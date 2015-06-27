@@ -2,7 +2,6 @@
 
 var fs = require('fs'),
     path = require('path'),
-    ejs = require('ejs'),
     rm = require('del'),
     debug = require('debug')('files'),
     mkdirp = require('mkdirp'),
@@ -52,10 +51,6 @@ function copyFile(source, target, cb) {
             }
         }
     });
-}
-
-function render(view, options) {
-    return ejs.render(fs.readFileSync(view, 'utf8'), options);
 }
 
 function getAbsolutePath(filePath) {

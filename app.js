@@ -7,6 +7,8 @@ var express = require('express'),
     morgan = require('morgan'),
     passport = require('passport'),
     path = require('path'),
+    ejs = require('ejs'),
+    fs = require('fs'),
     compression = require('compression'),
     session = require('express-session'),
     bodyParser = require('body-parser'),
@@ -25,8 +27,9 @@ router.get('/api/files/*', auth.ldap, files.get);
 router.put('/api/files/*', auth.ldap, multipart, files.put);
 router.delete('/api/files/*', auth.ldap, files.del);
 
-// healthcheck in case / does not serve up any file yet
-router.get('/', function (req, res) { res.sendFile(path.join(__dirname, '/app/welcome.html')); });
+// welcome screen in case / does not serve up any file yet
+var appUrl = process.env.HOSTNAME ? 'https://' + process.env.HOSTNAME : 'http://localhost:3000';
+router.get('/', function (req, res) { res.status(200).send(ejs.render(fs.readFileSync(path.join(__dirname, '/app/welcome.html'), 'utf8'), { appUrl: appUrl })); });
 
 app.use(morgan('dev'));
 app.use(compression());
