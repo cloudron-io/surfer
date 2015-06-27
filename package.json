@@ -10,20 +10,28 @@
     "file",
     "server"
   ],
+  "bin": {
+    "surfer": "./cli/surfer.js"
+  },
   "author": "Johannes Zellner <johannes@nebulon.de>",
   "license": "MIT",
   "dependencies": {
+    "async": "^1.2.1",
     "body-parser": "^1.13.1",
+    "colors": "^1.1.2",
     "commander": "^2.8.1",
     "compression": "^1.5.0",
     "connect-lastmile": "0.0.10",
     "connect-timeout": "^1.6.2",
+    "debug": "^2.2.0",
     "ejs": "^2.3.1",
     "express": "^4.12.4",
     "mkdirp": "^0.5.1",
     "morgan": "^1.6.0",
     "multiparty": "^4.1.2",
     "rimraf": "^2.4.0",
-    "superagent": "^1.2.0"
+    "safetydance": "0.0.16",
+    "superagent": "^1.2.0",
+    "underscore": "^1.8.3"
   }
 }

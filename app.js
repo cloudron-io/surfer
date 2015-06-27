@@ -4,11 +4,12 @@
 
 var express = require('express'),
     morgan = require('morgan'),
+    path = require('path'),
     compression = require('compression'),
     bodyParser = require('body-parser'),
     lastMile = require('connect-lastmile'),
     multipart = require('./src/multipart'),
-    files = require('./src/files.js');
+    files = require('./src/files.js')(path.resolve(__dirname, 'files'));
 
 var app = express();
 var router = new express.Router();

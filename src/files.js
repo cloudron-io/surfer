@@ -4,17 +4,22 @@ var fs = require('fs'),
     path = require('path'),
     ejs = require('ejs'),
     rimraf = require('rimraf'),
+    debug = require('debug')('files'),
     mkdirp = require('mkdirp'),
     HttpError = require('connect-lastmile').HttpError,
     HttpSuccess = require('connect-lastmile').HttpSuccess;
 
-exports = module.exports = {
-    get: get,
-    put: put,
-    del: del
-};
+var gBasePath;
 
-var FILE_BASE = path.resolve(__dirname, '../files');
+exports = module.exports = function (basePath) {
+    gBasePath = basePath;
+
+    return {
+        get: get,
+        put: put,
+        del: del
+    };
+};
 
 // http://stackoverflow.com/questions/11293857/fastest-way-to-copy-file-in-node-js
 function copyFile(source, target, cb) {
@@ -54,9 +59,9 @@ function render(view, options) {
 }
 
 function getAbsolutePath(filePath) {
-    var absoluteFilePath = path.resolve(FILE_BASE, filePath);
+    var absoluteFilePath = path.resolve(gBasePath, filePath);
 
-    if (absoluteFilePath.indexOf(FILE_BASE) !== 0) return null;
+    if (absoluteFilePath.indexOf(gBasePath) !== 0) return null;
     return absoluteFilePath;
 }
 
@@ -68,7 +73,7 @@ function get(req, res, next) {
     fs.stat(absoluteFilePath, function (error, result) {
         if (error) return next(new HttpError(404, error));
 
-        console.log('get', absoluteFilePath);
+        debug('get', absoluteFilePath);
 
         if (result.isFile()) return res.sendfile(absoluteFilePath);
         if (result.isDirectory()) return res.status(200).send({ entries: fs.readdirSync(absoluteFilePath) });
@@ -88,7 +93,7 @@ function put(req, res, next) {
     fs.stat(absoluteFilePath, function (error, result) {
         if (error && error.code !== 'ENOENT') return next(new HttpError(500, error));
 
-        console.log('put', absoluteFilePath, req.files.file);
+        debug('put', absoluteFilePath, req.files.file);
 
         if (result && result.isDirectory()) return next(new HttpError(409, 'cannot put on directories'));
         if (!result || result.isFile()) {
@@ -106,7 +111,7 @@ function del(req, res, next) {
     var filePath = req.params[0];
     var absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath) return next(new HttpError(404, 'Not found'));
-    if (absoluteFilePath.slice(FILE_BASE.length) === '') return next(new HttpError(403, 'Forbidden'));
+    if (absoluteFilePath.slice(gBasePath.length) === '') return next(new HttpError(403, 'Forbidden'));
 
     fs.stat(absoluteFilePath, function (error, result) {
         if (error) return next(new HttpError(404, error));
