@@ -22,6 +22,7 @@ router.delete('/api/files/*', files.del);
 app.use(morgan('dev'));
 app.use(compression());
 app.use(bodyParser.json());
+app.use(express.static(__dirname + '/files'));
 app.use(router);
 app.use(lastMile());
 

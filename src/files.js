@@ -4,6 +4,7 @@ var fs = require('fs'),
     path = require('path'),
     ejs = require('ejs'),
     rimraf = require('rimraf'),
+    mkdirp = require('mkdirp'),
     HttpError = require('connect-lastmile').HttpError,
     HttpSuccess = require('connect-lastmile').HttpSuccess;
 
@@ -19,28 +20,33 @@ var FILE_BASE = path.resolve(__dirname, '../files');
 function copyFile(source, target, cb) {
     var cbCalled = false;
 
-    var rd = fs.createReadStream(source);
-        rd.on("error", function(err) {
-        done(err);
-    });
+    // ensure directory
+    mkdirp(path.dirname(target), function (error) {
+        if (error) return cb(error);
 
-    var wr = fs.createWriteStream(target);
-        wr.on("error", function(err) {
-        done(err);
-    });
+        var rd = fs.createReadStream(source);
+            rd.on("error", function(err) {
+            done(err);
+        });
 
-    wr.on("close", function(ex) {
-        done();
-    });
+        var wr = fs.createWriteStream(target);
+            wr.on("error", function(err) {
+            done(err);
+        });
 
-    rd.pipe(wr);
+        wr.on("close", function(ex) {
+            done();
+        });
 
-    function done(err) {
-        if (!cbCalled) {
-            cb(err);
-            cbCalled = true;
+        rd.pipe(wr);
+
+        function done(err) {
+            if (!cbCalled) {
+                cb(err);
+                cbCalled = true;
+            }
         }
-    }
+    });
 }
 
 function render(view, options) {
@@ -99,7 +105,8 @@ function put(req, res, next) {
 function del(req, res, next) {
     var filePath = req.params[0];
     var absoluteFilePath = getAbsolutePath(filePath);
-    if (!absoluteFilePath) return next(new HttpError(403, 'Path not allowed'));
+    if (!absoluteFilePath) return next(new HttpError(404, 'Not found'));
+    if (absoluteFilePath.slice(FILE_BASE.length) === '') return next(new HttpError(403, 'Forbidden'));
 
     fs.stat(absoluteFilePath, function (error, result) {
         if (error) return next(new HttpError(404, error));
