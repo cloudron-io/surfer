@@ -6,7 +6,8 @@ exports.get = get;
 exports.del = del;
 
 var superagent = require('superagent'),
-    config = require('./config'),
+    config = require('./config.js'),
+    readlineSync = require('readline-sync'),
     async = require('async'),
     fs = require('fs'),
     path = require('path');
@@ -15,11 +16,15 @@ require('colors');
 
 var API = '/api/files/';
 
+var gQuery = {};
+
 function checkConfig() {
-    if (!config.server()) {
+    if (!config.server() || !config.username() || !config.password()) {
         console.log('You have run "login" first');
         process.exit(1);
     }
+
+    gQuery = { username: config.username(), password: config.password() };
 
     console.log('Using server %s', config.server().yellow);
 }
@@ -43,11 +48,40 @@ function collectFiles(filesOrFolders) {
     return tmp;
 }
 
+function checkResponse(error, result) {
+    if (error && error.status === 401) {
+        console.log('Login failed');
+        process.exit(1);
+    } else if (error) {
+        console.log('Error', result ? result.text : error);
+        process.exit(1);
+    }
+}
+
 function login(server) {
     if (server[server.length-1] === '/') server = server.slice(0, -1);
 
     console.log('Using server', server);
-    config.set('server', server);
+
+    var username = readlineSync.question('Username: ', { hideEchoBack: false });
+    var password = readlineSync.question('Password: ', { hideEchoBack: true });
+
+    superagent.get(server + API + '/').query({ username: username, password: password }).end(function (error, result) {
+        console.log(result.status);
+
+        if (result.status === 401) {
+            console.log('Login failed.');
+            process.exit(1);
+        }
+
+        config.set('server', server);
+        config.set('username', username);
+
+        // TODO this is clearly bad and needs fixing
+        config.set('password', password);
+
+        gQuery = { username: username, password: password };
+    });
 }
 
 function put(filePath, otherFilePaths, options) {
@@ -60,7 +94,7 @@ function put(filePath, otherFilePaths, options) {
 
         console.log('Uploading file %s -> %s', relativeFilePath.cyan, ((options.destination ? options.destination : '') + '/' + relativeFilePath).cyan);
 
-        superagent.put(config.server() + API + relativeFilePath).attach('file', file).end(callback);
+        superagent.put(config.server() + API + relativeFilePath).query(gQuery).attach('file', file).end(callback);
     }, function (error) {
         if (error) {
             console.log('Failed to put file.', error);
@@ -74,8 +108,9 @@ function put(filePath, otherFilePaths, options) {
 function get(filePath) {
     checkConfig();
 
-    var relativeFilePath = path.resolve(filePath).slice(process.cwd().length + 1);
-    superagent.get(config.server() + API + relativeFilePath).end(function (error, result) {
+    superagent.get(config.server() + API + filePath).query(gQuery).end(function (error, result) {
+        if (error && error.status === 401) return console.log('Login failed');
+        if (error && error.status === 404) return console.log('No such file or directory');
         if (error) return console.log('Failed', result ? result.body : error);
 
         if (result.body && result.body.entries) {
@@ -93,8 +128,9 @@ function del(filePath) {
     checkConfig();
 
     var relativeFilePath = path.resolve(filePath).slice(process.cwd().length + 1);
-    superagent.del(config.server() + API + relativeFilePath).end(function (error, result) {
-        if (error.status === 404) return console.log('No such file or directory');
+    superagent.del(config.server() + API + relativeFilePath).query(gQuery).end(function (error, result) {
+        if (error && error.status === 401) return console.log('Login failed');
+        if (error && error.status === 404) return console.log('No such file or directory');
         if (error) return console.log('Failed', result ? result.body : error);
         console.log('Success', result.body);
     });
