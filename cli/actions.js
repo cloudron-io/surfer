@@ -48,16 +48,6 @@ function collectFiles(filesOrFolders) {
     return tmp;
 }
 
-function checkResponse(error, result) {
-    if (error && error.status === 401) {
-        console.log('Login failed');
-        process.exit(1);
-    } else if (error) {
-        console.log('Error', result ? result.text : error);
-        process.exit(1);
-    }
-}
-
 function login(server) {
     if (server[server.length-1] === '/') server = server.slice(0, -1);
 
