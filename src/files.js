@@ -75,7 +75,7 @@ function get(req, res, next) {
 
         debug('get', absoluteFilePath);
 
-        if (result.isFile()) return res.sendfile(absoluteFilePath);
+        if (result.isFile()) return res.sendFile(absoluteFilePath);
         if (result.isDirectory()) return res.status(200).send({ entries: fs.readdirSync(absoluteFilePath) });
 
         return next(new HttpError(500, 'unsupported type'));

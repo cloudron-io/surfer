@@ -5,12 +5,12 @@ var passport = require('passport'),
 
 passport.serializeUser(function (user, done) {
     console.log('serializeUser', user);
-    done(null, user.id);
+    done(null, user.uid);
 });
 
 passport.deserializeUser(function (id, done) {
     console.log('deserializeUser', id);
-    done(null, { id: id });
+    done(null, { uid: id });
 });
 
 var LDAP_URL = process.env.LDAP_URL;

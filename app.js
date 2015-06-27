@@ -25,7 +25,7 @@ router.put('/api/files/*', auth.ldap, multipart, files.put);
 router.delete('/api/files/*', auth.ldap, files.del);
 
 // healthcheck in case / does not serve up any file yet
-router.get('/', function (req, res) { res.sendfile(path.join(__dirname, '/app/welcome.html')); });
+router.get('/', function (req, res) { res.sendFile(path.join(__dirname, '/app/welcome.html')); });
 
 app.use(morgan('dev'));
 app.use(compression());
