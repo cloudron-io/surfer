@@ -62,7 +62,7 @@ function get(req, res, next) {
     fs.stat(absoluteFilePath, function (error, result) {
         if (error) return next(new HttpError(404, error));
 
-        console.log('get', absoluteFilePath, result);
+        console.log('get', absoluteFilePath);
 
         if (result.isFile()) return res.sendfile(absoluteFilePath);
         if (result.isDirectory()) return res.status(200).send({ entries: fs.readdirSync(absoluteFilePath) });
@@ -82,7 +82,7 @@ function put(req, res, next) {
     fs.stat(absoluteFilePath, function (error, result) {
         if (error && error.code !== 'ENOENT') return next(new HttpError(500, error));
 
-        console.log('put', absoluteFilePath, result, req.files.file);
+        console.log('put', absoluteFilePath, req.files.file);
 
         if (result && result.isDirectory()) return next(new HttpError(409, 'cannot put on directories'));
         if (!result || result.isFile()) {
@@ -106,7 +106,7 @@ function del(req, res, next) {
 
         rimraf(absoluteFilePath, function (error) {
             if (error) return next(new HttpError(500, 'Unable to remove'));
-            next(new HttpError(200, {}));
+            next(new HttpSuccess(200, {}));
         });
     });
 }
