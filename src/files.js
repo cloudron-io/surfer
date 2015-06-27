@@ -3,7 +3,7 @@
 var fs = require('fs'),
     path = require('path'),
     ejs = require('ejs'),
-    rimraf = require('rimraf'),
+    rm = require('del'),
     debug = require('debug')('files'),
     mkdirp = require('mkdirp'),
     HttpError = require('connect-lastmile').HttpError,
@@ -116,9 +116,9 @@ function del(req, res, next) {
     fs.stat(absoluteFilePath, function (error, result) {
         if (error) return next(new HttpError(404, error));
 
-        rimraf(absoluteFilePath, function (error) {
+        rm(absoluteFilePath, function (error, result) {
             if (error) return next(new HttpError(500, 'Unable to remove'));
-            next(new HttpSuccess(200, {}));
+            next(new HttpSuccess(200, { entries: result }));
         });
     });
 }

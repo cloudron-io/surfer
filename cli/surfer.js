@@ -15,6 +15,7 @@ program.command('login')
     .action(actions.login);
 
 program.command('put <file> [files...]')
+    .option('-d --destination <folder>', 'Destination folder. This is prepended to the relative <file> path')
     .description('Put a file')
     .action(actions.put);
 

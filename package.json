@@ -24,12 +24,12 @@
     "connect-lastmile": "0.0.10",
     "connect-timeout": "^1.6.2",
     "debug": "^2.2.0",
+    "del": "^1.2.0",
     "ejs": "^2.3.1",
     "express": "^4.12.4",
     "mkdirp": "^0.5.1",
     "morgan": "^1.6.0",
     "multiparty": "^4.1.2",
-    "rimraf": "^2.4.0",
     "safetydance": "0.0.16",
     "superagent": "^1.2.0",
     "underscore": "^1.8.3"

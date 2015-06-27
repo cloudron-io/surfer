@@ -46,7 +46,7 @@ function login(server) {
     config.set('server', server);
 }
 
-function put(filePath, otherFilePaths) {
+function put(filePath, otherFilePaths, options) {
     checkConfig();
 
     var files = collectFiles([ filePath ].concat(otherFilePaths));
@@ -54,7 +54,7 @@ function put(filePath, otherFilePaths) {
     async.eachSeries(files, function (file, callback) {
         var relativeFilePath = path.resolve(file).slice(process.cwd().length + 1);
 
-        console.log('Uploading file %s', relativeFilePath.cyan);
+        console.log('Uploading file %s -> %s', relativeFilePath.cyan, ((options.destination ? options.destination : '') + '/' + relativeFilePath).cyan);
 
         superagent.put(config.server() + API + relativeFilePath).attach('file', file).end(callback);
     }, function (error) {
@@ -90,6 +90,7 @@ function del(filePath) {
 
     var relativeFilePath = path.resolve(filePath).slice(process.cwd().length + 1);
     superagent.del(config.server() + API + relativeFilePath).end(function (error, result) {
+        if (error.status === 404) return console.log('No such file or directory');
         if (error) return console.log('Failed', result ? result.body : error);
         console.log('Success', result.body);
     });
