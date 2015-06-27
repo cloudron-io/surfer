@@ -2,6 +2,7 @@
 
 'use strict';
 
+
 var express = require('express'),
     morgan = require('morgan'),
     passport = require('passport'),
@@ -13,7 +14,7 @@ var express = require('express'),
     lastMile = require('connect-lastmile'),
     multipart = require('./src/multipart'),
     auth = require('./src/auth.js'),
-    files = require('./src/files.js')(path.resolve(__dirname, 'files'));
+    files = require('./src/files.js')(path.resolve(__dirname, process.argv[2] || 'files'));
 
 var app = express();
 var router = new express.Router();
@@ -40,9 +41,11 @@ app.use(passport.session());
 app.use(router);
 app.use(lastMile());
 
+
 var server = app.listen(3000, function () {
     var host = server.address().address;
     var port = server.address().port;
 
     console.log('Surfer listening at http://%s:%s', host, port);
+    console.log('Using base path', path.resolve(__dirname, process.argv[2] || 'files'));
 });
