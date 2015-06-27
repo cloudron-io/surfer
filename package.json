@@ -1,6 +1,6 @@
 {
   "name": "cloudron-surfer",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Simple file server",
   "main": "app.js",
   "scripts": {
