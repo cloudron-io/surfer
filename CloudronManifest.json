@@ -1,0 +1,20 @@
+{
+  "id": "io.cloudron.surfer",
+  "title": "Surfer",
+  "author": "Cloudron Team",
+  "description": "Simple static file server",
+  "tagline": "Static file server",
+  "version": "0.1.0",
+  "healthCheckPath": "/",
+  "httpPort": 3000,
+  "manifestVersion": 1,
+  "website": "https://github.com/nebulade/surfer",
+  "contactEmail": "support@cloudron.io",
+  "icon": "logo.png",
+  "addons": {
+    "ldap": {},
+    "localstorage": {}
+  },
+  "mediaLinks": [
+  ]
+}
