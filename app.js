@@ -20,9 +20,13 @@ router.get('/api/files/*', files.get);
 router.put('/api/files/*', multipart, files.put);
 router.delete('/api/files/*', files.del);
 
+// healthcheck in case / does not serve up any file yet
+router.get('/', function (req, res) { res.sendfile(path.join(__dirname, '/app/welcome.html')); });
+
 app.use(morgan('dev'));
 app.use(compression());
 app.use(bodyParser.json());
+app.use('/settings', express.static(__dirname + '/app'));
 app.use(express.static(__dirname + '/files'));
 app.use(router);
 app.use(lastMile());

@@ -20,6 +20,8 @@ function checkConfig() {
         console.log('You have run "login" first');
         process.exit(1);
     }
+
+    console.log('Using server %s', config.server().yellow);
 }
 
 function collectFiles(filesOrFolders) {
