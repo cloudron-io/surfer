@@ -1,0 +1,17 @@
+<html>
+<head>
+    <title> <%= dirPath %> </title>
+</head>
+
+<body>
+
+Directory <%= dirPath %>:
+
+<ul>
+<% entries.forEach(function (entry) { %>
+	<li><a href="/api/files/<%= dirPath %>/<%= entry %>"><%= entry %></a></li>
+<% }); %>
+</ul>
+
+</body>
+</html>
