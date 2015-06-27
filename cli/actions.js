@@ -44,6 +44,8 @@ function collectFiles(filesOrFolders) {
 }
 
 function login(server) {
+    if (server[server.length-1] === '/') server = server.slice(0, -1);
+
     console.log('Using server', server);
     config.set('server', server);
 }

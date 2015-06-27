@@ -9,6 +9,7 @@ WORKDIR /app/code
 ADD package.json /app/code/package.json
 ADD src /app/code/src
 ADD app.js /app/code/app.js
+ADD app /app/code/app
 RUN npm install
 
 EXPOSE 3000
