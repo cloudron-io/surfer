@@ -67,8 +67,6 @@ function login(server) {
     var password = readlineSync.question('Password: ', { hideEchoBack: true });
 
     superagent.get(server + API + '/').query({ username: username, password: password }).end(function (error, result) {
-        console.log(result.status);
-
         if (result.status === 401) {
             console.log('Login failed.');
             process.exit(1);
@@ -81,6 +79,8 @@ function login(server) {
         config.set('password', password);
 
         gQuery = { username: username, password: password };
+
+        console.log('Done');
     });
 }
 
