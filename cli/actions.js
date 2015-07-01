@@ -10,6 +10,7 @@ var superagent = require('superagent'),
     readlineSync = require('readline-sync'),
     async = require('async'),
     fs = require('fs'),
+    url = require('url'),
     path = require('path');
 
 require('colors');
@@ -48,8 +49,11 @@ function collectFiles(filesOrFolders) {
     return tmp;
 }
 
-function login(server) {
-    if (server[server.length-1] === '/') server = server.slice(0, -1);
+function login(uri) {
+    var tmp = url.parse(uri);
+    if (!tmp.host) tmp = url.parse('https://' + uri);
+
+    var server = 'https://' + tmp.host;
 
     console.log('Using server', server);
 
@@ -57,6 +61,10 @@ function login(server) {
     var password = readlineSync.question('Password: ', { hideEchoBack: true });
 
     superagent.get(server + API + '/').query({ username: username, password: password }).end(function (error, result) {
+        if (error && error.code === 'ENOTFOUND') {
+            console.log('No such server %s'.red, server);
+            process.exit(1);
+        }
         if (result.status === 401) {
             console.log('Login failed.');
             process.exit(1);
@@ -70,7 +78,7 @@ function login(server) {
 
         gQuery = { username: username, password: password };
 
-        console.log('Done');
+        console.log('Done'.green);
     });
 }
 
