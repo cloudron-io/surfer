@@ -2,7 +2,7 @@
   "id": "io.cloudron.surfer",
   "title": "Surfer",
   "author": "Cloudron Team",
-  "description": "Simple static file server",
+  "description": "Simple static file server. It comes with a commandline tool to upload files from your local folders.",
   "tagline": "Static file server",
   "tags": [
     "fileserver",
