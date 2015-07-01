@@ -4,6 +4,11 @@
   "author": "Cloudron Team",
   "description": "Simple static file server",
   "tagline": "Static file server",
+  "tags": [
+    "fileserver",
+    "webserver",
+    "server"
+  ],
   "version": "0.1.0",
   "healthCheckPath": "/",
   "httpPort": 3000,
