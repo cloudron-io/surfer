@@ -34,7 +34,7 @@ router.get('/', function (req, res) { res.status(200).send(ejs.render(fs.readFil
 app.use(morgan('dev'));
 app.use(compression());
 app.use('/settings', express.static(__dirname + '/app'));
-app.use(express.static(__dirname + '/files'));
+app.use(express.static(path.resolve(__dirname, process.argv[2] || 'files')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 app.use(cookieParser());
