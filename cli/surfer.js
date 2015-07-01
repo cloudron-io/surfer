@@ -10,7 +10,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 program.version('0.1.0');
 
-program.command('login')
+program.command('login <url>')
     .description('Login to server')
     .action(actions.login);
 
