@@ -66,7 +66,7 @@ function login(uri) {
             console.log('No such server %s'.red, server.bold);
             process.exit(1);
         }
-        if (error.code) {
+        if (error && error.code) {
             console.log('Failed to connect to server %s'.red, server.bold, error.code);
             process.exit(1);
         }
