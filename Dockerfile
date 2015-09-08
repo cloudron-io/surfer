@@ -13,8 +13,6 @@ ADD app /app/code/app
 ADD start.sh /app/code/start.sh
 RUN npm install
 
-RUN npm install -g forever
-
 EXPOSE 3000
 
 CMD [ "/app/code/start.sh" ]
