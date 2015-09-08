@@ -53,20 +53,24 @@ function login(uri) {
     var tmp = url.parse(uri);
     if (!tmp.host) tmp = url.parse('https://' + uri);
 
-    var server = 'https://' + tmp.host;
+    var server = tmp.protocol + '//' + tmp.host;
 
-    console.log('Using server', server);
+    console.log('Using server', server.bold);
 
     var username = readlineSync.question('Username: ', { hideEchoBack: false });
     var password = readlineSync.question('Password: ', { hideEchoBack: true });
 
     superagent.get(server + API + '/').query({ username: username, password: password }).end(function (error, result) {
         if (error && error.code === 'ENOTFOUND') {
-            console.log('No such server %s'.red, server);
+            console.log('No such server %s'.red, server.bold);
+            process.exit(1);
+        }
+        if (error.code) {
+            console.log('Failed to connect to server %s'.red, server.bold, error.code);
             process.exit(1);
         }
         if (result.status === 401) {
-            console.log('Login failed.');
+            console.log('Login failed.'.red);
             process.exit(1);
         }
 
@@ -78,7 +82,7 @@ function login(uri) {
 
         gQuery = { username: username, password: password };
 
-        console.log('Done'.green);
+        console.log('Ok'.green);
     });
 }
 
