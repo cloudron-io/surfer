@@ -15,6 +15,7 @@ var express = require('express'),
     cookieParser = require('cookie-parser'),
     lastMile = require('connect-lastmile'),
     multipart = require('./src/multipart'),
+    mkdirp = require('mkdirp'),
     auth = require('./src/auth.js'),
     files = require('./src/files.js')(path.resolve(__dirname, process.argv[2] || 'files'));
 
@@ -49,6 +50,9 @@ var server = app.listen(3000, function () {
     var host = server.address().address;
     var port = server.address().port;
 
+    var basePath = path.resolve(__dirname, process.argv[2] || 'files');
+    mkdirp.sync(basePath);
+
     console.log('Surfer listening at http://%s:%s', host, port);
-    console.log('Using base path', path.resolve(__dirname, process.argv[2] || 'files'));
+    console.log('Using base path', basePath);
 });

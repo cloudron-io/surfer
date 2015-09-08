@@ -19,7 +19,7 @@ program.command('put <file> [files...]')
     .description('Put a file')
     .action(actions.put);
 
-program.command('get')
+program.command('get [file]')
     .description('Get a file or directory')
     .action(actions.get);
 

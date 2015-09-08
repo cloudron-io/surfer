@@ -10,6 +10,7 @@ var superagent = require('superagent'),
     readlineSync = require('readline-sync'),
     async = require('async'),
     fs = require('fs'),
+    request = require('request'),
     url = require('url'),
     path = require('path');
 
@@ -27,7 +28,7 @@ function checkConfig() {
 
     gQuery = { username: config.username(), password: config.password() };
 
-    console.log('Using server %s', config.server().yellow);
+    console.error('Using server %s', config.server().yellow);
 }
 
 function collectFiles(filesOrFolders) {
@@ -110,20 +111,40 @@ function put(filePath, otherFilePaths, options) {
 function get(filePath) {
     checkConfig();
 
-    superagent.get(config.server() + API + filePath).query(gQuery).end(function (error, result) {
-        if (error && error.status === 401) return console.log('Login failed');
-        if (error && error.status === 404) return console.log('No such file or directory');
-        if (error) return console.log('Failed', result ? result.body : error);
+    // if no argument provided, fetch root
+    filePath = filePath || '/';
 
-        if (result.body && result.body.entries) {
+    request.get(config.server() + API + filePath, { qs: gQuery }, function (error, result, body) {
+        if (error) return console.error(error);
+        if (result.statusCode === 401) return console.log('Login failed');
+        if (result.statusCode === 404) return console.log('No such file or directory');
+
+        // 222 indicates directory listing
+        if (result.statusCode === 222) {
             console.log('Files:');
-            result.body.entries.forEach(function (entry) {
+            JSON.parse(body).entries.forEach(function (entry) {
                 console.log('\t %s', entry);
             });
         } else {
-            console.log(result.text);
+            console.log(body);
         }
     });
+    // var req = superagent.get(config.server() + API + filePath);
+    // req.query(gQuery);
+    // req.end(function (error, result) {
+    //     if (error && error.status === 401) return console.log('Login failed');
+    //     if (error && error.status === 404) return console.log('No such file or directory');
+    //     if (error) return console.log('Failed', result ? result.body : error);
+
+    //     if (result.body && result.body.entries) {
+    //         console.log('Files:');
+    //         result.body.entries.forEach(function (entry) {
+    //             console.log('\t %s', entry);
+    //         });
+    //     } else {
+    //         req.pipe(process.stdout);
+    //     }
+    // });
 }
 
 function del(filePath) {

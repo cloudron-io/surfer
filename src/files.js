@@ -54,7 +54,7 @@ function copyFile(source, target, cb) {
 }
 
 function getAbsolutePath(filePath) {
-    var absoluteFilePath = path.resolve(gBasePath, filePath);
+    var absoluteFilePath = path.resolve(path.join(gBasePath, filePath));
 
     if (absoluteFilePath.indexOf(gBasePath) !== 0) return null;
     return absoluteFilePath;
@@ -71,7 +71,7 @@ function get(req, res, next) {
         debug('get', absoluteFilePath);
 
         if (result.isFile()) return res.sendFile(absoluteFilePath);
-        if (result.isDirectory()) return res.status(200).send({ entries: fs.readdirSync(absoluteFilePath) });
+        if (result.isDirectory()) return res.status(222).send({ entries: fs.readdirSync(absoluteFilePath) });
 
         return next(new HttpError(500, 'unsupported type'));
     });
