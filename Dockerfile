@@ -1,4 +1,4 @@
-FROM cloudron/base:0.6.0
+FROM cloudron/base:0.7.0
 MAINTAINER Johannes Zellner <johannes@nebulon.de>
 
 ENV DEBIAN_FRONTEND noninteractive
