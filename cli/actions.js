@@ -94,10 +94,15 @@ function put(filePath, otherFilePaths, options) {
 
     async.eachSeries(files, function (file, callback) {
         var relativeFilePath = path.resolve(file).slice(process.cwd().length + 1);
+        var destinationPath = (options.destination ? '/' + options.destination : '') + '/' + relativeFilePath;
+        console.log('Uploading file %s -> %s', relativeFilePath.cyan, destinationPath.cyan);
 
-        console.log('Uploading file %s -> %s', relativeFilePath.cyan, ((options.destination ? options.destination : '') + '/' + relativeFilePath).cyan);
+        superagent.put(config.server() + API + relativeFilePath).query(gQuery).attach('file', file).end(function (error, result) {
+            if (error) return callback(error);
+            if (result.statusCode !== 201) return callback(new Error('Error uploading file: ' + result.statusCode));
 
-        superagent.put(config.server() + API + relativeFilePath).query(gQuery).attach('file', file).end(callback);
+            console.log('Uploaded to ' + config.server() + destinationPath);
+        });
     }, function (error) {
         if (error) {
             console.log('Failed to put file.', error);
