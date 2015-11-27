@@ -97,7 +97,7 @@ function put(filePath, otherFilePaths, options) {
         var destinationPath = (options.destination ? '/' + options.destination : '') + '/' + relativeFilePath;
         console.log('Uploading file %s -> %s', relativeFilePath.cyan, destinationPath.cyan);
 
-        superagent.put(config.server() + API + relativeFilePath).query(gQuery).attach('file', file).end(function (error, result) {
+        superagent.put(config.server() + API + destinationPath).query(gQuery).attach('file', file).end(function (error, result) {
             if (error) return callback(error);
             if (result.statusCode !== 201) return callback(new Error('Error uploading file: ' + result.statusCode));
 
