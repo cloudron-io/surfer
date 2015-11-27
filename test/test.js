@@ -4,6 +4,8 @@
 
 var execSync = require('child_process').execSync,
     expect = require('expect.js'),
+    fs = require('fs'),
+    os = require('os'),
     path = require('path'),
     superagent = require('superagent');
 
@@ -12,7 +14,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 describe('Application life cycle test', function () {
     this.timeout(0);
     var LOCATION = 'surfertest';
-    var app;
+    var app, testFile = os.tmpdir() + '/surfer-test.txt';
     var username = process.env.USERNAME;
     var password = process.env.PASSWORD;
 
@@ -31,7 +33,7 @@ describe('Application life cycle test', function () {
         execSync('cloudron build', { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
     });
 
-    it('install app', function () {
+    xit('install app', function () {
         execSync('cloudron install --new --location ' + LOCATION, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
     });
 
@@ -52,13 +54,14 @@ describe('Application life cycle test', function () {
         });
     });
 
-    it('can login using cli', function (done) {
-        execSync(__dirname + '../cli/surfer.js login https://' + app.fqdn, { input: username + '\n' + password + '\n' });
-        done();
+    it('can login using cli', function () {
+        // execSync(__dirname + '/../cli/surfer.js login https://' + app.fqdn, { input: username + '\n' + password + '\n' });
+        fs.writeFileSync(process.env.HOME + '/.surfer.json', JSON.stringify({ server: 'https://' + app.fqdn, username: username, password: password }));
     });
 
     it('can upload file', function (done) {
-        execSync(__dirname + '../cli/surfer.js put test.js');
+        fs.writeFileSync(testFile, 'surfer');
+        execSync(__dirname + '/../cli/surfer.js put ' + testFile,  { stdio: 'inherit' } );
         done();
     });
 
@@ -71,12 +74,14 @@ describe('Application life cycle test', function () {
     });
 
     it('can get the uploaded file', function (done) {
-        var testFile = execSync(__dirname + '../cli/surfer.js get test.js').toString('utf8');
-        console.log(testFile);
+        var contents = execSync(__dirname + '/../cli/surfer.js get test/test.js').toString('utf8');
+        expect(contents).to.be('surfer');
         done();
     });
 
     xit('uninstall app', function () {
         execSync('cloudron uninstall --app ' + app.id, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
+        fs.unlinkSync(process.env.HOME + '/.surfer.json');
+        fs.unlinkSync(testFile);
     });
 });
