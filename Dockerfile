@@ -13,7 +13,7 @@ ADD src /app/code/src
 ADD app.js /app/code/app.js
 ADD app /app/code/app
 ADD start.sh /app/code/start.sh
-RUN npm install
+RUN npm install --production
 
 EXPOSE 3000
 
