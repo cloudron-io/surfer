@@ -42,3 +42,14 @@ Put some files:
 
     surfer put [file]
  
+## Testing
+
+The e2e tests are located in the `test/` folder and require [nodejs](http://nodejs.org/). They are creating a fresh build, install the app on your Cloudron, perform tests, backup, restore and test if the files are still ok.
+
+```
+cd surfer/test
+
+npm install
+USERNAME=<cloudron username> PASSWORD=<cloudron password> mocha --bail test.js
+```
+
