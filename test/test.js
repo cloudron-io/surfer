@@ -29,7 +29,7 @@ describe('Application life cycle test', function () {
         done();
     });
 
-    xit('build app', function () {
+    it('build app', function () {
         execSync('cloudron build', { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
     });
 
