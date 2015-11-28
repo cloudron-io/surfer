@@ -139,7 +139,7 @@ function get(filePath) {
                 console.log('\t %s', entry);
             });
         } else {
-            console.log(body);
+            process.stdout.write(body);
         }
     });
     // var req = superagent.get(config.server() + API + filePath);
