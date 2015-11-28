@@ -29,7 +29,7 @@ router.put   ('/api/files/*', auth.ldap, multipart, files.put);
 router.delete('/api/files/*', auth.ldap, files.del);
 
 // welcome screen in case / does not serve up any file yet
-var appUrl = process.env.HOSTNAME ? 'https://' + process.env.HOSTNAME : 'http://localhost:3000';
+var appUrl = process.env.APP_ORIGIN ? process.env.APP_ORIGIN : 'http://localhost:3000';
 router.get('/', function (req, res) { res.status(200).send(ejs.render(fs.readFileSync(path.join(__dirname, '/app/welcome.html'), 'utf8'), { appUrl: appUrl })); });
 
 app.use(morgan('dev'));
