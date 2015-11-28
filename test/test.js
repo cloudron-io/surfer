@@ -33,7 +33,7 @@ describe('Application life cycle test', function () {
         execSync('cloudron build', { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
     });
 
-    xit('install app', function () {
+    it('install app', function () {
         execSync('cloudron install --new --location ' + LOCATION, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
     });
 
@@ -74,12 +74,12 @@ describe('Application life cycle test', function () {
     });
 
     it('can get the uploaded file', function (done) {
-        var contents = execSync(__dirname + '/../cli/surfer.js get test/test.js').toString('utf8');
+        var contents = execSync(__dirname + '/../cli/surfer.js get surfer-test.txt').toString('utf8');
         expect(contents).to.be('surfer');
         done();
     });
 
-    xit('uninstall app', function () {
+    it('uninstall app', function () {
         execSync('cloudron uninstall --app ' + app.id, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
         fs.unlinkSync(process.env.HOME + '/.surfer.json');
         fs.unlinkSync(testFile);
