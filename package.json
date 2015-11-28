@@ -15,6 +15,10 @@
   },
   "author": "Johannes Zellner <johannes@nebulon.de>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nebulade/surfer.git"
+  },
   "dependencies": {
     "async": "^1.2.1",
     "body-parser": "^1.13.1",
