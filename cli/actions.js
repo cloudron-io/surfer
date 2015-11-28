@@ -93,7 +93,15 @@ function put(filePath, otherFilePaths, options) {
     var files = collectFiles([ filePath ].concat(otherFilePaths));
 
     async.eachSeries(files, function (file, callback) {
-        var relativeFilePath = path.resolve(file).slice(process.cwd().length + 1);
+        var relativeFilePath;
+        if (path.isAbsolute(file)) {
+            relativeFilePath = path.basename(file);
+        } else if (path.resolve(file).indexOf(process.cwd().length) === 0) { // relative to current dir
+            relativeFilePath = path.resolve(file).slice(process.cwd().length + 1);
+        } else { // relative but somewhere else
+            relativeFilePath = path.basename(file);
+        }
+
         var destinationPath = (options.destination ? '/' + options.destination : '') + '/' + relativeFilePath;
         console.log('Uploading file %s -> %s', relativeFilePath.cyan, destinationPath.cyan);
 
