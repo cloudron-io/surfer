@@ -97,9 +97,10 @@ function put(filePath, otherFilePaths, options) {
 
     async.eachSeries(files, function (file, callback) {
         var relativeFilePath;
+
         if (path.isAbsolute(file)) {
             relativeFilePath = path.basename(file);
-        } else if (path.resolve(file).indexOf(process.cwd().length) === 0) { // relative to current dir
+        } else if (path.resolve(file).indexOf(process.cwd()) === 0) { // relative to current dir
             relativeFilePath = path.resolve(file).slice(process.cwd().length + 1);
         } else { // relative but somewhere else
             relativeFilePath = path.basename(file);
