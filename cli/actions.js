@@ -114,6 +114,8 @@ function put(filePath, otherFilePaths, options) {
             if (result.statusCode !== 201) return callback(new Error('Error uploading file: ' + result.statusCode));
 
             console.log('Uploaded to ' + config.server() + destinationPath);
+
+            callback(null);
         });
     }, function (error) {
         if (error) {
