@@ -16,6 +16,7 @@ program.command('login <url>')
 
 program.command('put <file> [files...]')
     .option('-d --destination <folder>', 'Destination folder. This is prepended to the relative <file> path')
+    .option('-a --all', 'Also include hidden files and folders.', false)
     .description('Put a file')
     .action(actions.put);
 

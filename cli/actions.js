@@ -31,17 +31,20 @@ function checkConfig() {
     console.error('Using server %s', config.server().yellow);
 }
 
-function collectFiles(filesOrFolders) {
+function collectFiles(filesOrFolders, options) {
     var tmp = [];
 
     filesOrFolders.forEach(function (filePath) {
+        var baseName = path.basename(filePath);
+        if (!options.all && baseName[0] === '.' && baseName.length > 1) return;
+
         var stat = fs.statSync(filePath);
 
         if (stat.isFile()) {
             tmp.push(filePath);
         } else if (stat.isDirectory()) {
             var files = fs.readdirSync(filePath).map(function (file) { return path.join(filePath, file); });
-            tmp = tmp.concat(collectFiles(files));
+            tmp = tmp.concat(collectFiles(files, options));
         } else {
             console.log('Skipping %s', filePath.cyan);
         }
@@ -90,7 +93,7 @@ function login(uri) {
 function put(filePath, otherFilePaths, options) {
     checkConfig();
 
-    var files = collectFiles([ filePath ].concat(otherFilePaths));
+    var files = collectFiles([ filePath ].concat(otherFilePaths), options);
 
     async.eachSeries(files, function (file, callback) {
         var relativeFilePath;
