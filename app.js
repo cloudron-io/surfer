@@ -27,6 +27,7 @@ var multipart = multipart({ maxFieldsSize: 2 * 1024, limit: '512mb', timeout: 3 
 router.get   ('/api/files/*', auth.ldap, files.get);
 router.put   ('/api/files/*', auth.ldap, multipart, files.put);
 router.delete('/api/files/*', auth.ldap, files.del);
+router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });
 
 // welcome screen in case / does not serve up any file yet
 var appUrl = process.env.APP_ORIGIN ? process.env.APP_ORIGIN : 'http://localhost:3000';
