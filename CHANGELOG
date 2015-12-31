@@ -7,3 +7,5 @@
 [0.4.2]
 * Fix app url
 
+[0.4.3]
+* Improve healthcheck
