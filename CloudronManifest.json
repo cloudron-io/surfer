@@ -9,7 +9,7 @@
     "webserver",
     "server"
   ],
-  "version": "0.4.3",
+  "version": "0.5.0",
   "targetBoxVersion": "0.4.0",
   "healthCheckPath": "/api/healthcheck",
   "httpPort": 3000,
@@ -17,6 +17,7 @@
   "website": "https://github.com/nebulade/surfer",
   "contactEmail": "support@cloudron.io",
   "icon": "logo.png",
+  "configurePath": "/_admin",
   "addons": {
     "ldap": {},
     "localstorage": {}

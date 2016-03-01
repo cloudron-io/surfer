@@ -9,3 +9,6 @@
 
 [0.4.3]
 * Improve healthcheck
+
+[0.5.0]
+* Add settings ui
