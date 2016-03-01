@@ -60,6 +60,10 @@ function getAbsolutePath(filePath) {
     return absoluteFilePath;
 }
 
+function removeBasePath(filePath) {
+    return filePath.slice(gBasePath.length);
+}
+
 function get(req, res, next) {
     var filePath = req.params[0];
     var absoluteFilePath = getAbsolutePath(filePath);
@@ -104,18 +108,29 @@ function put(req, res, next) {
 
 function del(req, res, next) {
     var filePath = req.params[0];
+    var recursive = !!req.query.recursive;
+    var dryRun = !!req.query.dryRun;
+
     var absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath) return next(new HttpError(404, 'Not found'));
 
     // absoltueFilePath has to have the base path prepended
-    if (absoluteFilePath.length <= gBasePath.length) return next(new HttpError(403, 'Forbidden'));
+    if (absoluteFilePath.length <= gBasePath.length) return next(new HttpError(404, 'Not found'));
 
     fs.stat(absoluteFilePath, function (error, result) {
         if (error) return next(new HttpError(404, error));
 
-        rm(absoluteFilePath, function (error, result) {
-            if (error) return next(new HttpError(500, 'Unable to remove'));
+        if (result.isDirectory() && !recursive) return next(new HttpError(403, 'Is directory'));
+
+        // add globs to get file listing
+        if (result.isDirectory()) absoluteFilePath += '/**';
+
+        rm(absoluteFilePath, { dryRun: dryRun }).then(function (result) {
+            result = result.map(removeBasePath);
             next(new HttpSuccess(200, { entries: result }));
+        }, function (error) {
+            console.error(error);
+            next(new HttpError(500, 'Unable to remove'));
         });
     });
 }

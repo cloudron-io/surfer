@@ -24,6 +24,8 @@ program.command('get [file]')
     .action(actions.get);
 
 program.command('del <file>')
+    .option('-r --recursive', 'Recursive delete directories.', false)
+    .option('-d --dry-run', 'Only list files to delete.', false)
     .description('Delete a file or directory')
     .action(actions.del);
 

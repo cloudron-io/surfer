@@ -180,16 +180,27 @@ function get(filePath) {
     // });
 }
 
-function del(filePath) {
+function del(filePath, options) {
     checkConfig();
 
+    var query = safe.JSON.parse(safe.JSON.stringify(gQuery));
+    query.recursive = options.recursive;
+    query.dryRun = options.dryRun;
+
     var relativeFilePath = path.resolve(filePath).slice(process.cwd().length + 1);
-    superagent.del(config.server() + API + relativeFilePath).query(gQuery).end(function (error, result) {
-        if (error && error.status === 401) return console.log('Login failed');
+    superagent.del(config.server() + API + relativeFilePath).query(query).end(function (error, result) {
+        if (error && error.status === 401) return console.log('Login failed'.red);
         if (error && error.status === 404) return console.log('No such file or directory');
-        if (error && error.status === 403) return console.log('No such file or directory');
+        if (error && error.status === 403) return console.log('Failed. Target is a directory. Use %s to delete directories.', '--recursive'.yellow);
         if (error) return console.log('Failed', result ? result.body : error);
 
-        console.log('Success. Removed %s files.', result.body.entries.length);
+        if (options.dryRun) {
+            console.log('This would remove %s files:', result.body.entries.length);
+            result.body.entries.forEach(function (entry) {
+                console.log('\t %s', entry);
+            });
+        } else {
+            console.log('Success. Removed %s files.', result.body.entries.length);
+        }
     });
 }
