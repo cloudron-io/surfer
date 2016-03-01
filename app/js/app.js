@@ -39,6 +39,14 @@ function sanitize(filePath) {
     return filePath.replace(/\/+/g, '/');
 }
 
+function encode(filePath) {
+    return filePath.split('/').map(encodeURIComponent).join('/');
+}
+
+function refresh() {
+    loadDirectory(app.path);
+}
+
 function loadDirectory(filePath) {
     app.busy = true;
 
@@ -70,6 +78,29 @@ function up() {
     loadDirectory(app.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
 }
 
+function upload() {
+    $(app.$els.upload).change(function () {
+        app.busy = true;
+
+        var file = app.$els.upload.files[0];
+        var path = encode(sanitize(app.path + '/' + file.name));
+
+        var formData = new FormData();
+        formData.append('file', file);
+
+        superagent.put('/api/files' + path).query({ username: app.session.username, password: app.session.password }).send(formData).end(function (error, result) {
+            app.busy = false;
+
+            if (error) return console.error(error);
+            if (result.statusCode !== 201) return console.error('Error uploading file: ', result.statusCode);
+
+            refresh();
+        });
+    });
+
+    app.$els.upload.click();
+}
+
 var app = new Vue({
     el: '#app',
     data: {
@@ -87,7 +118,8 @@ var app = new Vue({
         logout: logout,
         loadDirectory: loadDirectory,
         open: open,
-        up: up
+        up: up,
+        upload: upload
     }
 });
 
