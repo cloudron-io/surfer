@@ -55,14 +55,14 @@ function collectFiles(filesOrFolders, options) {
 
 function login(uri) {
     var tmp = url.parse(uri);
-    if (!tmp.host) tmp = url.parse('https://' + uri);
+    if (!tmp.slashes) tmp = url.parse('https://' + uri);
 
     var server = tmp.protocol + '//' + tmp.host;
 
-    console.log('Using server', server.bold);
+    console.log('Using server', server.cyan);
 
-    var username = readlineSync.question('Username: ', { hideEchoBack: false });
-    var password = readlineSync.question('Password: ', { hideEchoBack: true });
+    var username = readlineSync.question('Username: ');
+    var password = readlineSync.question('Password: ', { noEchoBack: true });
 
     superagent.get(server + API + '/').query({ username: username, password: password }).end(function (error, result) {
         if (error && error.code === 'ENOTFOUND') {
@@ -86,7 +86,7 @@ function login(uri) {
 
         gQuery = { username: username, password: password };
 
-        console.log('Ok'.green);
+        console.log('Login successful'.green);
     });
 }
 
