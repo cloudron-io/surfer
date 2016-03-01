@@ -21,7 +21,7 @@ function login(username, password) {
         localStorage.username = username;
         localStorage.password = password;
 
-        loadDirectory(app.path);
+        loadDirectory(window.location.hash.slice(1));
     });
 }
 
@@ -41,6 +41,10 @@ function sanitize(filePath) {
 
 function encode(filePath) {
     return filePath.split('/').map(encodeURIComponent).join('/');
+}
+
+function decode(filePath) {
+    return filePath.split('/').map(decodeURIComponent).join('/');
 }
 
 var mimeTypes = {
@@ -81,13 +85,16 @@ function loadDirectory(filePath) {
         if (error) return console.error(error);
         if (result.statusCode === 401) return logout();
 
-        result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1 });
+        result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
         app.entries = result.body.entries.map(function (entry) {
             entry.previewUrl = getPreviewUrl(entry, filePath);
             return entry;
         });
         app.path = filePath;
-        app.pathParts = filePath.split('/').filter(function (e) { return !!e; });
+        app.pathParts = decode(filePath).split('/').filter(function (e) { return !!e; });
+
+        // update in case this was triggered from code
+        window.location.hash = app.path;
 
         Vue.nextTick(function () {
             $(function () {
@@ -98,15 +105,18 @@ function loadDirectory(filePath) {
 }
 
 function open(entry) {
-    var path = sanitize(app.path + '/' + entry.filePath);
+    var path = encode(sanitize(app.path + '/' + entry.filePath));
 
-    if (entry.isDirectory) return loadDirectory(path);
+    if (entry.isDirectory) {
+        window.location.hash = path;
+        return;
+    }
 
     window.open(path);
 }
 
 function up() {
-    loadDirectory(app.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
+    window.location.hash = encode(sanitize(app.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/')));
 }
 
 function upload() {
@@ -218,5 +228,9 @@ var app = new Vue({
 });
 
 login(localStorage.username, localStorage.password);
+
+$(window).on('hashchange', function () {
+    loadDirectory(window.location.hash.slice(1));
+});
 
 })();
