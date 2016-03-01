@@ -8,6 +8,7 @@ exports.del = del;
 var superagent = require('superagent'),
     config = require('./config.js'),
     readlineSync = require('readline-sync'),
+    safe = require('safetydance'),
     async = require('async'),
     fs = require('fs'),
     request = require('request'),
@@ -28,7 +29,7 @@ function checkConfig() {
 
     gQuery = { username: config.username(), password: config.password() };
 
-    console.error('Using server %s', config.server().yellow);
+    console.error('Using server %s', config.server().cyan);
 }
 
 function collectFiles(filesOrFolders, options) {
@@ -93,6 +94,14 @@ function login(uri) {
 function put(filePath, otherFilePaths, options) {
     checkConfig();
 
+    var destination = '';
+
+    // take the last argument as destination
+    if (otherFilePaths.length > 0) {
+        destination = otherFilePaths.pop();
+        if (otherFilePaths.length > 0 && destination[destination.length-1] !== '/') destination += '/';
+    }
+
     var files = collectFiles([ filePath ].concat(otherFilePaths), options);
 
     async.eachSeries(files, function (file, callback) {
@@ -106,7 +115,7 @@ function put(filePath, otherFilePaths, options) {
             relativeFilePath = path.basename(file);
         }
 
-        var destinationPath = (options.destination ? '/' + options.destination : '') + '/' + relativeFilePath;
+        var destinationPath = (destination ? '/' + destination : '') + '/' + relativeFilePath;
         console.log('Uploading file %s -> %s', relativeFilePath.cyan, destinationPath.cyan);
 
         superagent.put(config.server() + API + destinationPath).query(gQuery).attach('file', file).end(function (error, result) {
@@ -136,14 +145,19 @@ function get(filePath) {
     request.get(config.server() + API + filePath, { qs: gQuery }, function (error, result, body) {
         if (error) return console.error(error);
         if (result.statusCode === 401) return console.log('Login failed');
-        if (result.statusCode === 404) return console.log('No such file or directory');
+        if (result.statusCode === 404) return console.log('No such file or directory %s', filePath.yellow);
 
         // 222 indicates directory listing
         if (result.statusCode === 222) {
-            console.log('Files:');
-            JSON.parse(body).entries.forEach(function (entry) {
-                console.log('\t %s', entry);
-            });
+            var files = safe.JSON.parse(body);
+            if (!files || files.entries.length === 0) {
+                console.log('No files on the server. Use %s to upload some.', 'surfer put <file>'.yellow);
+            } else {
+                console.log('Files:');
+                files.entries.forEach(function (entry) {
+                    console.log('\t %s', entry);
+                });
+            }
         } else {
             process.stdout.write(body);
         }
