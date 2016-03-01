@@ -79,8 +79,11 @@ function up() {
 }
 
 function upload() {
-    $(app.$els.upload).change(function () {
+    $(app.$els.upload).on('change', function () {
         app.busy = true;
+
+        // detach event handler
+        $(app.$els.upload).off('change');
 
         var file = app.$els.upload.files[0];
         var path = encode(sanitize(app.path + '/' + file.name));
@@ -123,6 +126,29 @@ function del(entry) {
     });
 }
 
+function createDirectoryAsk() {
+    $('#modalcreateDirectory').modal('show');
+    app.createDirectoryData = '';
+}
+
+function createDirectory(name) {
+    app.busy = true;
+
+    var path = encode(sanitize(app.path + '/' + name));
+
+    superagent.put('/api/files' + path).query({ username: app.session.username, password: app.session.password, directory: true }).end(function (error, result) {
+        app.busy = false;
+
+        if (error) return console.error(error);
+        if (result.statusCode !== 201) return console.error('Error creating directory: ', result.statusCode);
+
+        app.createDirectoryData = '';
+        refresh();
+
+        $('#modalcreateDirectory').modal('hide');
+    });
+}
+
 var app = new Vue({
     el: '#app',
     data: {
@@ -134,6 +160,7 @@ var app = new Vue({
         },
         loginData: {},
         deleteData: {},
+        createDirectoryData: '',
         entries: []
     },
     methods: {
@@ -144,7 +171,9 @@ var app = new Vue({
         up: up,
         upload: upload,
         delAsk: delAsk,
-        del: del
+        del: del,
+        createDirectoryAsk: createDirectoryAsk,
+        createDirectory: createDirectory
     }
 });
 

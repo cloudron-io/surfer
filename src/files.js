@@ -54,6 +54,13 @@ function copyFile(source, target, cb) {
     });
 }
 
+function createDirectory(targetPath, callback) {
+    mkdirp(targetPath, function (error) {
+        if (error) return callback(error);
+        callback(null);
+    });
+}
+
 function getAbsolutePath(filePath) {
     var absoluteFilePath = path.resolve(path.join(gBasePath, filePath));
 
@@ -103,7 +110,8 @@ function get(req, res, next) {
 function put(req, res, next) {
     var filePath = req.params[0];
 
-    if (!req.files.file) return next(new HttpError(400, 'missing file'));
+    if (!(req.files && req.files.file) && !req.query.directory) return next(new HttpError(400, 'missing file or directory'));
+    if ((req.files && req.files.file) && req.query.directory) return next(new HttpError(400, 'either file or directory'));
 
     var absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath) return next(new HttpError(403, 'Path not allowed'));
@@ -111,10 +119,17 @@ function put(req, res, next) {
     fs.stat(absoluteFilePath, function (error, result) {
         if (error && error.code !== 'ENOENT') return next(new HttpError(500, error));
 
-        debug('put', absoluteFilePath, req.files.file);
+        debug('put', absoluteFilePath);
 
+        if (result && req.query.directory) return next(new HttpError(409, 'name already exists'));
         if (result && result.isDirectory()) return next(new HttpError(409, 'cannot put on directories'));
-        if (!result || result.isFile()) {
+
+        if (req.query.directory) {
+            return createDirectory(absoluteFilePath, function (error) {
+                if (error) return next(new HttpError(500, error));
+                next(new HttpSuccess(201, {}));
+            });
+        } else if (!result || result.isFile()) {
             return copyFile(req.files.file.path, absoluteFilePath, function (error) {
                 if (error) return next(new HttpError(500, error));
                 next(new HttpSuccess(201, {}));

@@ -12,7 +12,7 @@ function _mime(req) {
 
 module.exports = function multipart(options) {
     return function (req, res, next) {
-        if (_mime(req) !== 'multipart/form-data') return res.status(400).send('Invalid content-type. Expecting multipart');
+        if (_mime(req) !== 'multipart/form-data') return next(null);
 
         var form = new multiparty.Form({
             uploadDir: '/tmp',

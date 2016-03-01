@@ -49,6 +49,29 @@
         </div>
     </div>
 
+    <div class="modal fade" tabindex="-1" role="dialog" id="modalcreateDirectory">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">New Directory Name</h4>
+                </div>
+                <div class="modal-body">
+                    <form v-on:submit.prevent="createDirectory(createDirectoryData)">
+                        <div class="form-group">
+                            <input type="text" class="form-control" v-model="createDirectoryData" placeholder="Name">
+                        </div>
+                        <button type="submit" style="display: none;"></button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" v-on:click="createDirectory(createDirectoryData)">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container" v-show="busy" v-cloak>
         <div class="row">
             <div class="col-lg-12">
@@ -126,7 +149,7 @@
                 </table>
             </div>
             <div class="col-lg-12" style="text-align: right;">
-                <button class="btn btn-default btn-sm" v-on:click="">Create Directory</button>
+                <button class="btn btn-default btn-sm" v-on:click="createDirectoryAsk()">Create Directory</button>
             </div>
         </div>
     </div>
