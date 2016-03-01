@@ -106,7 +106,9 @@ function del(req, res, next) {
     var filePath = req.params[0];
     var absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath) return next(new HttpError(404, 'Not found'));
-    if (absoluteFilePath.slice(gBasePath.length) === '') return next(new HttpError(403, 'Forbidden'));
+
+    // absoltueFilePath has to have the base path prepended
+    if (absoluteFilePath.length <= gBasePath.length) return next(new HttpError(403, 'Forbidden'));
 
     fs.stat(absoluteFilePath, function (error, result) {
         if (error) return next(new HttpError(404, error));
