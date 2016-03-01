@@ -60,8 +60,9 @@
                 </div>
                 <div class="modal-body">
                     <form v-on:submit.prevent="createDirectory(createDirectoryData)">
-                        <div class="form-group">
-                            <input type="text" class="form-control" v-model="createDirectoryData" placeholder="Name">
+                        <div class="form-group" v-bind:class="{ 'has-error': createDirectoryError }">
+                            <input type="text" class="form-control" v-model="createDirectoryData" id="inputDirectoryName" placeholder="Name" autofocus="true">
+                            <label class="control-label" for="inputDirectoryName">{{ createDirectoryError }}</label>
                         </div>
                         <button type="submit" style="display: none;"></button>
                     </form>

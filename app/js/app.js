@@ -82,8 +82,8 @@ function loadDirectory(filePath) {
     superagent.get('/api/files/' + filePath).query({ username: app.session.username, password: app.session.password }).end(function (error, result) {
         app.busy = false;
 
+        if (result && result.statusCode === 401) return logout();
         if (error) return console.error(error);
-        if (result.statusCode === 401) return logout();
 
         result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
         app.entries = result.body.entries.map(function (entry) {
@@ -135,8 +135,9 @@ function upload() {
         superagent.put('/api/files' + path).query({ username: app.session.username, password: app.session.password }).send(formData).end(function (error, result) {
             app.busy = false;
 
+            if (result && result.statusCode === 401) return logout();
+            if (result && result.statusCode !== 201) return console.error('Error uploading file: ', result.statusCode);
             if (error) return console.error(error);
-            if (result.statusCode !== 201) return console.error('Error uploading file: ', result.statusCode);
 
             refresh();
         });
@@ -158,8 +159,9 @@ function del(entry) {
     superagent.del('/api/files' + path).query({ username: app.session.username, password: app.session.password, recursive: true }).end(function (error, result) {
         app.busy = false;
 
+        if (result && result.statusCode === 401) return logout();
+        if (result && result.statusCode !== 200) return console.error('Error deleting file: ', result.statusCode);
         if (error) return console.error(error);
-        if (result.statusCode !== 200) return console.error('Error deleting file: ', result.statusCode);
 
         refresh();
 
@@ -170,18 +172,29 @@ function del(entry) {
 function createDirectoryAsk() {
     $('#modalcreateDirectory').modal('show');
     app.createDirectoryData = '';
+    app.createDirectoryError = null;
 }
 
 function createDirectory(name) {
     app.busy = true;
+    app.createDirectoryError = null;
 
     var path = encode(sanitize(app.path + '/' + name));
 
     superagent.put('/api/files' + path).query({ username: app.session.username, password: app.session.password, directory: true }).end(function (error, result) {
         app.busy = false;
 
+        if (result && result.statusCode === 401) return logout();
+        if (result && result.statusCode === 403) {
+            app.createDirectoryError = 'Name not allowed';
+            return;
+        }
+        if (result && result.statusCode === 409) {
+            app.createDirectoryError = 'Directory already exists';
+            return;
+        }
+        if (result && result.statusCode !== 201) return console.error('Error creating directory: ', result.statusCode);
         if (error) return console.error(error);
-        if (result.statusCode !== 201) return console.error('Error creating directory: ', result.statusCode);
 
         app.createDirectoryData = '';
         refresh();
@@ -211,6 +224,7 @@ var app = new Vue({
         loginData: {},
         deleteData: {},
         createDirectoryData: '',
+        createDirectoryError: null,
         entries: []
     },
     methods: {
@@ -227,10 +241,19 @@ var app = new Vue({
     }
 });
 
+window.app = app;
+
 login(localStorage.username, localStorage.password);
 
 $(window).on('hashchange', function () {
     loadDirectory(window.location.hash.slice(1));
+});
+
+// setup all the dialog focus handling
+['modalcreateDirectory'].forEach(function (id) {
+    $('#' + id).on('shown.bs.modal', function () {
+        $(this).find("[autofocus]:first").focus();
+    });
 });
 
 })();
