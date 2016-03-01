@@ -63,6 +63,12 @@ function loadDirectory(filePath) {
         app.entries = result.body.entries;
         app.path = filePath;
         app.pathParts = filePath.split('/').filter(function (e) { return !!e; });
+
+        Vue.nextTick(function () {
+            $(function () {
+                $('[data-toggle="tooltip"]').tooltip();
+            });
+        });
     });
 }
 
