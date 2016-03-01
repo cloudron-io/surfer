@@ -81,6 +81,7 @@ function loadDirectory(filePath) {
         if (error) return console.error(error);
         if (result.statusCode === 401) return logout();
 
+        result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1 });
         app.entries = result.body.entries.map(function (entry) {
             entry.previewUrl = getPreviewUrl(entry, filePath);
             return entry;
