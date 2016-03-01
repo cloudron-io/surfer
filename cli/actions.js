@@ -188,6 +188,7 @@ function del(filePath) {
         if (error && error.status === 401) return console.log('Login failed');
         if (error && error.status === 404) return console.log('No such file or directory');
         if (error) return console.log('Failed', result ? result.body : error);
-        console.log('Success', result.body);
+
+        console.log('Success. Removed %s files.', result.body.entries.length);
     });
 }

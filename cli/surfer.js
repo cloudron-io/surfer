@@ -20,11 +20,11 @@ program.command('put <file> [files...]')
     .action(actions.put);
 
 program.command('get [file]')
-    .description('Get a file or directory')
+    .description('Get a file or directory listing')
     .action(actions.get);
 
-program.command('del')
-    .description('Delete a file')
+program.command('del <file>')
+    .description('Delete a file or directory')
     .action(actions.del);
 
 program.parse(process.argv);
