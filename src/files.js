@@ -1,6 +1,7 @@
 'use strict';
 
-var fs = require('fs'),
+var async = require('async'),
+    fs = require('fs'),
     path = require('path'),
     rm = require('del'),
     debug = require('debug')('files'),
@@ -74,10 +75,28 @@ function get(req, res, next) {
 
         debug('get', absoluteFilePath);
 
+        if (!result.isDirectory() && !result.isFile()) return next(new HttpError(500, 'unsupported type'));
         if (result.isFile()) return res.sendFile(absoluteFilePath);
-        if (result.isDirectory()) return res.status(222).send({ entries: fs.readdirSync(absoluteFilePath) });
 
-        return next(new HttpError(500, 'unsupported type'));
+        async.map(fs.readdirSync(absoluteFilePath), function (filePath, callback) {
+            fs.stat(path.join(absoluteFilePath, filePath), function (error, result) {
+                if (error) return callback(error);
+
+                callback(null, {
+                    isDirectory: result.isDirectory(),
+                    isFile: result.isFile(),
+                    atime: result.atime,
+                    mtime: result.mtime,
+                    ctime: result.ctime,
+                    birthtime: result.birthtime,
+                    size: result.size,
+                    filePath: filePath
+                });
+            });
+        }, function (error, results) {
+            if (error) return next(new HttpError(500, error));
+            res.status(222).send({ entries: results });
+        });
     });
 }
 

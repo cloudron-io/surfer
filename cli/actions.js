@@ -153,9 +153,9 @@ function get(filePath) {
             if (!files || files.entries.length === 0) {
                 console.log('No files on the server. Use %s to upload some.', 'surfer put <file>'.yellow);
             } else {
-                console.log('Files:');
+                console.log('Entries:');
                 files.entries.forEach(function (entry) {
-                    console.log('\t %s', entry);
+                    console.log('\t %s', entry.isDirectory ? entry.filePath + '/' : entry.filePath);
                 });
             }
         } else {
