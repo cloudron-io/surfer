@@ -24,8 +24,8 @@ if (LDAP_URL && LDAP_USERS_BASE_DN) {
     exports.ldap = function (req, res, next) {
         console.log('Disable ldap auth, use developer credentials!');
 
-        if (req.query.username !== 'username') return res.send(401);
-        if (req.query.password !== 'password') return res.send(401);
+        if (req.query.username !== 'test') return res.send(401);
+        if (req.query.password !== 'test') return res.send(401);
 
         next();
     };
