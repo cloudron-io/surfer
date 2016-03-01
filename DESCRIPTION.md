@@ -1,9 +1,14 @@
-Surfer is a Simple static file server. It comes with a commandline tool
-to upload files from your local folders.
+Surfer is a Simple static file server. It comes with a webinterface and commandline tooling to manage files.
 
-### How to upload
+Any `index.html` file in a directory will be served up automatically.
 
-You can upload files using the commandline tool.
+### Webinterface
+
+ * Upload files
+ * Create directories
+ * Remove files and directories
+
+### Commandline tool
 
 First, install the surfer cli tool using npm.
 
@@ -12,10 +17,9 @@ First, install the surfer cli tool using npm.
 
 Login using your Cloudron credentials:
 
-    surfer login <this app's url>
+    surfer login <appurl>
 
 
 Put some files:
 
     surfer put [file]
- 
