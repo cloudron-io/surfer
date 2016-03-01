@@ -101,6 +101,28 @@ function upload() {
     app.$els.upload.click();
 }
 
+function delAsk(entry) {
+    $('#modalDelete').modal('show');
+    app.deleteData = entry;
+}
+
+function del(entry) {
+    app.busy = true;
+
+    var path = encode(sanitize(app.path + '/' + entry.filePath));
+
+    superagent.del('/api/files' + path).query({ username: app.session.username, password: app.session.password, recursive: true }).end(function (error, result) {
+        app.busy = false;
+
+        if (error) return console.error(error);
+        if (result.statusCode !== 200) return console.error('Error deleting file: ', result.statusCode);
+
+        refresh();
+
+        $('#modalDelete').modal('hide');
+    });
+}
+
 var app = new Vue({
     el: '#app',
     data: {
@@ -111,6 +133,7 @@ var app = new Vue({
             valid: false
         },
         loginData: {},
+        deleteData: {},
         entries: []
     },
     methods: {
@@ -119,7 +142,9 @@ var app = new Vue({
         loadDirectory: loadDirectory,
         open: open,
         up: up,
-        upload: upload
+        upload: upload,
+        delAsk: delAsk,
+        del: del
     }
 });
 

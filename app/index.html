@@ -31,6 +31,24 @@
         </div>
     </nav>
 
+    <div class="modal fade" tabindex="-1" role="dialog" id="modalDelete">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <h5 v-show="deleteData.isFile">Really delete <span style="font-weight: bold;">{{ deleteData.filePath }}</span>?</h5>
+                    <h5 v-show="deleteData.isDirectory">Really delete directory <span style="font-weight: bold;">{{ deleteData.filePath }}</span> and all its content?</h5>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
+                    <button type="button" class="btn btn-danger" v-on:click="del(deleteData)">Yes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container" v-show="busy" v-cloak>
         <div class="row">
             <div class="col-lg-12">
@@ -102,7 +120,7 @@
                             <th>{{ entry.filePath }}</th>
                             <th>{{ entry.size }}</th>
                             <th>{{ entry.mtime }}</th>
-                            <th style="text-align: right;"><button class="btn btn-sm btn-danger"><i class="fa fa-trash"></i></button></th>
+                            <th style="text-align: right;"><button class="btn btn-sm btn-danger" v-on:click.stop="delAsk(entry)"><i class="fa fa-trash"></i></button></th>
                         </tr>
                     </tbody>
                 </table>
