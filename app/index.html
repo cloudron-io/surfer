@@ -142,7 +142,7 @@
                             </th>
                             <th>{{ entry.filePath }}</th>
                             <th>{{ entry.size }}</th>
-                            <th>{{ entry.mtime }}</th>
+                            <th><span v-my-tooltip="foobar" data-toggle="tooltip" title="{{ entry.mtime }}">{{ entry.mtime | prettyDate }}</span></th>
                             <th style="text-align: right;"><button class="btn btn-sm btn-danger" v-on:click.stop="delAsk(entry)"><i class="fa fa-trash"></i></button></th>
                         </tr>
                     </tbody>

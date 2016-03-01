@@ -149,6 +149,11 @@ function createDirectory(name) {
     });
 }
 
+Vue.filter('prettyDate', function (value) {
+    var d = new Date(value);
+    return d.toDateString();
+});
+
 var app = new Vue({
     el: '#app',
     data: {
@@ -176,8 +181,6 @@ var app = new Vue({
         createDirectory: createDirectory
     }
 });
-
-window.app = app;
 
 login(localStorage.username, localStorage.password);
 
