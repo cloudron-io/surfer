@@ -66,7 +66,7 @@ function login(uri) {
 
     superagent.get(server + API + '/').query({ username: username, password: password }).end(function (error, result) {
         if (error && error.code === 'ENOTFOUND') {
-            console.log('No such server %s'.red, server.bold);
+            console.log('Server %s not found.'.red, server.bold);
             process.exit(1);
         }
         if (error && error.code) {
