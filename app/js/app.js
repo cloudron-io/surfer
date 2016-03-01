@@ -185,6 +185,10 @@ Vue.filter('prettyDate', function (value) {
     return d.toDateString();
 });
 
+Vue.filter('prettyFileSize', function (value) {
+    return filesize(value);
+});
+
 var app = new Vue({
     el: '#app',
     data: {
