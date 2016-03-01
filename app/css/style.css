@@ -25,3 +25,7 @@ pre {
     text-align: left;
     width: 400px;
 }
+
+[v-cloak] {
+  display: none;
+}
