@@ -29,3 +29,7 @@ pre {
 [v-cloak] {
   display: none;
 }
+
+.hand {
+    cursor: hand;
+}
