@@ -27,8 +27,8 @@ function login(username, password) {
 
 function logout() {
     app.session.valid = false;
-    app.session.username = username;
-    app.session.password = password;
+    app.session.username = null;
+    app.session.password = null;
 
     delete localStorage.username;
     delete localStorage.password;
