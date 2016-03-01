@@ -35,7 +35,7 @@ router.get('/', function (req, res) { res.status(200).send(ejs.render(fs.readFil
 
 app.use(morgan('dev'));
 app.use(compression());
-app.use('/admin', express.static(__dirname + '/app'));
+app.use('/_admin', express.static(__dirname + '/app'));
 app.use(express.static(path.resolve(__dirname, process.argv[2] || 'files')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false, limit: '100mb' }));
