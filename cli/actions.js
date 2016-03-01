@@ -119,8 +119,9 @@ function put(filePath, otherFilePaths, options) {
         console.log('Uploading file %s -> %s', relativeFilePath.cyan, destinationPath.cyan);
 
         superagent.put(config.server() + API + destinationPath).query(gQuery).attach('file', file).end(function (error, result) {
+            if (result && result.statusCode === 403) return callback(new Error('Upload destination ' + destinationPath + ' not allowed'));
+            if (result && result.statusCode !== 201) return callback(new Error('Error uploading file: ' + result.statusCode));
             if (error) return callback(error);
-            if (result.statusCode !== 201) return callback(new Error('Error uploading file: ' + result.statusCode));
 
             console.log('Uploaded to ' + config.server() + destinationPath);
 
@@ -128,7 +129,7 @@ function put(filePath, otherFilePaths, options) {
         });
     }, function (error) {
         if (error) {
-            console.log('Failed to put file.', error);
+            console.log('Failed to put file.', error.message.red);
             process.exit(1);
         }
 
@@ -143,9 +144,9 @@ function get(filePath) {
     filePath = filePath || '/';
 
     request.get(config.server() + API + filePath, { qs: gQuery }, function (error, result, body) {
+        if (result && result.statusCode === 401) return console.log('Login failed');
+        if (result && result.statusCode === 404) return console.log('No such file or directory %s', filePath.yellow);
         if (error) return console.error(error);
-        if (result.statusCode === 401) return console.log('Login failed');
-        if (result.statusCode === 404) return console.log('No such file or directory %s', filePath.yellow);
 
         // 222 indicates directory listing
         if (result.statusCode === 222) {

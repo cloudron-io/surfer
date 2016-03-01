@@ -61,6 +61,10 @@ function createDirectory(targetPath, callback) {
     });
 }
 
+function isProtected(targetPath) {
+    return targetPath.indexOf(getAbsolutePath('_admin')) === 0;
+}
+
 function getAbsolutePath(filePath) {
     var absoluteFilePath = path.resolve(path.join(gBasePath, filePath));
 
@@ -114,7 +118,7 @@ function put(req, res, next) {
     if ((req.files && req.files.file) && req.query.directory) return next(new HttpError(400, 'either file or directory'));
 
     var absoluteFilePath = getAbsolutePath(filePath);
-    if (!absoluteFilePath) return next(new HttpError(403, 'Path not allowed'));
+    if (!absoluteFilePath || isProtected(absoluteFilePath)) return next(new HttpError(403, 'Path not allowed'));
 
     fs.stat(absoluteFilePath, function (error, result) {
         if (error && error.code !== 'ENOENT') return next(new HttpError(500, error));
@@ -147,6 +151,8 @@ function del(req, res, next) {
 
     var absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath) return next(new HttpError(404, 'Not found'));
+
+    if (isProtected(absoluteFilePath)) return next(new HttpError(403, 'Path not allowed'));
 
     // absoltueFilePath has to have the base path prepended
     if (absoluteFilePath.length <= gBasePath.length) return next(new HttpError(404, 'Not found'));
