@@ -159,7 +159,7 @@ function del(req, res, next) {
         // add globs to get file listing
         if (result.isDirectory()) absoluteFilePath += '/**';
 
-        rm(absoluteFilePath, { dryRun: dryRun }).then(function (result) {
+        rm(absoluteFilePath, { dryRun: dryRun, force: true }).then(function (result) {
             result = result.map(removeBasePath);
             next(new HttpSuccess(200, { entries: result }));
         }, function (error) {
