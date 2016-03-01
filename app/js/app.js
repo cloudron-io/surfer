@@ -55,7 +55,6 @@ function loadDirectory(filePath) {
         app.entries = result.body.entries;
         app.path = filePath;
         app.pathParts = filePath.split('/').filter(function (e) { return !!e; });
-        console.log(app.pathParts)
     });
 }
 
@@ -64,7 +63,7 @@ function open(entry) {
 
     if (entry.isDirectory) return loadDirectory(path);
 
-    window.location.href = window.location.origin + path;
+    window.open(path);
 }
 
 function up() {

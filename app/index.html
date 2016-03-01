@@ -25,7 +25,6 @@
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                 <ul class="nav navbar-nav navbar-right">
-                    <li v-show="session.valid"><a href="#">Upload</a></li>
                     <li v-show="session.valid"><a href="#" ng-click="logout()">Logout</a></li>
                 </ul>
             </div>
@@ -62,6 +61,12 @@
 
     <div class="container" v-show="session.valid && !busy" v-cloak>
         <div class="row">
+            <div class="col-lg-12">
+                <center>
+                    <button class="btn btn-primary">Upload</button>
+                </center>
+                <br/>
+            </div>
             <div class="col-lg-12">
                 <ol class="breadcrumb">
                     <li><i class="fa fa-home"></i>&nbsp;</li>
