@@ -8,11 +8,12 @@ ENV PATH /usr/local/node-0.12.7/bin:$PATH
 RUN mkdir -p /app/code
 WORKDIR /app/code
 
-ADD package.json /app/code/package.json
 ADD src /app/code/src
-ADD app.js /app/code/app.js
 ADD app /app/code/app
-ADD start.sh /app/code/start.sh
+ADD cli /app/code/cli
+
+ADD package.json app.js start.sh README.md /app/code/
+
 RUN npm install --production
 
 EXPOSE 3000
