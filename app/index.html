@@ -138,8 +138,7 @@
                         </tr>
                         <tr v-for="entry in entries" v-on:click="open(entry)" class="hand">
                             <th>
-                                <i class="fa fa-folder-o" v-show="entry.isDirectory"></i>
-                                <i class="fa fa-file-o" v-show="entry.isFile"></i>
+                                <img v-bind:src="entry.previewUrl" height="48px" width="48px"/>
                             </th>
                             <th>{{ entry.filePath }}</th>
                             <th>{{ entry.size }}</th>

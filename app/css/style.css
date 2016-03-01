@@ -33,3 +33,7 @@ pre {
 .hand {
     cursor: hand;
 }
+
+th {
+    vertical-align: middle !important;
+}

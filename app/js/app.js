@@ -43,6 +43,27 @@ function encode(filePath) {
     return filePath.split('/').map(encodeURIComponent).join('/');
 }
 
+var mimeTypes = {
+    images: [ '.png', '.jpg', '.jpeg', '.tiff', '.gif' ],
+    text: [ '.txt', '.md' ],
+    pdf: [ '.pdf' ],
+    html: [ '.html', '.htm', '.php' ],
+    video: [ '.mp4', '.mpg', '.mpeg', '.ogg', '.mkv' ]
+};
+
+function getPreviewUrl(entry, basePath) {
+    var path = '/_admin/img/';
+
+    if (entry.isDirectory) return path + 'directory.png';
+    if (mimeTypes.images.some(function (e) { return entry.filePath.endsWith(e); })) return sanitize(basePath + '/' + entry.filePath);
+    if (mimeTypes.text.some(function (e) { return entry.filePath.endsWith(e); })) return path +'text.png';
+    if (mimeTypes.pdf.some(function (e) { return entry.filePath.endsWith(e); })) return path + 'pdf.png';
+    if (mimeTypes.html.some(function (e) { return entry.filePath.endsWith(e); })) return path + 'html.png';
+    if (mimeTypes.video.some(function (e) { return entry.filePath.endsWith(e); })) return path + 'video.png';
+
+    return path + 'unknown.png';
+}
+
 function refresh() {
     loadDirectory(app.path);
 }
@@ -60,7 +81,10 @@ function loadDirectory(filePath) {
         if (error) return console.error(error);
         if (result.statusCode === 401) return logout();
 
-        app.entries = result.body.entries;
+        app.entries = result.body.entries.map(function (entry) {
+            entry.previewUrl = getPreviewUrl(entry, filePath);
+            return entry;
+        });
         app.path = filePath;
         app.pathParts = filePath.split('/').filter(function (e) { return !!e; });
 
