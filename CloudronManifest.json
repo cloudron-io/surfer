@@ -17,7 +17,7 @@
   "website": "https://github.com/nebulade/surfer",
   "contactEmail": "support@cloudron.io",
   "icon": "logo.png",
-  "configurePath": "/_admin",
+  "configurePath": "_admin/",
   "addons": {
     "ldap": {},
     "localstorage": {}
