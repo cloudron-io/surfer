@@ -30,7 +30,6 @@
     "cookie-parser": "^1.4.1",
     "debug": "^2.2.0",
     "del": "^2.2.0",
-    "ejs": "^2.4.1",
     "express": "^4.13.4",
     "express-session": "^1.13.0",
     "mkdirp": "^0.5.1",
