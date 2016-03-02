@@ -7,8 +7,6 @@ var express = require('express'),
     morgan = require('morgan'),
     passport = require('passport'),
     path = require('path'),
-    ejs = require('ejs'),
-    fs = require('fs'),
     compression = require('compression'),
     session = require('express-session'),
     bodyParser = require('body-parser'),
@@ -30,8 +28,7 @@ router.delete('/api/files/*', auth.ldap, files.del);
 router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });
 
 // welcome screen in case / does not serve up any file yet
-var appUrl = process.env.APP_ORIGIN ? process.env.APP_ORIGIN : 'http://localhost:3000';
-router.get('/', function (req, res) { res.status(200).send(ejs.render(fs.readFileSync(path.join(__dirname, '/app/welcome.html'), 'utf8'), { appUrl: appUrl })); });
+router.get('/', function (req, res) { res.status(200).sendFile(path.join(__dirname, '/app/welcome.html')); });
 
 app.use(morgan('dev'));
 app.use(compression());
