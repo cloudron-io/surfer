@@ -4,7 +4,7 @@
   "description": "Simple file server",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/mocha/bin/_mocha -R spec ./test"
   },
   "keywords": [
     "file",
@@ -43,5 +43,13 @@
     "superagent": "^1.7.2",
     "underscore": "^1.8.3"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "expect.js": "^0.3.1",
+    "mocha": "^2.4.5",
+    "selenium-server-standalone-jar": "^2.52.0",
+    "selenium-webdriver": "^2.52.0"
+  },
+  "scripts": {
+    "test": "./node_modules/mocha/bin/_mocha -R spec ./test/test.js"
+  }
 }
