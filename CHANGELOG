@@ -16,3 +16,6 @@
 [0.5.1]
 * Fix settings link 
 * Add selenium tests
+
+[0.5.2]
+* Support username and email login
