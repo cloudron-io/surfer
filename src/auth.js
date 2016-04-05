@@ -37,7 +37,7 @@ var opts = {
     },
     base: LDAP_USERS_BASE_DN,
     search: {
-        filter: '(uid={{username}})',
+        filter: '(|(username={{username}})(mail={{username}}))',
         attributes: ['displayname', 'username', 'mail', 'uid'],
         scope: 'sub'
     },
