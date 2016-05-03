@@ -143,6 +143,9 @@ function upload() {
         });
     });
 
+    // reset the form first to make the change handler retrigger even on the same file selected
+    $('#fileUploadForm')[0].reset();
+
     app.$els.upload.click();
 }
 
