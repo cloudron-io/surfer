@@ -23,3 +23,5 @@
 [0.5.3]
 * Support uploading the same file multiple times
 
+[0.5.4]
+* Fix upload files first time
