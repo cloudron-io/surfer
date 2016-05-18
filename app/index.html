@@ -109,7 +109,7 @@
                 <center>
                     <form id="fileUploadForm">
                         <input type="file" v-el:upload style="display: none" id="uploadInput"/>
-                        <button class="btn btn-primary" v-on:click="upload()" id="uploadButton">Upload</button>
+                        <button class="btn btn-primary" v-on:click.stop.prevent="upload()" id="uploadButton">Upload</button>
                     </form>
                 </center>
                 <br/>
