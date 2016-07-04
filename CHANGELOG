@@ -25,3 +25,7 @@
 
 [0.5.4]
 * Fix upload files first time
+
+[0.5.5]
+* Use new base image
+
