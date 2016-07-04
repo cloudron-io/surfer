@@ -31,7 +31,7 @@ Surfer can also be run standlone on any server:
 git clone https://github.com/nebulade/surfer.git
 cd surfer
 npm install
-./app.js
+./app.js <public folder>
 ```
 Without LDAP integration, the default username is `test` with the same password. Check `src/auth.js` for further details about user management.
 
