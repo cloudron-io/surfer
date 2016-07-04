@@ -1,7 +1,7 @@
 # Surfer
 
-Surfer is a Simple static file server. It comes with a commandline tool
-to upload files from your local folders.
+Surfer is a Simple static file server.
+It comes with a commandline tool to upload files from your local folders and a webinterface to manage files directly on the server.
 
 ## Installation
 
@@ -15,6 +15,7 @@ cloudron install --appstore-id io.cloudron.surfer
 
 ## Building
 
+### Cloudron
 The app package can be built using the [Cloudron command line tooling](https://cloudron.io/references/cli.html).
 
 ```
@@ -24,24 +25,35 @@ cloudron build
 cloudron install
 ```
 
-### How to upload
+### Standalone
+Surfer can also be run standlone on any server:
+```
+git clone https://github.com/nebulade/surfer.git
+cd surfer
+npm install
+./app.js
+```
+Without LDAP integration, the default username is `test` with the same password. Check `src/auth.js` for further details about user management.
 
-You can upload files using the commandline tool.
+## File management
+
+The admin interface is available under the `/_admin` location or you can upload files using the commandline tool.
 
 First, install the surfer cli tool using npm.
-
-    sudo npm -g install cloudron-surfer
-
+```
+npm -g install cloudron-surfer
+```
 
 Login using your Cloudron credentials:
-
-    surfer login <this app's url>
-
+```
+surfer login <this app's url>
+```
 
 Put some files:
+```
+surfer put [file]
+```
 
-    surfer put [file]
- 
 ## Testing
 
 The e2e tests are located in the `test/` folder and require [nodejs](http://nodejs.org/). They are creating a fresh build, install the app on your Cloudron, perform tests, backup, restore and test if the files are still ok.
