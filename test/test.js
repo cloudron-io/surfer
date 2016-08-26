@@ -151,7 +151,7 @@ describe('Application life cycle test', function () {
     it('can logout', logout);
 
     it('backup app', function () {
-        execSync('cloudron backup --app ' + app.id, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
+        execSync('cloudron backup create --app ' + app.id, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
     });
 
     it('restore app', function () {
