@@ -23,8 +23,8 @@ if (!process.env.USERNAME || !process.env.PASSWORD) {
 describe('Application life cycle test', function () {
     this.timeout(0);
 
-    var firefox = require('selenium-webdriver/firefox');
-    var server, browser = new firefox.Driver();
+    var chrome = require('selenium-webdriver/chrome');
+    var server, browser = new chrome.Driver();
 
     before(function (done) {
         var seleniumJar= require('selenium-server-standalone-jar');
@@ -119,7 +119,7 @@ describe('Application life cycle test', function () {
         done();
     }
 
-    it('build app', function () {
+    xit('build app', function () {
         execSync('cloudron build', { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
     });
 
