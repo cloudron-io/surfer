@@ -1,8 +1,6 @@
 FROM cloudron/base:0.9.0
 MAINTAINER Johannes Zellner <johannes@nebulon.de>
 
-ENV DEBIAN_FRONTEND noninteractive
-
 ENV PATH /usr/local/node-0.12.7/bin:$PATH
 
 RUN mkdir -p /app/code
