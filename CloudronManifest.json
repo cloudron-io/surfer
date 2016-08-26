@@ -9,7 +9,7 @@
     "webserver",
     "server"
   ],
-  "version": "0.5.5",
+  "version": "0.5.6",
   "targetBoxVersion": "0.4.0",
   "healthCheckPath": "/api/healthcheck",
   "httpPort": 3000,
