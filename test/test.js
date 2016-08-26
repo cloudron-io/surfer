@@ -41,7 +41,7 @@ describe('Application life cycle test', function () {
         done();
     });
 
-    var LOCATION = 'rctest';
+    var LOCATION = 'surfer';
     var TEST_TIMEOUT = 10000;
     var TEST_FILE_NAME_0 = 'index.html';
     var TEST_FILE_NAME_1 = 'test.txt';
@@ -167,7 +167,7 @@ describe('Application life cycle test', function () {
 
     it('move to different location', function () {
         browser.manage().deleteAllCookies();
-        execSync('cloudron install --location ' + LOCATION + '2', { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
+        execSync('cloudron install --location ' + LOCATION + '2 --app ' + app.id, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
         var inspect = JSON.parse(execSync('cloudron inspect'));
         app = inspect.apps.filter(function (a) { return a.location === LOCATION + '2'; })[0];
         expect(app).to.be.an('object');
