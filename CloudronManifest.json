@@ -27,5 +27,6 @@
     "https://s3.amazonaws.com/cloudron-app-screenshots/io.cloudron.surfer/8c87c0db33704755c3ff9a48fd0089d6ae72928d/img02.png",
     "https://s3.amazonaws.com/cloudron-app-screenshots/io.cloudron.surfer/8c87c0db33704755c3ff9a48fd0089d6ae72928d/img03.png"
   ],
-  "changelog": "file://CHANGELOG"
+  "changelog": "file://CHANGELOG",
+  "postInstallMessage": "file://POSTINSTALL.md"
 }
