@@ -105,18 +105,18 @@ function loadDirectory(filePath) {
 }
 
 function open(entry) {
-    var path = encode(sanitize(app.path + '/' + entry.filePath));
+    var path = sanitize(app.path + '/' + entry.filePath);
 
     if (entry.isDirectory) {
         window.location.hash = path;
         return;
     }
 
-    window.open(path);
+    window.open(encode(path));
 }
 
 function up() {
-    window.location.hash = encode(sanitize(app.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/')));
+    window.location.hash = sanitize(app.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
 }
 
 function upload() {
