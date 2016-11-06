@@ -112,7 +112,7 @@ function get(req, res, next) {
 }
 
 function put(req, res, next) {
-    var filePath = req.params[0];
+    var filePath = decodeURIComponent(req.params[0]);
 
     if (!(req.files && req.files.file) && !req.query.directory) return next(new HttpError(400, 'missing file or directory'));
     if ((req.files && req.files.file) && req.query.directory) return next(new HttpError(400, 'either file or directory'));
