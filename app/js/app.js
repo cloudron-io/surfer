@@ -77,9 +77,7 @@ function loadDirectory(filePath) {
 
     filePath = filePath ? sanitize(filePath) : '/';
 
-    console.log(filePath);
-
-    superagent.get('/api/files/' + filePath).query({ username: app.session.username, password: app.session.password }).end(function (error, result) {
+    superagent.get('/api/files/' + encode(filePath)).query({ username: app.session.username, password: app.session.password }).end(function (error, result) {
         app.busy = false;
 
         if (result && result.statusCode === 401) return logout();
@@ -91,7 +89,12 @@ function loadDirectory(filePath) {
             return entry;
         });
         app.path = filePath;
-        app.pathParts = decode(filePath).split('/').filter(function (e) { return !!e; });
+        app.pathParts = decode(filePath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
+            return {
+                name: e,
+                link: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
+            };
+        });
 
         // update in case this was triggered from code
         window.location.hash = app.path;

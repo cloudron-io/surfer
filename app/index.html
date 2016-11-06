@@ -116,9 +116,9 @@
             </div>
             <div class="col-lg-12">
                 <ol class="breadcrumb">
-                    <li><i class="fa fa-home"></i>&nbsp;</li>
+                    <li><a href="#/"><i class="fa fa-home"></i>&nbsp;</a></li>
                     <li v-for="part in pathParts">
-                        {{ part }}
+                        <a href="{{ part.link }}">{{ part.name }}</a>
                     </li>
                 </ol>
             </div>
