@@ -47,6 +47,5 @@ var opts = {
 };
 
 passport.use(new LdapStrategy(opts, function (profile, done) {
-    console.log('ldap', profile);
     done(null, profile);
 }));
