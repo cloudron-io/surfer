@@ -77,7 +77,7 @@ function removeBasePath(filePath) {
 }
 
 function get(req, res, next) {
-    var filePath = req.params[0];
+    var filePath = decodeURIComponent(req.params[0]);
     var absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath) return next(new HttpError(403, 'Path not allowed'));
 
@@ -145,7 +145,7 @@ function put(req, res, next) {
 }
 
 function del(req, res, next) {
-    var filePath = req.params[0];
+    var filePath = decodeURIComponent(req.params[0]);
     var recursive = !!req.query.recursive;
     var dryRun = !!req.query.dryRun;
 
