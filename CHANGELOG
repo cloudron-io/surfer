@@ -36,3 +36,6 @@
 * Add post install message
 * Download files as attachments
 
+[0.5.8]
+* Various encoding bugfixes
+* Make breadcumbs clickable
