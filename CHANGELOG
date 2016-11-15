@@ -39,3 +39,6 @@
 [0.5.8]
 * Various encoding bugfixes
 * Make breadcumbs clickable
+
+[0.6.0]
+* Support multifile upload via the webinterface
