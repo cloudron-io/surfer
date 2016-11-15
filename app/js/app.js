@@ -129,21 +129,32 @@ function upload() {
         // detach event handler
         $(app.$els.upload).off('change');
 
-        var file = app.$els.upload.files[0];
-        var path = encode(sanitize(app.path + '/' + file.name));
+        var length = app.$els.upload.files.length;
+        var done = 0;
 
-        var formData = new FormData();
-        formData.append('file', file);
+        function uploadFile(file) {
+            var path = encode(sanitize(app.path + '/' + file.name));
 
-        superagent.put('/api/files' + path).query({ username: app.session.username, password: app.session.password }).send(formData).end(function (error, result) {
-            app.busy = false;
+            var formData = new FormData();
+            formData.append('file', file);
 
-            if (result && result.statusCode === 401) return logout();
-            if (result && result.statusCode !== 201) return console.error('Error uploading file: ', result.statusCode);
-            if (error) return console.error(error);
+            superagent.put('/api/files' + path).query({ username: app.session.username, password: app.session.password }).send(formData).end(function (error, result) {
+                if (result && result.statusCode === 401) return logout();
+                if (result && result.statusCode !== 201) console.error('Error uploading file: ', result.statusCode);
+                if (error) console.error(error);
 
-            refresh();
-        });
+                ++done;
+
+                if (done >= length) {
+                    app.busy = false;
+                    refresh();
+                }
+            });
+        }
+
+        for(var i = 0; i < length; i++) {
+            uploadFile(app.$els.upload.files[i]);
+        }
     });
 
     // reset the form first to make the change handler retrigger even on the same file selected
