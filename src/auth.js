@@ -24,11 +24,11 @@ var LDAP_USERS_BASE_DN = process.env.LDAP_USERS_BASE_DN;
 if (LDAP_URL && LDAP_USERS_BASE_DN) {
     console.log('Enable ldap auth');
 
-    exports.ldap = passport.authenticate('ldap');
+    exports.verify = passport.authenticate('ldap');
 } else {
     console.log('Use local user file:', LOCAL_AUTH_FILE);
 
-    exports.ldap = function (req, res, next) {
+    exports.verify = function (req, res, next) {
         var users = safe.JSON.parse(safe.fs.readFileSync(LOCAL_AUTH_FILE));
         if (!users) return res.send(401);
         if (!users[req.query.username]) return res.send(401);
