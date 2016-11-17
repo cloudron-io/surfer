@@ -19,8 +19,8 @@ cloudron install --appstore-id io.cloudron.surfer
 The app package can be built using the [Cloudron command line tooling](https://cloudron.io/references/cli.html).
 
 ```
+git clone https://github.com/nebulade/surfer.git
 cd surfer
-
 cloudron build
 cloudron install
 ```
@@ -31,9 +31,9 @@ Surfer can also be run standlone on any server:
 git clone https://github.com/nebulade/surfer.git
 cd surfer
 npm install
-./app.js <public folder>
+./server.js <public folder>
 ```
-Without LDAP integration, the default username is `test` with the same password. Check `src/auth.js` for further details about user management.
+Use the `admin` tool to manage local users.
 
 ## File management
 
