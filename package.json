@@ -2,7 +2,7 @@
   "name": "cloudron-surfer",
   "version": "3.0.0",
   "description": "Simple file server",
-  "main": "app.js",
+  "main": "server.js",
   "scripts": {
     "test": "./node_modules/mocha/bin/_mocha -R spec ./test/test.js"
   },

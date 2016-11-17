@@ -10,7 +10,7 @@ ADD src /app/code/src
 ADD app /app/code/app
 ADD cli /app/code/cli
 
-ADD package.json app.js start.sh README.md /app/code/
+ADD package.json server.js start.sh README.md /app/code/
 
 RUN npm install --production
 
