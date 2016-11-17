@@ -4,7 +4,7 @@
   "description": "Simple file server",
   "main": "app.js",
   "scripts": {
-    "test": "./node_modules/mocha/bin/_mocha -R spec ./test"
+    "test": "./node_modules/mocha/bin/_mocha -R spec ./test/test.js"
   },
   "keywords": [
     "file",
@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "async": "^1.5.2",
+    "bcryptjs": "^2.3.0",
     "body-parser": "^1.15.0",
     "colors": "^1.1.2",
     "commander": "^2.8.1",
@@ -39,7 +40,7 @@
     "passport-ldapjs": "^1.0.2",
     "readline-sync": "^1.4.1",
     "request": "^2.69.0",
-    "safetydance": "0.0.16",
+    "safetydance": "^0.1.1",
     "superagent": "^1.7.2",
     "underscore": "^1.8.3"
   },
@@ -48,8 +49,5 @@
     "mocha": "^2.4.5",
     "selenium-server-standalone-jar": "^2.52.0",
     "selenium-webdriver": "^2.52.0"
-  },
-  "scripts": {
-    "test": "./node_modules/mocha/bin/_mocha -R spec ./test/test.js"
   }
 }
