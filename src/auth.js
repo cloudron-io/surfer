@@ -1,7 +1,12 @@
 'use strict';
 
 var passport = require('passport'),
+    path = require('path'),
+    safe = require('safetydance'),
+    bcrypt = require('bcryptjs'),
     LdapStrategy = require('passport-ldapjs').Strategy;
+
+var LOCAL_AUTH_FILE = path.resolve(process.env.LOCAL_AUTH_FILE || './.users.json');
 
 passport.serializeUser(function (user, done) {
     console.log('serializeUser', user);
@@ -21,13 +26,17 @@ if (LDAP_URL && LDAP_USERS_BASE_DN) {
 
     exports.ldap = passport.authenticate('ldap');
 } else {
+    console.log('Use local user file:', LOCAL_AUTH_FILE);
+
     exports.ldap = function (req, res, next) {
-        console.log('Disable ldap auth, use developer credentials!');
+        var users = safe.JSON.parse(safe.fs.readFileSync(LOCAL_AUTH_FILE));
+        if (!users) return res.send(401);
+        if (!users[req.query.username]) return res.send(401);
 
-        if (req.query.username !== 'test') return res.send(401);
-        if (req.query.password !== 'test') return res.send(401);
-
-        next();
+        bcrypt.compare(req.query.password, users[req.query.username].passwordHash, function (error, valid) {
+            if (error || !valid) return res.send(401);
+            next();
+        });
     };
 }
 
