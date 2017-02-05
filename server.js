@@ -35,16 +35,16 @@ var rootFolder = path.resolve(__dirname, process.argv[2] || 'files');
 
 app.use(morgan('dev'));
 app.use(compression());
-app.use('/_admin', express.static(__dirname + '/frontend'));
-app.use(express.static(rootFolder));
-app.use(serveIndex(rootFolder, { icons: true }));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false, limit: '100mb' }));
-app.use(cookieParser());
-app.use(session({ secret: 'surfin surfin', resave: false, saveUninitialized: false }));
-app.use(passport.initialize());
-app.use(passport.session());
+app.use('/api', bodyParser.json());
+app.use('/api', bodyParser.urlencoded({ extended: false, limit: '100mb' }));
+app.use('/api', cookieParser());
+app.use('/api', session({ secret: 'surfin surfin', resave: false, saveUninitialized: false }));
+app.use('/api', passport.initialize());
+app.use('/api', passport.session());
 app.use(router);
+app.use('/_admin', express.static(__dirname + '/frontend'));
+app.use('/', express.static(rootFolder));
+app.use('/', serveIndex(rootFolder, { icons: true }));
 app.use(lastMile());
 
 var server = app.listen(3000, function () {
