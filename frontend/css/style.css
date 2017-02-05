@@ -64,3 +64,16 @@ footer {
 footer:hover {
     opacity: 1;
 }
+
+th {
+    overflow: hidden;
+}
+
+.entry-toolbar {
+    opacity: 0;
+    transition: opacity .25s;
+}
+
+tr:hover .entry-toolbar {
+    opacity: 1;
+}
