@@ -124,13 +124,16 @@ function up() {
 
 function upload() {
     $(app.$els.upload).on('change', function () {
-        app.busy = true;
 
         // detach event handler
         $(app.$els.upload).off('change');
 
-        var length = app.$els.upload.files.length;
-        var done = 0;
+        app.uploadStatus = {
+            busy: true,
+            count: app.$els.upload.files.length,
+            done: 0,
+            percentDone: 0
+        };
 
         function uploadFile(file) {
             var path = encode(sanitize(app.path + '/' + file.name));
@@ -143,16 +146,25 @@ function upload() {
                 if (result && result.statusCode !== 201) console.error('Error uploading file: ', result.statusCode);
                 if (error) console.error(error);
 
-                ++done;
+                app.uploadStatus.done += 1;
+                app.uploadStatus.percentDone = Math.round(app.uploadStatus.done / app.uploadStatus.count * 100);
 
-                if (done >= length) {
-                    app.busy = false;
+                console.log(Math.round(app.uploadStatus.done / app.uploadStatus.count * 100))
+
+                if (app.uploadStatus.done >= app.uploadStatus.count) {
+                    app.uploadStatus = {
+                        busy: false,
+                        count: 0,
+                        done: 0,
+                        percentDone: 100
+                    };
+
                     refresh();
                 }
             });
         }
 
-        for(var i = 0; i < length; i++) {
+        for(var i = 0; i < app.uploadStatus.count; ++i) {
             uploadFile(app.$els.upload.files[i]);
         }
     });
@@ -233,6 +245,12 @@ var app = new Vue({
     el: '#app',
     data: {
         busy: true,
+        uploadStatus: {
+            busy: false,
+            count: 0,
+            done: 0,
+            percentDone: 50
+        },
         path: '/',
         pathParts: [],
         session: {
