@@ -15,6 +15,7 @@ var express = require('express'),
     multipart = require('./src/multipart'),
     mkdirp = require('mkdirp'),
     auth = require('./src/auth.js'),
+    serveIndex = require('serve-index'),
     files = require('./src/files.js')(path.resolve(__dirname, process.argv[2] || 'files'));
 
 var app = express();
@@ -30,10 +31,13 @@ router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); 
 // welcome screen in case / does not serve up any file yet
 router.get('/', function (req, res) { res.status(200).sendFile(path.join(__dirname, '/app/welcome.html')); });
 
+var rootFolder = path.resolve(__dirname, process.argv[2] || 'files');
+
 app.use(morgan('dev'));
 app.use(compression());
 app.use('/_admin', express.static(__dirname + '/app'));
-app.use(express.static(path.resolve(__dirname, process.argv[2] || 'files')));
+app.use(express.static(rootFolder));
+app.use(serveIndex(rootFolder, { icons: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false, limit: '100mb' }));
 app.use(cookieParser());
