@@ -41,6 +41,7 @@
     "readline-sync": "^1.4.1",
     "request": "^2.69.0",
     "safetydance": "^0.1.1",
+    "serve-index": "^1.8.0",
     "superagent": "^1.7.2",
     "underscore": "^1.8.3"
   },
