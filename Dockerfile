@@ -7,7 +7,7 @@ RUN mkdir -p /app/code
 WORKDIR /app/code
 
 ADD src /app/code/src
-ADD app /app/code/app
+ADD frontend /app/code/frontend
 ADD cli /app/code/cli
 
 ADD package.json server.js start.sh README.md /app/code/

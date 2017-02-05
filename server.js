@@ -29,13 +29,13 @@ router.delete('/api/files/*', auth.verify, files.del);
 router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });
 
 // welcome screen in case / does not serve up any file yet
-router.get('/', function (req, res) { res.status(200).sendFile(path.join(__dirname, '/app/welcome.html')); });
+router.get('/', function (req, res) { res.status(200).sendFile(path.join(__dirname, '/frontend/welcome.html')); });
 
 var rootFolder = path.resolve(__dirname, process.argv[2] || 'files');
 
 app.use(morgan('dev'));
 app.use(compression());
-app.use('/_admin', express.static(__dirname + '/app'));
+app.use('/_admin', express.static(__dirname + '/frontend'));
 app.use(express.static(rootFolder));
 app.use(serveIndex(rootFolder, { icons: true }));
 app.use(bodyParser.json());
