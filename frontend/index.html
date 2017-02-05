@@ -150,13 +150,6 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-show="path !== '/'" v-on:click="up()" class="hand">
-                            <th><i class="fa fa-chevron-up"></i></th>
-                            <th>..</th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                        </tr>
                         <tr v-for="entry in entries" v-on:click="open(entry)" class="hand">
                             <th>
                                 <img v-bind:src="entry.previewUrl" height="48px" width="48px"/>
