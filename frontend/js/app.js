@@ -141,15 +141,13 @@ function upload() {
             var formData = new FormData();
             formData.append('file', file);
 
-            superagent.put('/api/files' + path).query({ username: app.session.username, password: app.session.password }).send(formData).end(function (error, result) {
+            superagent.post('/api/files' + path).query({ username: app.session.username, password: app.session.password }).send(formData).end(function (error, result) {
                 if (result && result.statusCode === 401) return logout();
                 if (result && result.statusCode !== 201) console.error('Error uploading file: ', result.statusCode);
                 if (error) console.error(error);
 
                 app.uploadStatus.done += 1;
                 app.uploadStatus.percentDone = Math.round(app.uploadStatus.done / app.uploadStatus.count * 100);
-
-                console.log(Math.round(app.uploadStatus.done / app.uploadStatus.count * 100))
 
                 if (app.uploadStatus.done >= app.uploadStatus.count) {
                     app.uploadStatus = {
@@ -198,6 +196,33 @@ function del(entry) {
     });
 }
 
+function renameAsk(entry) {
+    app.renameData.entry = entry;
+    app.renameData.error = null;
+    app.renameData.newFilePath = entry.filePath;
+
+    $('#modalRename').modal('show');
+}
+
+function rename(data) {
+    app.busy = true;
+
+    var path = encode(sanitize(app.path + '/' + data.entry.filePath));
+    var newFilePath = sanitize(app.path + '/' + data.newFilePath);
+
+    superagent.put('/api/files' + path).query({ username: app.session.username, password: app.session.password }).send({ newFilePath: newFilePath }).end(function (error, result) {
+        app.busy = false;
+
+        if (result && result.statusCode === 401) return logout();
+        if (result && result.statusCode !== 200) return console.error('Error renaming file: ', result.statusCode);
+        if (error) return console.error(error);
+
+        refresh();
+
+        $('#modalRename').modal('hide');
+    });
+}
+
 function createDirectoryAsk() {
     $('#modalcreateDirectory').modal('show');
     app.createDirectoryData = '';
@@ -210,7 +235,7 @@ function createDirectory(name) {
 
     var path = encode(sanitize(app.path + '/' + name));
 
-    superagent.put('/api/files' + path).query({ username: app.session.username, password: app.session.password, directory: true }).end(function (error, result) {
+    superagent.post('/api/files' + path).query({ username: app.session.username, password: app.session.password, directory: true }).end(function (error, result) {
         app.busy = false;
 
         if (result && result.statusCode === 401) return logout();
@@ -258,6 +283,11 @@ var app = new Vue({
         },
         loginData: {},
         deleteData: {},
+        renameData: {
+            entry: {},
+            error: null,
+            newFilePath: ''
+        },
         createDirectoryData: '',
         createDirectoryError: null,
         entries: []
@@ -271,6 +301,8 @@ var app = new Vue({
         upload: upload,
         delAsk: delAsk,
         del: del,
+        renameAsk: renameAsk,
+        rename: rename,
         createDirectoryAsk: createDirectoryAsk,
         createDirectory: createDirectory
     }

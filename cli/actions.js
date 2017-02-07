@@ -118,7 +118,7 @@ function put(filePath, otherFilePaths, options) {
         var destinationPath = (destination ? '/' + destination : '') + '/' + relativeFilePath;
         console.log('Uploading file %s -> %s', relativeFilePath.cyan, destinationPath.cyan);
 
-        superagent.put(config.server() + API + destinationPath).query(gQuery).attach('file', file).end(function (error, result) {
+        superagent.post(config.server() + API + destinationPath).query(gQuery).attach('file', file).end(function (error, result) {
             if (result && result.statusCode === 403) return callback(new Error('Upload destination ' + destinationPath + ' not allowed'));
             if (result && result.statusCode !== 201) return callback(new Error('Error uploading file: ' + result.statusCode));
             if (error) return callback(error);

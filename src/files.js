@@ -17,6 +17,7 @@ exports = module.exports = function (basePath) {
     return {
         get: get,
         put: put,
+        post: post,
         del: del
     };
 };
@@ -111,11 +112,13 @@ function get(req, res, next) {
     });
 }
 
-function put(req, res, next) {
+function post(req, res, next) {
     var filePath = decodeURIComponent(req.params[0]);
 
     if (!(req.files && req.files.file) && !req.query.directory) return next(new HttpError(400, 'missing file or directory'));
     if ((req.files && req.files.file) && req.query.directory) return next(new HttpError(400, 'either file or directory'));
+
+    debug('post:', filePath);
 
     var absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath || isProtected(absoluteFilePath)) return next(new HttpError(403, 'Path not allowed'));
@@ -123,10 +126,8 @@ function put(req, res, next) {
     fs.stat(absoluteFilePath, function (error, result) {
         if (error && error.code !== 'ENOENT') return next(new HttpError(500, error));
 
-        debug('put', absoluteFilePath);
-
         if (result && req.query.directory) return next(new HttpError(409, 'name already exists'));
-        if (result && result.isDirectory()) return next(new HttpError(409, 'cannot put on directories'));
+        if (result && result.isDirectory()) return next(new HttpError(409, 'cannot post on directories'));
 
         if (req.query.directory) {
             return createDirectory(absoluteFilePath, function (error) {
@@ -141,6 +142,30 @@ function put(req, res, next) {
         }
 
         return next(new HttpError(500, 'unsupported type'));
+    });
+}
+
+function put(req, res, next) {
+    var oldFilePath = decodeURIComponent(req.params[0]);
+
+    if (!req.body || !req.body.newFilePath) return next(new HttpError(400, 'missing newFilePath'));
+
+    var newFilePath = decodeURIComponent(req.body.newFilePath);
+
+    debug('put: %s -> %s', oldFilePath, newFilePath);
+
+    var absoluteOldFilePath = getAbsolutePath(oldFilePath);
+    if (!absoluteOldFilePath || isProtected(absoluteOldFilePath)) return next(new HttpError(403, 'Path not allowed'));
+
+    var absoluteNewFilePath = getAbsolutePath(newFilePath);
+    if (!absoluteNewFilePath || isProtected(absoluteNewFilePath)) return next(new HttpError(403, 'Path not allowed'));
+
+    fs.rename(absoluteOldFilePath, absoluteNewFilePath, function (error) {
+        if (error) return next (new HttpError(500, error));
+
+        debug('put: successful');
+
+        return next(new HttpSuccess(200, {}));
     });
 }
 

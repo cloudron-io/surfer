@@ -41,11 +41,35 @@
                 </div>
                 <div class="modal-body">
                     <h5 v-show="deleteData.isFile">Really delete <span style="font-weight: bold;">{{ deleteData.filePath }}</span>?</h5>
-                    <h5 v-show="deleteData.isDirectory">Really delete directory <span style="font-weight: bold;">{{ deleteData.filePath }}</span> and all its content?</h5>
+                    <h5 v-show="deleteData.isDirectory">Really delete folder <span style="font-weight: bold;">{{ deleteData.filePath }}</span> and all its content?</h5>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
                     <button type="button" class="btn btn-danger" v-on:click="del(deleteData)">Yes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="modalRename" v-cloak>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Rename {{ renameData.entry.filePath }}</h4>
+                </div>
+                <div class="modal-body">
+                    <form v-on:submit.prevent="rename(renameData)">
+                        <div class="form-group" v-bind:class="{ 'has-error': renameData.error }">
+                            <input type="text" class="form-control" v-model="renameData.newFilePath" placeholder="Name" autofocus="true">
+                            <label class="control-label">{{ renameData.error }}</label>
+                        </div>
+                        <button type="submit" style="display: none;"></button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
+                    <button type="button" class="btn btn-success" v-on:click="rename(renameData)">Yes</button>
                 </div>
             </div>
         </div>
@@ -56,7 +80,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title">New Directory Name</h4>
+                    <h4 class="modal-title">New directory name</h4>
                 </div>
                 <div class="modal-body">
                     <form v-on:submit.prevent="createDirectory(createDirectoryData)">
@@ -135,7 +159,7 @@
                         <a href="{{ part.link }}">{{ part.name }}</a>
                     </li>
                     <li>{{ pathParts.slice(-1)[0].name }}</li>
-                    <button class="btn btn-default btn-sm pull-right" v-on:click="createDirectoryAsk()">Create Directory</button>
+                    <button class="btn btn-default btn-sm pull-right" v-on:click="createDirectoryAsk()">Create Folder</button>
                 </ol>
             </div>
             <div class="col-lg-12">
@@ -150,6 +174,9 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <tr v-show="entries.length === 0">
+                            <th><i>Empty folder</i></th>
+                        </tr>
                         <tr v-for="entry in entries" v-on:click="open(entry)" class="hand">
                             <th>
                                 <img v-bind:src="entry.previewUrl" height="48px" width="48px"/>
@@ -159,7 +186,7 @@
                             <th><span v-my-tooltip="foobar" data-toggle="tooltip" title="{{ entry.mtime }}">{{ entry.mtime | prettyDate }}</span></th>
                             <th style="text-align: right;">
                                 <span class="entry-toolbar">
-                                    <!-- <button class="btn btn-sm btn-default" v-on:click.stop="renameAsk(entry)" title="Rename"><i class="fa fa-pencil"></i></button> -->
+                                    <button class="btn btn-sm btn-default" v-on:click.stop="renameAsk(entry)" title="Rename"><i class="fa fa-pencil"></i></button>
                                     <button class="btn btn-sm btn-danger" v-on:click.stop="delAsk(entry)" title="Delete"><i class="fa fa-trash"></i></button>
                                 </span>
                             </th>

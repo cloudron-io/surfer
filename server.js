@@ -24,7 +24,8 @@ var router = new express.Router();
 var multipart = multipart({ maxFieldsSize: 2 * 1024, limit: '512mb', timeout: 3 * 60 * 1000 });
 
 router.get   ('/api/files/*', auth.verify, files.get);
-router.put   ('/api/files/*', auth.verify, multipart, files.put);
+router.post  ('/api/files/*', auth.verify, multipart, files.post);
+router.put   ('/api/files/*', auth.verify, files.put);
 router.delete('/api/files/*', auth.verify, files.del);
 router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });
 
