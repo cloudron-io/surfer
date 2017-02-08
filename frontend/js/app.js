@@ -122,49 +122,55 @@ function up() {
     window.location.hash = sanitize(app.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
 }
 
+function uploadFiles(files) {
+    if (!files || !files.length) return;
+
+    app.uploadStatus = {
+        busy: true,
+        count: files.length,
+        done: 0,
+        percentDone: 0
+    };
+
+    function uploadFile(file) {
+        var path = encode(sanitize(app.path + '/' + file.name));
+
+        var formData = new FormData();
+        formData.append('file', file);
+
+        superagent.post('/api/files' + path).query({ username: app.session.username, password: app.session.password }).send(formData).end(function (error, result) {
+            if (result && result.statusCode === 401) return logout();
+            if (result && result.statusCode !== 201) console.error('Error uploading file: ', result.statusCode);
+            if (error) console.error(error);
+
+            app.uploadStatus.done += 1;
+            app.uploadStatus.percentDone = Math.round(app.uploadStatus.done / app.uploadStatus.count * 100);
+
+            if (app.uploadStatus.done >= app.uploadStatus.count) {
+                app.uploadStatus = {
+                    busy: false,
+                    count: 0,
+                    done: 0,
+                    percentDone: 100
+                };
+
+                refresh();
+            }
+        });
+    }
+
+    for(var i = 0; i < app.uploadStatus.count; ++i) {
+        uploadFile(files[i]);
+    }
+}
+
 function upload() {
     $(app.$els.upload).on('change', function () {
 
         // detach event handler
         $(app.$els.upload).off('change');
 
-        app.uploadStatus = {
-            busy: true,
-            count: app.$els.upload.files.length,
-            done: 0,
-            percentDone: 0
-        };
-
-        function uploadFile(file) {
-            var path = encode(sanitize(app.path + '/' + file.name));
-
-            var formData = new FormData();
-            formData.append('file', file);
-
-            superagent.post('/api/files' + path).query({ username: app.session.username, password: app.session.password }).send(formData).end(function (error, result) {
-                if (result && result.statusCode === 401) return logout();
-                if (result && result.statusCode !== 201) console.error('Error uploading file: ', result.statusCode);
-                if (error) console.error(error);
-
-                app.uploadStatus.done += 1;
-                app.uploadStatus.percentDone = Math.round(app.uploadStatus.done / app.uploadStatus.count * 100);
-
-                if (app.uploadStatus.done >= app.uploadStatus.count) {
-                    app.uploadStatus = {
-                        busy: false,
-                        count: 0,
-                        done: 0,
-                        percentDone: 100
-                    };
-
-                    refresh();
-                }
-            });
-        }
-
-        for(var i = 0; i < app.uploadStatus.count; ++i) {
-            uploadFile(app.$els.upload.files[i]);
-        }
+        uploadFiles(app.$els.upload.files || []);
     });
 
     // reset the form first to make the change handler retrigger even on the same file selected
@@ -257,6 +263,15 @@ function createDirectory(name) {
     });
 }
 
+function dragOver(event) {
+    event.preventDefault();
+}
+
+function drop(event) {
+    event.preventDefault();
+    uploadFiles(event.dataTransfer.files || []);
+}
+
 Vue.filter('prettyDate', function (value) {
     var d = new Date(value);
     return d.toDateString();
@@ -304,7 +319,9 @@ var app = new Vue({
         renameAsk: renameAsk,
         rename: rename,
         createDirectoryAsk: createDirectoryAsk,
-        createDirectory: createDirectory
+        createDirectory: createDirectory,
+        drop: drop,
+        dragOver: dragOver
     }
 });
 
