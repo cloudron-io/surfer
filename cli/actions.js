@@ -24,7 +24,7 @@ var gQuery = {};
 
 function checkConfig() {
     if (!config.server() || !config.accessToken()) {
-        console.log('You have run "login" first');
+        console.log('Run %s first', 'surfer login'.yellow);
         process.exit(1);
     }
 
@@ -92,9 +92,9 @@ function login(uri) {
 }
 
 function logout() {
-    checkConfig();
+    if (!config.accessToken()) return console.log('Done'.green);
 
-    superagent.post(config.server() + '/api/logout').query(gQuery).end(function (error, result) {
+    superagent.post(config.server() + '/api/logout').query({ access_token: config.accessToken() }).end(function (error, result) {
         if (result && result.statusCode !== 200) console.log('Failed to logout: ' + result.statusCode);
         if (error) console.log(error);
 
