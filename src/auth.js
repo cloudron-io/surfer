@@ -91,8 +91,6 @@ passport.use(new BearerStrategy(function (token, done) {
 }));
 
 exports.logout = function (req, res, next) {
-    console.log(req.authInfo);
-
     delete gTokenStore[req.authInfo.accessToken];
 
     next(new HttpSuccess(200, {}));
