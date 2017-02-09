@@ -87,8 +87,6 @@ function login(uri) {
         config.set('server', server);
         config.set('accessToken', result.body.accessToken);
 
-        gQuery = { access_token: result.body.accessToken };
-
         console.log('Login successful'.green);
     });
 }
