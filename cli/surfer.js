@@ -5,7 +5,7 @@
 var program = require('commander'),
     actions = require('./actions');
 
-program.version('0.1.0');
+program.version(require('../package.json').version);
 
 program.command('login <url>')
     .description('Login to server')
