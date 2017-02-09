@@ -11,6 +11,10 @@ program.command('login <url>')
     .description('Login to server')
     .action(actions.login);
 
+program.command('logout')
+    .description('Logout from server')
+    .action(actions.logout);
+
 program.command('put <file> [files...]')
     .option('-a --all', 'Also include hidden files and folders.', false)
     .description('Put a file, last argument is destination if provided')

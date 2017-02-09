@@ -1,6 +1,7 @@
 'use strict';
 
 exports.login = login;
+exports.logout = logout;
 exports.put = put;
 exports.get = get;
 exports.del = del;
@@ -89,6 +90,23 @@ function login(uri) {
         gQuery = { access_token: result.body.accessToken };
 
         console.log('Login successful'.green);
+    });
+}
+
+function logout() {
+    checkConfig();
+
+    superagent.post(config.server() + '/api/logout').query(gQuery).end(function (error, result) {
+        if (result && result.statusCode !== 200) console.log('Failed to logout: ' + result.statusCode);
+        if (error) console.log(error);
+
+        // TODO remove at some point, this is just to clear the previous old version values
+        config.set('username', '');
+        config.set('password', '');
+        config.set('server', '');
+        config.set('accessToken', '');
+
+        console.log('Done'.green);
     });
 }
 
