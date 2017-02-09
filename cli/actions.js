@@ -66,6 +66,8 @@ function login(uri, options) {
     var username = options.username || readlineSync.question('Username: ');
     var password = options.password || readlineSync.question('Password: ', { hideEchoBack: true, mask: '' });
 
+    if (!username || !password) process.exit(1);
+
     superagent.post(server + '/api/login').send({ username: username, password: password }).end(function (error, result) {
         if (error && error.code === 'ENOTFOUND') {
             console.log('Server %s not found.'.red, server.bold);
