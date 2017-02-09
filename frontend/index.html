@@ -172,7 +172,7 @@
                     </thead>
                     <tbody>
                         <tr v-show="entries.length === 0">
-                            <th><i>Empty folder</i></th>
+                            <th colspan="5"><i>Empty folder</i></th>
                         </tr>
                         <tr v-for="entry in entries" v-on:click="open(entry)" class="hand">
                             <th>
