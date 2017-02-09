@@ -19,6 +19,7 @@
   "configurePath": "_admin/",
   "addons": {
     "ldap": {},
+    "redis": {},
     "localstorage": {}
   },
   "mediaLinks": [
