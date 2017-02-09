@@ -5,9 +5,6 @@
 var program = require('commander'),
     actions = require('./actions');
 
-// Allow self signed certs!
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
 program.version('0.1.0');
 
 program.command('login <url>')
