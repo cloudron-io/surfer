@@ -9,6 +9,8 @@ program.version(require('../package.json').version);
 
 program.command('login <url>')
     .description('Login to server')
+    .option('--username [username]', 'Username (optional)')
+    .option('--password [password]', 'Password (optional)')
     .action(actions.login);
 
 program.command('logout')

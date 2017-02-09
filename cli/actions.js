@@ -55,7 +55,7 @@ function collectFiles(filesOrFolders, options) {
     return tmp;
 }
 
-function login(uri) {
+function login(uri, options) {
     var tmp = url.parse(uri);
     if (!tmp.slashes) tmp = url.parse('https://' + uri);
 
@@ -63,8 +63,8 @@ function login(uri) {
 
     console.log('Using server', server.cyan);
 
-    var username = readlineSync.question('Username: ');
-    var password = readlineSync.question('Password: ', { hideEchoBack: true, mask: '' });
+    var username = options.username || readlineSync.question('Username: ');
+    var password = options.password || readlineSync.question('Password: ', { hideEchoBack: true, mask: '' });
 
     superagent.post(server + '/api/login').send({ username: username, password: password }).end(function (error, result) {
         if (error && error.code === 'ENOTFOUND') {
@@ -77,7 +77,11 @@ function login(uri) {
         }
         if (result.status !== 201) {
             console.log('Login failed.\n'.red);
-            return login(uri);
+
+            // remove the password to avoid a login loop
+            delete options.password;
+
+            return login(uri, options);
         }
 
         // TODO remove at some point, this is just to clear the previous old version values
