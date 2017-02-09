@@ -39,8 +39,14 @@ if (process.env.REDIS_URL) {
     }
 
     // overwrite the tokenStore api
-    tokenStore.get = redisClient.get.bind(redisClient);
-    tokenStore.set = redisClient.set.bind(redisClient);
+    tokenStore.get = function (token, callback) {
+        redisClient.get(token, function (error, result) {
+            callback(error || null, safe.JSON.parse(result));
+        });
+    };
+    tokenStore.set = function (token, data, callback) {
+        redisClient.set(token, JSON.stringify(data), callback);
+    };
     tokenStore.del = redisClient.del.bind(redisClient);
 } else {
     console.log('Use in-memory token store');
