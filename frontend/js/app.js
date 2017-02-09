@@ -1,37 +1,54 @@
 (function () {
 'use strict';
 
+function getProfile(accessToken, callback) {
+    callback = callback || function (error) { if (error) console.error(error); };
+
+    superagent.get('/api/profile').query({ access_token: accessToken }).end(function (error, result) {
+        app.busy = false;
+
+        if (error && !error.response) return callback(error);
+        if (result.statusCode !== 200) {
+            delete localStorage.accessToken;
+            return callback('Invalid access token');
+        }
+
+        localStorage.accessToken = accessToken;
+        app.session.username = result.body.username;
+        app.session.valid = true;
+
+        callback();
+    });
+}
+
 function login(username, password) {
     username = username || app.loginData.username;
     password = password || app.loginData.password;
 
     app.busy = true;
 
-    superagent.get('/api/files/').query({ username: username, password: password }).end(function (error, result) {
+    superagent.post('/api/login').query({ username: username, password: password }).end(function (error, result) {
         app.busy = false;
 
         if (error) return console.error(error);
         if (result.statusCode === 401) return console.error('Invalid credentials');
 
-        app.session.valid = true;
-        app.session.username = username;
-        app.session.password = password;
+        getProfile(result.body.accessToken, function (error) {
+            if (error) return console.error(error);
 
-        // clearly not the best option
-        localStorage.username = username;
-        localStorage.password = password;
-
-        loadDirectory(window.location.hash.slice(1));
+            loadDirectory(window.location.hash.slice(1));
+        });
     });
 }
 
 function logout() {
-    app.session.valid = false;
-    app.session.username = null;
-    app.session.password = null;
+    superagent.post('/api/logout').query({ access_token: localStorage.accessToken }).end(function (error) {
+        if (error) console.error(error);
 
-    delete localStorage.username;
-    delete localStorage.password;
+        app.session.valid = false;
+
+        delete localStorage.accessToken;
+    });
 }
 
 function sanitize(filePath) {
@@ -77,7 +94,7 @@ function loadDirectory(filePath) {
 
     filePath = filePath ? sanitize(filePath) : '/';
 
-    superagent.get('/api/files/' + encode(filePath)).query({ username: app.session.username, password: app.session.password }).end(function (error, result) {
+    superagent.get('/api/files/' + encode(filePath)).query({ access_token: localStorage.accessToken }).end(function (error, result) {
         app.busy = false;
 
         if (result && result.statusCode === 401) return logout();
@@ -138,7 +155,7 @@ function uploadFiles(files) {
         var formData = new FormData();
         formData.append('file', file);
 
-        superagent.post('/api/files' + path).query({ username: app.session.username, password: app.session.password }).send(formData).end(function (error, result) {
+        superagent.post('/api/files' + path).query({ access_token: localStorage.accessToken }).send(formData).end(function (error, result) {
             if (result && result.statusCode === 401) return logout();
             if (result && result.statusCode !== 201) console.error('Error uploading file: ', result.statusCode);
             if (error) console.error(error);
@@ -189,7 +206,7 @@ function del(entry) {
 
     var path = encode(sanitize(app.path + '/' + entry.filePath));
 
-    superagent.del('/api/files' + path).query({ username: app.session.username, password: app.session.password, recursive: true }).end(function (error, result) {
+    superagent.del('/api/files' + path).query({ access_token: localStorage.accessToken, recursive: true }).end(function (error, result) {
         app.busy = false;
 
         if (result && result.statusCode === 401) return logout();
@@ -216,7 +233,7 @@ function rename(data) {
     var path = encode(sanitize(app.path + '/' + data.entry.filePath));
     var newFilePath = sanitize(app.path + '/' + data.newFilePath);
 
-    superagent.put('/api/files' + path).query({ username: app.session.username, password: app.session.password }).send({ newFilePath: newFilePath }).end(function (error, result) {
+    superagent.put('/api/files' + path).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end(function (error, result) {
         app.busy = false;
 
         if (result && result.statusCode === 401) return logout();
@@ -241,7 +258,7 @@ function createDirectory(name) {
 
     var path = encode(sanitize(app.path + '/' + name));
 
-    superagent.post('/api/files' + path).query({ username: app.session.username, password: app.session.password, directory: true }).end(function (error, result) {
+    superagent.post('/api/files' + path).query({ access_token: localStorage.accessToken, directory: true }).end(function (error, result) {
         app.busy = false;
 
         if (result && result.statusCode === 401) return logout();
@@ -327,7 +344,7 @@ var app = new Vue({
 
 window.app = app;
 
-login(localStorage.username, localStorage.password);
+getProfile(localStorage.accessToken);
 
 $(window).on('hashchange', function () {
     loadDirectory(window.location.hash.slice(1));

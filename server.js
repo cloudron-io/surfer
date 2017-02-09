@@ -23,6 +23,9 @@ var router = new express.Router();
 
 var multipart = multipart({ maxFieldsSize: 2 * 1024, limit: '512mb', timeout: 3 * 60 * 1000 });
 
+router.post  ('/api/login', auth.login);
+router.post  ('/api/logout', auth.verify, auth.logout);
+router.get   ('/api/profile', auth.verify, auth.getProfile);
 router.get   ('/api/files/*', auth.verify, files.get);
 router.post  ('/api/files/*', auth.verify, multipart, files.post);
 router.put   ('/api/files/*', auth.verify, files.put);

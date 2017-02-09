@@ -37,13 +37,15 @@
     "morgan": "^1.7.0",
     "multiparty": "^4.1.2",
     "passport": "^0.2.2",
+    "passport-http-bearer": "^1.0.1",
     "passport-ldapjs": "^1.0.2",
     "readline-sync": "^1.4.1",
     "request": "^2.69.0",
     "safetydance": "^0.1.1",
     "serve-index": "^1.8.0",
     "superagent": "^1.7.2",
-    "underscore": "^1.8.3"
+    "underscore": "^1.8.3",
+    "uuid": "^3.0.1"
   },
   "devDependencies": {
     "expect.js": "^0.3.1",

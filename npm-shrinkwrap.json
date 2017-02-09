@@ -903,6 +903,11 @@
         }
       }
     },
+    "passport-http-bearer": {
+      "version": "1.0.1",
+      "from": "passport-http-bearer@latest",
+      "resolved": "https://registry.npmjs.org/passport-http-bearer/-/passport-http-bearer-1.0.1.tgz"
+    },
     "passport-ldapjs": {
       "version": "1.0.2",
       "from": "passport-ldapjs@>=1.0.2 <2.0.0",
@@ -1015,6 +1020,11 @@
           "resolved": "https://registry.npmjs.org/passport-strategy/-/passport-strategy-1.0.0.tgz"
         }
       }
+    },
+    "passport-strategy": {
+      "version": "1.0.0",
+      "from": "passport-strategy@>=1.0.0 <2.0.0",
+      "resolved": "https://registry.npmjs.org/passport-strategy/-/passport-strategy-1.0.0.tgz"
     },
     "readline-sync": {
       "version": "1.4.1",
@@ -1534,6 +1544,11 @@
       "version": "1.8.3",
       "from": "underscore@>=1.8.3 <2.0.0",
       "resolved": "http://registry.npmjs.org/underscore/-/underscore-1.8.3.tgz"
+    },
+    "uuid": {
+      "version": "3.0.1",
+      "from": "uuid@latest",
+      "resolved": "https://registry.npmjs.org/uuid/-/uuid-3.0.1.tgz"
     }
   }
 }
