@@ -5,21 +5,55 @@ var passport = require('passport'),
     safe = require('safetydance'),
     bcrypt = require('bcryptjs'),
     uuid = require('uuid/v4'),
+    redis = require('redis'),
     BearerStrategy = require('passport-http-bearer').Strategy,
     LdapStrategy = require('passport-ldapjs').Strategy,
+    HttpError = require('connect-lastmile').HttpError,
     HttpSuccess = require('connect-lastmile').HttpSuccess;
 
 var LOCAL_AUTH_FILE = path.resolve(process.env.LOCAL_AUTH_FILE || './.users.json');
 
-var gTokenStore = {};
+var tokenStore = {
+    data: {},
+    get: function (token, callback) {
+        callback(tokenStore.data[token] ? null : 'not found', tokenStore.data[token]);
+    },
+    set: function (token, data, callback) {
+        tokenStore.data[token] = data;
+        callback(null);
+    },
+    del: function (token, callback) {
+        delete tokenStore.data[token];
+        callback(null);
+    }
+};
+
+if (process.env.REDIS_URL) {
+    console.log('Enable redis token store');
+
+    var redisClient = redis.createClient(process.env.REDIS_URL);
+
+    if (process.env.REDIS_PASSWORD) {
+        console.log('Using redis auth');
+        redisClient.auth(process.env.REDIS_PASSWORD);
+    }
+
+    // overwrite the tokenStore api
+    tokenStore.get = redisClient.get.bind(redisClient);
+    tokenStore.set = redisClient.set.bind(redisClient);
+    tokenStore.del = redisClient.del.bind(redisClient);
+} else {
+    console.log('Use in-memory token store');
+}
 
 function issueAccessToken() {
     return function (req, res, next) {
         var accessToken = uuid();
 
-        gTokenStore[accessToken] = req.user;
-
-        next(new HttpSuccess(201, { accessToken: accessToken, user: req.user }));
+        tokenStore.set(accessToken, req.user, function (error) {
+            if (error) return next(new HttpError(500, error));
+            next(new HttpSuccess(201, { accessToken: accessToken, user: req.user }));
+        });
     };
 }
 
@@ -85,15 +119,22 @@ passport.use(new LdapStrategy(opts, function (profile, done) {
 exports.verify = passport.authenticate('bearer', { session: false });
 
 passport.use(new BearerStrategy(function (token, done) {
-    if (!gTokenStore[token]) return done(null, false);
+    tokenStore.get(token, function (error, result) {
+        if (error) {
+            console.error(error);
+            return done(null, false);
+        }
 
-    return done(null, gTokenStore[token], { accessToken: token });
+        done(null, result, { accessToken: token });
+    });
 }));
 
 exports.logout = function (req, res, next) {
-    delete gTokenStore[req.authInfo.accessToken];
+    tokenStore.del(req.authInfo.accessToken, function (error) {
+        if (error) console.error(error);
 
-    next(new HttpSuccess(200, {}));
+        next(new HttpSuccess(200, {}));
+    });
 };
 
 exports.getProfile = function (req, res, next) {
