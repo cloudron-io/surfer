@@ -27,7 +27,7 @@ function login(username, password) {
 
     app.busy = true;
 
-    superagent.post('/api/login').query({ username: username, password: password }).end(function (error, result) {
+    superagent.post('/api/login').send({ username: username, password: password }).end(function (error, result) {
         app.busy = false;
 
         if (error) return console.error(error);

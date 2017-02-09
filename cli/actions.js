@@ -22,12 +22,12 @@ var API = '/api/files/';
 var gQuery = {};
 
 function checkConfig() {
-    if (!config.server() || !config.username() || !config.password()) {
+    if (!config.server() || !config.accessToken()) {
         console.log('You have run "login" first');
         process.exit(1);
     }
 
-    gQuery = { username: config.username(), password: config.password() };
+    gQuery = { access_token: config.accessToken() };
 
     console.error('Using server %s', config.server().cyan);
 }
@@ -65,7 +65,7 @@ function login(uri) {
     var username = readlineSync.question('Username: ');
     var password = readlineSync.question('Password: ', { hideEchoBack: true, mask: '' });
 
-    superagent.get(server + API + '/').query({ username: username, password: password }).end(function (error, result) {
+    superagent.post(server + '/api/login').send({ username: username, password: password }).end(function (error, result) {
         if (error && error.code === 'ENOTFOUND') {
             console.log('Server %s not found.'.red, server.bold);
             process.exit(1);
@@ -74,18 +74,19 @@ function login(uri) {
             console.log('Failed to connect to server %s'.red, server.bold, error.code);
             process.exit(1);
         }
-        if (result.status === 401) {
-            console.log('Login failed.'.red);
-            process.exit(1);
+        if (result.status !== 201) {
+            console.log('Login failed.\n'.red);
+            return login(uri);
         }
 
+        // TODO remove at some point, this is just to clear the previous old version values
+        config.set('username', '');
+        config.set('password', '');
+
         config.set('server', server);
-        config.set('username', username);
+        config.set('accessToken', result.body.accessToken);
 
-        // TODO this is clearly bad and needs fixing
-        config.set('password', password);
-
-        gQuery = { username: username, password: password };
+        gQuery = { access_token: result.body.accessToken };
 
         console.log('Login successful'.green);
     });

@@ -16,8 +16,7 @@ exports = module.exports = {
 
     // convenience
     server: function () { return get('server'); },
-    username: function () { return get('username'); },
-    password: function () { return get('password'); }
+    accessToken: function () { return get('accessToken'); }
 };
 
 var HOME = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;

@@ -47,13 +47,13 @@ if (LDAP_URL && LDAP_USERS_BASE_DN) {
         function (req, res, next) {
             var users = safe.JSON.parse(safe.fs.readFileSync(LOCAL_AUTH_FILE));
             if (!users) return res.send(401);
-            if (!users[req.query.username]) return res.send(401);
+            if (!users[req.body.username]) return res.send(401);
 
-            bcrypt.compare(req.query.password, users[req.query.username].passwordHash, function (error, valid) {
+            bcrypt.compare(req.body.password, users[req.body.username].passwordHash, function (error, valid) {
                 if (error || !valid) return res.send(401);
 
                 req.user = {
-                    username: req.query.username
+                    username: req.body.username
                 };
 
                 next();
