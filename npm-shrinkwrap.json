@@ -507,6 +507,11 @@
         }
       }
     },
+    "double-ended-queue": {
+      "version": "2.1.0-0",
+      "from": "double-ended-queue@>=2.1.0-0 <3.0.0",
+      "resolved": "https://registry.npmjs.org/double-ended-queue/-/double-ended-queue-2.1.0-0.tgz"
+    },
     "escape-html": {
       "version": "1.0.3",
       "from": "escape-html@>=1.0.3 <1.1.0",
@@ -1030,6 +1035,21 @@
       "version": "1.4.6",
       "from": "readline-sync@latest",
       "resolved": "https://registry.npmjs.org/readline-sync/-/readline-sync-1.4.6.tgz"
+    },
+    "redis": {
+      "version": "2.6.5",
+      "from": "redis@latest",
+      "resolved": "https://registry.npmjs.org/redis/-/redis-2.6.5.tgz"
+    },
+    "redis-commands": {
+      "version": "1.3.1",
+      "from": "redis-commands@>=1.2.0 <2.0.0",
+      "resolved": "https://registry.npmjs.org/redis-commands/-/redis-commands-1.3.1.tgz"
+    },
+    "redis-parser": {
+      "version": "2.4.0",
+      "from": "redis-parser@>=2.0.0 <3.0.0",
+      "resolved": "https://registry.npmjs.org/redis-parser/-/redis-parser-2.4.0.tgz"
     },
     "request": {
       "version": "2.69.0",
