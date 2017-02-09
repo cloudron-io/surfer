@@ -41,7 +41,7 @@ describe('Application life cycle test', function () {
         done();
     });
 
-    var LOCATION = 'surfer';
+    var LOCATION = 'test';
     var TEST_TIMEOUT = 10000;
     var TEST_FILE_NAME_0 = 'index.html';
     var TEST_FILE_NAME_1 = 'test.txt';
