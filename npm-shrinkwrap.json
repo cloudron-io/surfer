@@ -1027,9 +1027,9 @@
       "resolved": "https://registry.npmjs.org/passport-strategy/-/passport-strategy-1.0.0.tgz"
     },
     "readline-sync": {
-      "version": "1.4.1",
-      "from": "readline-sync@>=1.4.1 <2.0.0",
-      "resolved": "https://registry.npmjs.org/readline-sync/-/readline-sync-1.4.1.tgz"
+      "version": "1.4.6",
+      "from": "readline-sync@latest",
+      "resolved": "https://registry.npmjs.org/readline-sync/-/readline-sync-1.4.6.tgz"
     },
     "request": {
       "version": "2.69.0",
