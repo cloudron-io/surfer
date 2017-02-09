@@ -63,7 +63,7 @@ function login(uri) {
     console.log('Using server', server.cyan);
 
     var username = readlineSync.question('Username: ');
-    var password = readlineSync.question('Password: ', { noEchoBack: true });
+    var password = readlineSync.question('Password: ', { hideEchoBack: true, mask: '' });
 
     superagent.get(server + API + '/').query({ username: username, password: password }).end(function (error, result) {
         if (error && error.code === 'ENOTFOUND') {
