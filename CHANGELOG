@@ -43,8 +43,9 @@
 [0.6.0]
 * Support multifile upload via the webinterface
 
-[0.7.0]
+[4.0.0]
 * Implement token auth with redis backend
 * Basic drag'n'drop support
 * Use new base image v0.10.0
+* Synchronize cli and server versions
 
