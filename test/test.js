@@ -5,6 +5,7 @@
 var execSync = require('child_process').execSync,
     expect = require('expect.js'),
     path = require('path'),
+    util = require('util'),
     fs = require('fs'),
     superagent = require('superagent'),
     webdriver = require('selenium-webdriver');
@@ -111,10 +112,14 @@ describe('Application life cycle test', function () {
         });
     }
 
+    function cliLogin(done) {
+        execSync(util.format('%s login %s --username %s --password %s', path.join(__dirname, '/../cli/surfer.js'), app.fqdn, process.env.USERNAME, process.env.PASSWORD),  { stdio: 'inherit' } );
+        done();
+    }
+
     function uploadFile(name, done) {
         // File upload can't be tested with selenium, since the file input is not visible and thus can't be interacted with :-(
 
-        fs.writeFileSync(process.env.HOME + '/.surfer.json', JSON.stringify({ server: 'https://' + app.fqdn, username: process.env.USERNAME, password: process.env.PASSWORD }));
         execSync(path.join(__dirname, '/../cli/surfer.js') + ' put ' + path.join(__dirname, name),  { stdio: 'inherit' } );
         done();
     }
@@ -136,6 +141,7 @@ describe('Application life cycle test', function () {
     });
 
     it('can login', login);
+    it('can cli login', cliLogin);
     it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
     it('file is served up', checkFileIsPresent);
@@ -143,7 +149,6 @@ describe('Application life cycle test', function () {
     it('can upload second file', uploadFile.bind(null, TEST_FILE_NAME_1));
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_1));
     it('can delete second file with cli', function (done) {
-        fs.writeFileSync(process.env.HOME + '/.surfer.json', JSON.stringify({ server: 'https://' + app.fqdn, username: process.env.USERNAME, password: process.env.PASSWORD }));
         execSync(path.join(__dirname, '/../cli/surfer.js') + ' del ' + TEST_FILE_NAME_1,  { stdio: 'inherit' } );
         done();
     });
@@ -167,7 +172,7 @@ describe('Application life cycle test', function () {
 
     it('move to different location', function () {
         browser.manage().deleteAllCookies();
-        execSync('cloudron install --location ' + LOCATION + '2 --app ' + app.id, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
+        execSync('cloudron configure --location ' + LOCATION + '2 --app ' + app.id, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
         var inspect = JSON.parse(execSync('cloudron inspect'));
         app = inspect.apps.filter(function (a) { return a.location === LOCATION + '2'; })[0];
         expect(app).to.be.an('object');
