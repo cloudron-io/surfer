@@ -17,12 +17,12 @@ program.command('logout')
     .description('Logout from server')
     .action(actions.logout);
 
-program.command('put <file> [files...]')
+program.command('put <file|dir> [files...]')
     .option('-a --all', 'Also include hidden files and folders.', false)
     .description('Put a file, last argument is destination if provided')
     .action(actions.put);
 
-program.command('get [file]')
+program.command('get [file|dir]')
     .description('Get a file or directory listing')
     .action(actions.get);
 
