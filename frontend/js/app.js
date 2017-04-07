@@ -138,7 +138,7 @@ function open(entry) {
 function download(entry) {
     if (entry.isDirectory) return;
 
-    window.open(encode('/api/files/' + sanitize(app.path + '/' + entry.filePath)) + '?access_token=' + localStorage.accessToken);
+    window.location.href = encode('/api/files/' + sanitize(app.path + '/' + entry.filePath)) + '?access_token=' + localStorage.accessToken;
 }
 
 function up() {
