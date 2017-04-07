@@ -49,3 +49,6 @@
 * Use new base image v0.10.0
 * Synchronize cli and server versions
 
+[4.1.0]
+* Add ability to download files from the UI
+
