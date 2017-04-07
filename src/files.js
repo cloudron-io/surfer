@@ -88,7 +88,7 @@ function get(req, res, next) {
         debug('get', absoluteFilePath);
 
         if (!result.isDirectory() && !result.isFile()) return next(new HttpError(500, 'unsupported type'));
-        if (result.isFile()) return res.sendFile(absoluteFilePath);
+        if (result.isFile()) return res.download(absoluteFilePath);
 
         async.map(fs.readdirSync(absoluteFilePath), function (filePath, callback) {
             fs.stat(path.join(absoluteFilePath, filePath), function (error, result) {

@@ -183,6 +183,7 @@
                             <th><span v-my-tooltip="foobar" data-toggle="tooltip" title="{{ entry.mtime }}">{{ entry.mtime | prettyDate }}</span></th>
                             <th style="text-align: right;">
                                 <span class="entry-toolbar">
+                                    <button class="btn btn-sm btn-default" v-on:click.stop="download(entry)" title="Download" v-show="entry.isFile"><i class="fa fa-download"></i></button>
                                     <button class="btn btn-sm btn-default" v-on:click.stop="renameAsk(entry)" title="Rename"><i class="fa fa-pencil"></i></button>
                                     <button class="btn btn-sm btn-danger" v-on:click.stop="delAsk(entry)" title="Delete"><i class="fa fa-trash"></i></button>
                                 </span>

@@ -135,6 +135,12 @@ function open(entry) {
     window.open(encode(path));
 }
 
+function download(entry) {
+    if (entry.isDirectory) return;
+
+    window.open(encode('/api/files/' + sanitize(app.path + '/' + entry.filePath)) + '?access_token=' + localStorage.accessToken);
+}
+
 function up() {
     window.location.hash = sanitize(app.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
 }
@@ -329,6 +335,7 @@ var app = new Vue({
         logout: logout,
         loadDirectory: loadDirectory,
         open: open,
+        download: download,
         up: up,
         upload: upload,
         delAsk: delAsk,
