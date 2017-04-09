@@ -39,10 +39,6 @@ pre {
     cursor: pointer;
 }
 
-th {
-    vertical-align: middle !important;
-}
-
 .main {
     margin-bottom: 40px;
 }
@@ -65,7 +61,8 @@ footer:hover {
     opacity: 1;
 }
 
-th {
+td {
+    vertical-align: middle !important;
     overflow: hidden;
 }
 
@@ -76,4 +73,12 @@ th {
 
 tr:hover .entry-toolbar {
     opacity: 1;
+}
+
+table.sortable th:not(.sorttable_sorted):not(.sorttable_sorted_reverse):not(.sorttable_nosort):after {
+    content: " \25B4\25BE"
+}
+
+th {
+    cursor: pointer;
 }

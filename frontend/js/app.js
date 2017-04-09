@@ -85,6 +85,12 @@ function getPreviewUrl(entry, basePath) {
     return path + 'unknown.png';
 }
 
+// simple extension detection, does not work with double extension like .tar.gz
+function getExtension(entry) {
+    if (entry.isFile) return entry.filePath.slice(entry.filePath.lastIndexOf('.') + 1);
+    return '';
+}
+
 function refresh() {
     loadDirectory(app.path);
 }
@@ -103,6 +109,7 @@ function loadDirectory(filePath) {
         result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
         app.entries = result.body.entries.map(function (entry) {
             entry.previewUrl = getPreviewUrl(entry, filePath);
+            entry.extension = getExtension(entry);
             return entry;
         });
         app.path = filePath;

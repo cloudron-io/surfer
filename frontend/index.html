@@ -160,34 +160,34 @@
                 </center>
             </div>
             <div class="col-lg-12" v-show="!busy">
-                <table class="table table-hover table-condensed">
+                <table class="table table-hover table-condensed sortable">
                     <thead>
                         <tr>
                             <th>Type</th>
                             <th>Name</th>
-                            <th>Size</th>
-                            <th>Modified</th>
-                            <th>&nbsp;</th>
+                            <th class="sorttable_numeric">Size</th>
+                            <th class="sorttable_numeric">Modified</th>
+                            <th class="sorttable_nosort" style="text-align: right;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-show="entries.length === 0">
-                            <th colspan="5"><i>Empty folder</i></th>
+                            <td colspan="5"><i>Empty folder</i></td>
                         </tr>
                         <tr v-for="entry in entries" v-on:click="open(entry)" class="hand">
-                            <th>
+                            <td sorttable_customkey="{{ entry.extension }}">
                                 <img v-bind:src="entry.previewUrl" height="48px" width="48px"/>
-                            </th>
-                            <th>{{ entry.filePath }}</th>
-                            <th>{{ entry.size | prettyFileSize }}</th>
-                            <th><span v-my-tooltip="foobar" data-toggle="tooltip" title="{{ entry.mtime }}">{{ entry.mtime | prettyDate }}</span></th>
-                            <th style="text-align: right;">
+                            </td>
+                            <td>{{ entry.filePath }}</td>
+                            <td sorttable_customkey="{{ entry.size }}">{{ entry.size | prettyFileSize }}</td>
+                            <td><span v-my-tooltip="foobar" data-toggle="tooltip" title="{{ entry.mtime }}">{{ entry.mtime | prettyDate }}</span></td>
+                            <td style="text-align: right;">
                                 <span class="entry-toolbar">
                                     <button class="btn btn-sm btn-default" v-on:click.stop="download(entry)" title="Download" v-show="entry.isFile"><i class="fa fa-download"></i></button>
                                     <button class="btn btn-sm btn-default" v-on:click.stop="renameAsk(entry)" title="Rename"><i class="fa fa-pencil"></i></button>
                                     <button class="btn btn-sm btn-danger" v-on:click.stop="delAsk(entry)" title="Delete"><i class="fa fa-trash"></i></button>
                                 </span>
-                            </th>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -205,6 +205,7 @@
     <script src="/_admin/js/vue.min.js"></script>
     <script src="/_admin/js/filesize.min.js"></script>
     <script src="/_admin/js/superagent.js"></script>
+    <script src="/_admin/js/sorttable.js"></script>
     <script src="/_admin/js/app.js"></script>
 
 </body>
