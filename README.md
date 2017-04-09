@@ -19,7 +19,7 @@ cloudron install --appstore-id io.cloudron.surfer
 The app package can be built using the [Cloudron command line tooling](https://cloudron.io/references/cli.html).
 
 ```
-git clone https://github.com/nebulade/surfer.git
+git clone https://git.cloudron.io/cloudron/surfer.git
 cd surfer
 cloudron build
 cloudron install
@@ -28,7 +28,7 @@ cloudron install
 ### Standalone
 Surfer can also be run standlone on any server:
 ```
-git clone https://github.com/nebulade/surfer.git
+git clone https://git.cloudron.io/cloudron/surfer.git
 cd surfer
 npm install
 ./server.js <public folder>
@@ -64,4 +64,3 @@ cd surfer
 npm install
 USERNAME=<cloudron username> PASSWORD=<cloudron password> mocha --bail test/test.js
 ```
-

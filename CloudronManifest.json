@@ -13,7 +13,7 @@
   "healthCheckPath": "/api/healthcheck",
   "httpPort": 3000,
   "manifestVersion": 1,
-  "website": "https://github.com/nebulade/surfer",
+  "website": "https://git.cloudron.io/cloudron/surfer",
   "contactEmail": "support@cloudron.io",
   "icon": "logo.png",
   "addons": {

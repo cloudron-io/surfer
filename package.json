@@ -17,7 +17,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nebulade/surfer.git"
+    "url": "https://git.cloudron.io/cloudron/surfer.git"
   },
   "dependencies": {
     "async": "^1.5.2",
