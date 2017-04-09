@@ -52,3 +52,6 @@
 [4.1.0]
 * Add ability to download files from the UI
 
+[4.1.1]
+* Add directory listing sorting
+* Replace github links with our own gitlab
