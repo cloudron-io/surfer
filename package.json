@@ -41,7 +41,7 @@
     "passport-ldapjs": "^1.0.2",
     "readline-sync": "^1.4.6",
     "redis": "^2.6.5",
-    "request": "^2.69.0",
+    "request": "^2.81.0",
     "safetydance": "^0.1.1",
     "serve-index": "^1.8.0",
     "superagent": "^1.7.2",
