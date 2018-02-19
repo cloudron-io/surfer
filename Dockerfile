@@ -1,5 +1,4 @@
 FROM cloudron/base:0.10.0
-MAINTAINER Johannes Zellner <johannes@nebulon.de>
 
 ENV PATH /usr/local/node-6.9.5/bin:$PATH
 
