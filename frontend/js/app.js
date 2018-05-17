@@ -1,6 +1,23 @@
 (function () {
 'use strict';
 
+// poor man's async
+function asyncForEach(items, handler, callback) {
+    var cur = 0;
+
+    if (items.length === 0) return callback();
+
+    (function iterator() {
+        handler(items[cur], function (error) {
+            if (error) return callback(error);
+            if (cur >= items.length-1) return callback();
+            ++cur;
+
+            iterator();
+        });
+    })();
+}
+
 function getProfile(accessToken, callback) {
     callback = callback || function (error) { if (error) console.error(error); };
 
@@ -114,14 +131,12 @@ function up() {
 function uploadFiles(files) {
     if (!files || !files.length) return;
 
-    app.uploadStatus = {
-        busy: true,
-        count: files.length,
-        done: 0,
-        percentDone: 0
-    };
+    app.uploadStatus.busy = true;
+    app.uploadStatus.count = files.length;
+    app.uploadStatus.done = 0;
+    app.uploadStatus.percentDone = 0;
 
-    function uploadFile(file) {
+    asyncForEach(files, function (file, callback) {
         var path = encode(sanitize(app.path + '/' + file.name));
 
         var formData = new FormData();
@@ -129,28 +144,24 @@ function uploadFiles(files) {
 
         superagent.post('/api/files' + path).query({ access_token: localStorage.accessToken }).send(formData).end(function (error, result) {
             if (result && result.statusCode === 401) return logout();
-            if (result && result.statusCode !== 201) console.error('Error uploading file: ', result.statusCode);
-            if (error) console.error(error);
+            if (result && result.statusCode !== 201) return callback('Error uploading file: ', result.statusCode);
+            if (error) return callback(error);
 
             app.uploadStatus.done += 1;
             app.uploadStatus.percentDone = Math.round(app.uploadStatus.done / app.uploadStatus.count * 100);
 
-            if (app.uploadStatus.done >= app.uploadStatus.count) {
-                app.uploadStatus = {
-                    busy: false,
-                    count: 0,
-                    done: 0,
-                    percentDone: 100
-                };
-
-                refresh();
-            }
+            callback();
         });
-    }
+    }, function (error) {
+        if (error) console.error(error);
 
-    for(var i = 0; i < app.uploadStatus.count; ++i) {
-        uploadFile(files[i]);
-    }
+        app.uploadStatus.busy = false;
+        app.uploadStatus.count = 0;
+        app.uploadStatus.done = 0;
+        app.uploadStatus.percentDone = 100;
+
+        refresh();
+    });
 }
 
 function dragOver(event) {

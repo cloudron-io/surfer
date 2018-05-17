@@ -23,7 +23,7 @@ body {
 .el-footer {
     padding: 3px 20px;
     font-size: 14px;
-    text-align: center;
+    height: 38px !important;
 }
 
 a {
