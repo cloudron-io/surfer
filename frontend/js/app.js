@@ -211,7 +211,9 @@ var app = new Vue({
         },
         onOptionsMenu: function (command) {
             if (command === 'folderListing') {
-                console.log('Not implemented');
+                superagent.put('/api/settings').send({ folderListingEnabled: this.folderListingEnabled }).query({ access_token: localStorage.accessToken }).end(function (error) {
+                    if (error) console.error(error);
+                });
             } else if (command === 'about') {
                 this.$msgbox({
                     title: 'About Surfer',
@@ -337,6 +339,12 @@ getProfile(localStorage.accessToken, function (error) {
     if (error) return console.error(error);
 
     loadDirectory(window.location.hash.slice(1));
+
+    superagent.get('/api/settings').query({ access_token: localStorage.accessToken }).end(function (error, result) {
+        if (error) console.error(error);
+
+        app.folderListingEnabled = !!result.body.folderListingEnabled;
+    });
 });
 
 $(window).on('hashchange', function () {
