@@ -6,6 +6,7 @@ function getProfile(accessToken, callback) {
 
     superagent.get('/api/profile').query({ access_token: accessToken }).end(function (error, result) {
         app.busy = false;
+        app.ready = true;
 
         if (error && !error.response) return callback(error);
         if (result.statusCode !== 200) {
@@ -18,36 +19,6 @@ function getProfile(accessToken, callback) {
         app.session.valid = true;
 
         callback();
-    });
-}
-
-function login(username, password) {
-    username = username || app.loginData.username;
-    password = password || app.loginData.password;
-
-    app.busy = true;
-
-    superagent.post('/api/login').send({ username: username, password: password }).end(function (error, result) {
-        app.busy = false;
-
-        if (error) return console.error(error);
-        if (result.statusCode === 401) return console.error('Invalid credentials');
-
-        getProfile(result.body.accessToken, function (error) {
-            if (error) return console.error(error);
-
-            loadDirectory(window.location.hash.slice(1));
-        });
-    });
-}
-
-function logout() {
-    superagent.post('/api/logout').query({ access_token: localStorage.accessToken }).end(function (error) {
-        if (error) console.error(error);
-
-        app.session.valid = false;
-
-        delete localStorage.accessToken;
     });
 }
 
@@ -122,30 +93,18 @@ function loadDirectory(filePath) {
 
         // update in case this was triggered from code
         window.location.hash = app.path;
-
-        Vue.nextTick(function () {
-            $(function () {
-                $('[data-toggle="tooltip"]').tooltip();
-            });
-        });
     });
 }
 
-function open(entry) {
-    var path = sanitize(app.path + '/' + entry.filePath);
+function open(row, event, column) {
+    var path = sanitize(app.path + '/' + row.filePath);
 
-    if (entry.isDirectory) {
+    if (row.isDirectory) {
         window.location.hash = path;
         return;
     }
 
     window.open(encode(path));
-}
-
-function download(entry) {
-    if (entry.isDirectory) return;
-
-    window.location.href = encode('/api/files/' + sanitize(app.path + '/' + entry.filePath)) + '?access_token=' + localStorage.accessToken;
 }
 
 function up() {
@@ -194,105 +153,6 @@ function uploadFiles(files) {
     }
 }
 
-function upload() {
-    $(app.$els.upload).on('change', function () {
-
-        // detach event handler
-        $(app.$els.upload).off('change');
-
-        uploadFiles(app.$els.upload.files || []);
-    });
-
-    // reset the form first to make the change handler retrigger even on the same file selected
-    $('#fileUploadForm')[0].reset();
-
-    app.$els.upload.click();
-}
-
-function delAsk(entry) {
-    $('#modalDelete').modal('show');
-    app.deleteData = entry;
-}
-
-function del(entry) {
-    app.busy = true;
-
-    var path = encode(sanitize(app.path + '/' + entry.filePath));
-
-    superagent.del('/api/files' + path).query({ access_token: localStorage.accessToken, recursive: true }).end(function (error, result) {
-        app.busy = false;
-
-        if (result && result.statusCode === 401) return logout();
-        if (result && result.statusCode !== 200) return console.error('Error deleting file: ', result.statusCode);
-        if (error) return console.error(error);
-
-        refresh();
-
-        $('#modalDelete').modal('hide');
-    });
-}
-
-function renameAsk(entry) {
-    app.renameData.entry = entry;
-    app.renameData.error = null;
-    app.renameData.newFilePath = entry.filePath;
-
-    $('#modalRename').modal('show');
-}
-
-function rename(data) {
-    app.busy = true;
-
-    var path = encode(sanitize(app.path + '/' + data.entry.filePath));
-    var newFilePath = sanitize(app.path + '/' + data.newFilePath);
-
-    superagent.put('/api/files' + path).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end(function (error, result) {
-        app.busy = false;
-
-        if (result && result.statusCode === 401) return logout();
-        if (result && result.statusCode !== 200) return console.error('Error renaming file: ', result.statusCode);
-        if (error) return console.error(error);
-
-        refresh();
-
-        $('#modalRename').modal('hide');
-    });
-}
-
-function createDirectoryAsk() {
-    $('#modalcreateDirectory').modal('show');
-    app.createDirectoryData = '';
-    app.createDirectoryError = null;
-}
-
-function createDirectory(name) {
-    app.busy = true;
-    app.createDirectoryError = null;
-
-    var path = encode(sanitize(app.path + '/' + name));
-
-    superagent.post('/api/files' + path).query({ access_token: localStorage.accessToken, directory: true }).end(function (error, result) {
-        app.busy = false;
-
-        if (result && result.statusCode === 401) return logout();
-        if (result && result.statusCode === 403) {
-            app.createDirectoryError = 'Name not allowed';
-            return;
-        }
-        if (result && result.statusCode === 409) {
-            app.createDirectoryError = 'Directory already exists';
-            return;
-        }
-        if (result && result.statusCode !== 201) return console.error('Error creating directory: ', result.statusCode);
-        if (error) return console.error(error);
-
-        app.createDirectoryData = '';
-        refresh();
-
-        $('#modalcreateDirectory').modal('hide');
-    });
-}
-
 function dragOver(event) {
     event.preventDefault();
 }
@@ -302,18 +162,10 @@ function drop(event) {
     uploadFiles(event.dataTransfer.files || []);
 }
 
-Vue.filter('prettyDate', function (value) {
-    var d = new Date(value);
-    return d.toDateString();
-});
-
-Vue.filter('prettyFileSize', function (value) {
-    return filesize(value);
-});
-
 var app = new Vue({
     el: '#app',
     data: {
+        ready: false,
         busy: true,
         uploadStatus: {
             busy: false,
@@ -326,37 +178,151 @@ var app = new Vue({
         session: {
             valid: false
         },
-        loginData: {},
-        deleteData: {},
-        renameData: {
-            entry: {},
-            error: null,
-            newFilePath: ''
+        folderListingEnabled: false,
+        loginData: {
+            username: '',
+            password: ''
         },
-        createDirectoryData: '',
-        createDirectoryError: null,
         entries: []
     },
     methods: {
-        login: login,
-        logout: logout,
+        onLogin: function () {
+            app.busy = true;
+
+            superagent.post('/api/login').send({ username: app.loginData.username, password: app.loginData.password }).end(function (error, result) {
+                app.busy = false;
+
+                if (error) return console.error(error);
+                if (result.statusCode === 401) return console.error('Invalid credentials');
+
+                getProfile(result.body.accessToken, function (error) {
+                    if (error) return console.error(error);
+
+                    loadDirectory(window.location.hash.slice(1));
+                });
+            });
+        },
+        onOptionsMenu: function (command) {
+            if (command === 'folderListing') {
+                console.log('Not implemented');
+            } else if (command === 'about') {
+                this.$msgbox({
+                    title: 'About Surfer',
+                    message: 'Surfer is a static file server written by <a href="https://cloudron.io" target="_blank">Cloudron</a>.<br/><br/>The source code is licensed under MIT and available <a href="https://git.cloudron.io/cloudron/surfer" target="_blank">here</a>.',
+                    dangerouslyUseHTMLString: true,
+                    confirmButtonText: 'OK',
+                    showCancelButton: false,
+                    type: 'info',
+                    center: true
+                  }).then(function () {}).catch(function () {});
+            } else if (command === 'logout') {
+                superagent.post('/api/logout').query({ access_token: localStorage.accessToken }).end(function (error) {
+                    if (error) console.error(error);
+
+                    app.session.valid = false;
+
+                    delete localStorage.accessToken;
+                });
+            }
+        },
+        onDownload: function (entry) {
+            if (entry.isDirectory) return;
+            window.location.href = encode('/api/files/' + sanitize(app.path + '/' + entry.filePath)) + '?access_token=' + localStorage.accessToken;
+        },
+        onUpload: function () {
+            $(app.$refs.upload).on('change', function () {
+
+                // detach event handler
+                $(app.$refs.upload).off('change');
+
+                uploadFiles(app.$refs.upload.files || []);
+            });
+
+            // reset the form first to make the change handler retrigger even on the same file selected
+            app.$refs.upload.value = '';
+            app.$refs.upload.click();
+        },
+        onDelete: function (entry) {
+            var title = 'Really delete ' + (entry.isDirectory ? 'folder ' : '') + entry.filePath;
+            this.$confirm('', title, { confirmButtonText: 'Yes', cancelButtonText: 'No' }).then(function () {
+                var path = encode(sanitize(app.path + '/' + entry.filePath));
+
+                superagent.del('/api/files' + path).query({ access_token: localStorage.accessToken, recursive: true }).end(function (error, result) {
+                    if (result && result.statusCode === 401) return logout();
+                    if (result && result.statusCode !== 200) return console.error('Error deleting file: ', result.statusCode);
+                    if (error) return console.error(error);
+
+                    refresh();
+                });
+            }).catch(function () {
+                console.log('delete error:', arguments);
+            });
+        },
+        onRename: function (entry) {
+            var title = 'Rename ' + entry.filePath;
+            this.$prompt('', title, { confirmButtonText: 'Yes', cancelButtonText: 'No', inputPlaceholder: 'new filename', inputValue: entry.filePath }).then(function (data) {
+                var path = encode(sanitize(app.path + '/' + entry.filePath));
+                var newFilePath = sanitize(app.path + '/' + data.value);
+
+                superagent.put('/api/files' + path).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end(function (error, result) {
+                    if (result && result.statusCode === 401) return logout();
+                    if (result && result.statusCode !== 200) return console.error('Error renaming file: ', result.statusCode);
+                    if (error) return console.error(error);
+
+                    refresh();
+                });
+            }).catch(function () {
+                console.log('rename error:', arguments);
+            });
+        },
+        onNewFolder: function () {
+            var title = 'Create New Folder';
+            this.$prompt('', title, { confirmButtonText: 'Yes', cancelButtonText: 'No', inputPlaceholder: 'new foldername' }).then(function (data) {
+                var path = encode(sanitize(app.path + '/' + data.value));
+
+                superagent.post('/api/files' + path).query({ access_token: localStorage.accessToken, directory: true }).end(function (error, result) {
+                    if (result && result.statusCode === 401) return logout();
+                    if (result && result.statusCode === 403) return console.error('Name not allowed');
+                    if (result && result.statusCode === 409) return console.error('Directory already exists');
+                    if (result && result.statusCode !== 201) return console.error('Error creating directory: ', result.statusCode);
+                    if (error) return console.error(error);
+
+                    refresh();
+                });
+            }).catch(function () {
+                console.log('create folder error:', arguments);
+            });
+        },
+        prettyDate: function (row, column, cellValue, index) {
+            var date = new Date(cellValue),
+            diff = (((new Date()).getTime() - date.getTime()) / 1000),
+            day_diff = Math.floor(diff / 86400);
+
+            if (isNaN(day_diff) || day_diff < 0)
+                return;
+
+            return day_diff === 0 && (
+                diff < 60 && 'just now' ||
+                diff < 120 && '1 minute ago' ||
+                diff < 3600 && Math.floor( diff / 60 ) + ' minutes ago' ||
+                diff < 7200 && '1 hour ago' ||
+                diff < 86400 && Math.floor( diff / 3600 ) + ' hours ago') ||
+                day_diff === 1 && 'Yesterday' ||
+                day_diff < 7 && day_diff + ' days ago' ||
+                day_diff < 31 && Math.ceil( day_diff / 7 ) + ' weeks ago' ||
+                day_diff < 365 && Math.round( day_diff / 30 ) +  ' months ago' ||
+                Math.round( day_diff / 365 ) + ' years ago';
+        },
+        prettyFileSize: function (row, column, cellValue, index) {
+            return filesize(cellValue);
+        },
         loadDirectory: loadDirectory,
-        open: open,
-        download: download,
         up: up,
-        upload: upload,
-        delAsk: delAsk,
-        del: del,
-        renameAsk: renameAsk,
-        rename: rename,
-        createDirectoryAsk: createDirectoryAsk,
-        createDirectory: createDirectory,
+        open: open,
         drop: drop,
         dragOver: dragOver
     }
 });
-
-window.app = app;
 
 getProfile(localStorage.accessToken, function (error) {
     if (error) return console.error(error);
@@ -366,13 +332,6 @@ getProfile(localStorage.accessToken, function (error) {
 
 $(window).on('hashchange', function () {
     loadDirectory(window.location.hash.slice(1));
-});
-
-// setup all the dialog focus handling
-['modalcreateDirectory'].forEach(function (id) {
-    $('#' + id).on('shown.bs.modal', function () {
-        $(this).find("[autofocus]:first").focus();
-    });
 });
 
 })();

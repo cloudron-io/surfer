@@ -1,15 +1,74 @@
 
-html, body {
-    min-height: 100%;
-    width: 100%;
-    height: 100%;
-    padding: 0;
+body {
     margin: 0;
+    font-family: Helvetica Neue,Helvetica,PingFang SC,Hiragino Sans GB,Microsoft YaHei,SimSun,sans-serif;
+    font-weight: 400;
+    color: rgb(96, 98, 102);
 }
 
-body {
-    padding-bottom: 70px;
+body > .el-container {
+    height: 100%;
 }
+
+.el-main {
+    padding: 10px;
+}
+
+.el-header {
+    padding: 10px 20px;
+    box-shadow: 0 1px 7px rgba(0,0,0,0.3);
+    height: 52px !important;
+}
+
+.el-footer {
+    padding: 3px 20px;
+    font-size: 14px;
+    text-align: center;
+}
+
+a {
+    color: #66b1ff;
+    text-decoration: none;
+}
+
+a:hover, a:focus {
+    color: #409EFF;
+    text-decoration: none;
+}
+
+.el-table a {
+    color: rgb(96, 98, 102);
+}
+
+.el-table a:hover {
+    color: #66b1ff;
+}
+
+.el-table td {
+    padding: 5px 0;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.el-table th {
+    font-size: 12px;
+}
+
+.el-table__row .list-actions .el-button {
+    visibility: hidden;
+}
+
+.el-table__row:hover .list-actions .el-button {
+    visibility: visible;
+}
+
+.el-breadcrumb {
+    border: 1px solid #ebeef5;
+    border-radius: 5px;
+    padding: 7px;
+}
+
+/* old */
 
 .wrapper {
     display: table;
@@ -41,24 +100,6 @@ pre {
 
 .main {
     margin-bottom: 40px;
-}
-
-footer {
-    position: fixed;
-    background-color: #efefef;
-    bottom: 0;
-    width: 100%;
-    color: #555;
-    font-size: 14px;
-    padding: 5px;
-    z-index: 13;
-    opacity: .5;
-    -webkit-transition: all .25s;
-    transition: all .25s;
-}
-
-footer:hover {
-    opacity: 1;
 }
 
 td {

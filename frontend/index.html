@@ -2,104 +2,73 @@
 <head>
     <title> Cloudron Surfer </title>
 
-    <link rel="stylesheet" href="/_admin/css/font-awesome.min.css">
-    <link rel="stylesheet" href="/_admin/css/bootstrap.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+    <link rel="icon" type="image/png" href="/_admin/img/logo.png">
+
+    <link rel="stylesheet" href="/_admin/css/theme-chalk.css">
     <link rel="stylesheet" href="/_admin/css/style.css">
 
-    <link href="/_admin/img/logo.png" rel="icon" type="image/png">
+    <script src="/_admin/js/jquery-1.12.1.min.js"></script>
+    <script src="/_admin/js/vue.js"></script>
+    <script src="/_admin/js/element-ui.js"></script>
+    <script src="/_admin/js/filesize.min.js"></script>
+    <script src="/_admin/js/superagent.js"></script>
+    <script src="/_admin/js/sorttable.js"></script>
 
 </head>
-<body id="app" @drop="drop" @dragover="dragOver">
+<body>
 
-    <nav class="navbar navbar-default" v-cloak>
-        <div class="container-fluid">
-            <!-- Brand and toggle get grouped for better mobile display -->
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" href="#">Surfer</a>
-            </div>
+<el-container id="app" @drop="drop" @dragover="dragOver">
+  <input type="file" ref="upload" style="display: none" id="uploadInput" multiple/>
 
-            <!-- Collect the nav links, forms, and other content for toggling -->
-            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                <ul class="nav navbar-nav navbar-right">
-                    <li v-show="session.valid"><a href="#" v-on:click="logout()" id="logoutButton">Logout</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+  <el-dialog title="Login" :visible.sync="ready && !session.valid" width="30%" :close-on-press-escape="false" :show-close="false">
+    <el-form :model="loginData" label-position="top" @submit.native.prevent>
+      <el-form-item label="Username"><el-input v-model="loginData.username" required autofocus></el-input></el-form-item>
+      <el-form-item label="Password"><el-input v-model="loginData.password" type="password" required></el-input></el-form-item>
+      <input type="submit" @click="onLogin" v-show="false"/>
+    </el-form>
+    <span slot="footer" class="dialog-footer">
+      <el-button type="primary" @click="onLogin"><i class="el-icon-loading" v-show="busy"></i><span v-show="!busy">Login</span></el-button>
+    </span>
+  </el-dialog>
 
-    <div class="modal fade" tabindex="-1" role="dialog" id="modalDelete" v-cloak>
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                </div>
-                <div class="modal-body">
-                    <h5 v-show="deleteData.isFile">Really delete <span style="font-weight: bold;">{{ deleteData.filePath }}</span>?</h5>
-                    <h5 v-show="deleteData.isDirectory">Really delete folder <span style="font-weight: bold;">{{ deleteData.filePath }}</span> and all its content?</h5>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
-                    <button type="button" class="btn btn-danger" v-on:click="del(deleteData)">Yes</button>
-                </div>
-            </div>
-        </div>
-    </div>
+  <el-header>
+    <el-row type="flex" justify="space-between">
+      <div style="padding: 7px;">
+        <span>Surfer</span>
+      </div>
+      <div style="flex-grow: 2; padding: 0 7px;" v-show="session.valid">
+        <el-breadcrumb separator-class="el-icon-arrow-right">
+          <el-breadcrumb-item><a href="#/">Path /</a></el-breadcrumb-item>
+          <el-breadcrumb-item v-for="part in pathParts.slice(0, -1)"><a :href="part.link">{{ part.name }}</a></el-breadcrumb-item>
+          <el-breadcrumb-item v-show="pathParts.slice(-1).length">{{ pathParts.slice(-1).length ? pathParts.slice(-1)[0].name : '' }}</el-breadcrumb-item>
+        </el-breadcrumb>
+      </div>
+      <div align="right" v-show="session.valid">
+        <el-button-group>
+          <el-button type="primary" icon="el-icon-upload" size="small" @click="onUpload">Upload</el-button>
+          <el-button type="primary" icon="el-icon-plus" size="small" @click="onNewFolder">New Folder</el-button>
 
-    <div class="modal fade" tabindex="-1" role="dialog" id="modalRename" v-cloak>
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title">Rename {{ renameData.entry.filePath }}</h4>
-                </div>
-                <div class="modal-body">
-                    <form v-on:submit.prevent="rename(renameData)">
-                        <div class="form-group" v-bind:class="{ 'has-error': renameData.error }">
-                            <input type="text" class="form-control" v-model="renameData.newFilePath" placeholder="Name" autofocus="true">
-                            <label class="control-label">{{ renameData.error }}</label>
-                        </div>
-                        <button type="submit" style="display: none;"></button>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
-                    <button type="button" class="btn btn-success" v-on:click="rename(renameData)">Yes</button>
-                </div>
-            </div>
-        </div>
-    </div>
+        </el-button-group>
+        <el-dropdown @command="onOptionsMenu">
+          <el-button size="small" icon="el-icon-more"></el-button>
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item disabled>Public Folder Listing</el-dropdown-item>
+            <el-dropdown-item command="folderListing">
+              <el-switch v-model="folderListingEnabled" active-text="Enabled" inactive-text="Disabled">
+            </el-switch>
+            </el-dropdown-item>
+            <el-dropdown-item command="about" divided><i class="el-icon-info"></i> About</el-dropdown-item>
+            <el-dropdown-item command="logout"><i class="el-icon-circle-close"></i> Logout</el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
+      </div>
+    </el-row>
+  </el-header>
+  <el-main>
 
-    <div class="modal fade" tabindex="-1" role="dialog" id="modalcreateDirectory" v-cloak>
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title">New directory name</h4>
-                </div>
-                <div class="modal-body">
-                    <form v-on:submit.prevent="createDirectory(createDirectoryData)">
-                        <div class="form-group" v-bind:class="{ 'has-error': createDirectoryError }">
-                            <input type="text" class="form-control" v-model="createDirectoryData" id="inputDirectoryName" placeholder="Name" autofocus="true">
-                            <label class="control-label" for="inputDirectoryName">{{ createDirectoryError }}</label>
-                        </div>
-                        <button type="submit" style="display: none;"></button>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" v-on:click="createDirectory(createDirectoryData)">Create</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="container" v-show="uploadStatus.busy" v-cloak>
+    <!-- <div class="container" v-show="uploadStatus.busy" v-cloak>
         <div class="row">
             <div class="col-lg-12">
                 <p>Uploading... ({{ uploadStatus.done }} / {{ uploadStatus.count }}) </p>
@@ -112,101 +81,37 @@
                 </center>
             </div>
         </div>
+    </div> -->
+
+    <div v-show="busy">
+      <center><h1><i class="el-icon-loading"></i></h1></center>
     </div>
 
-    <div class="container" v-show="!session.valid && !busy" v-cloak>
-        <div class="row">
-            <div class="col-lg-6 col-lg-offset-3">
-                <form id="loginForm" v-on:submit.prevent="login()">
-                    <div class="form-group">
-                        <label for="inputUsername">Username</label>
-                        <input type="text" class="form-control" id="inputUsername" v-model="loginData.username" placeholder="Username">
-                    </div>
-                    <div class="form-group">
-                        <label for="inputPassword">Password</label>
-                        <input type="password" class="form-control" id="inputPassword" v-model="loginData.password" placeholder="Password">
-                    </div>
-                    <button type="submit" class="btn btn-default">Submit</button>
-                </form>
-            </div>
-        </div>
+    <div v-show="!busy && session.valid" v-cloak>
+      <el-table :data="entries" style="width: 100%" height="100%" empty-text="Folder is emtpy" :default-sort="{ prop: 'filePath', order: 'descending' }" @row-click="open">
+        <el-table-column prop="previewUrl" label="Type" width="100px" sortable>
+          <template slot-scope="scope">
+            <img v-bind:src="scope.row.previewUrl" height="48px" width="48px"/>
+          </template>
+        </el-table-column>
+        <el-table-column prop="filePath" label="Name" sortable></el-table-column>
+        <el-table-column prop="size" label="Size" width="150px" sortable :formatter="prettyFileSize"></el-table-column>
+        <el-table-column prop="mtime" label="Modified" width="150px" sortable :formatter="prettyDate"></el-table-column>
+        <el-table-column label="Actions" align="right" width="200px" class-name="list-actions">
+          <template slot-scope="scope">
+            <el-button size="small" icon="el-icon-download" circle v-show="scope.row.isFile" @click.stop="onDownload(scope.row)"></el-button>
+            <el-button size="small" icon="el-icon-edit" circle @click.stop="onRename(scope.row)"></el-button>
+            <el-button size="small" icon="el-icon-delete" circle @click.stop="onDelete(scope.row)"></el-button>
+          </template>
+        </el-table-column>
+      </el-table>
     </div>
 
-    <div class="container main" v-show="session.valid" v-cloak>
-        <div class="row">
-            <div class="col-lg-12">
-                <center v-show="!uploadStatus.busy">
-                    <form id="fileUploadForm">
-                        <input type="file" v-el:upload style="display: none" id="uploadInput" multiple/>
-                        <button class="btn btn-primary" v-on:click.stop.prevent="upload()" id="uploadButton">Upload</button>
-                    </form>
-                </center>
-            </div>
-            <div class="col-lg-12">
-                <ol class="breadcrumb">
-                    <li><a href="#/"><i class="fa fa-home"></i></a></li>
-                    <li v-for="part in pathParts.slice(0, -1)">
-                        <a href="{{ part.link }}">{{ part.name }}</a>
-                    </li>
-                    <li>{{ pathParts.slice(-1)[0].name }}</li>
-                    <button class="btn btn-default btn-sm pull-right" v-on:click="createDirectoryAsk()">Create Folder</button>
-                </ol>
-            </div>
-            <div class="col-lg-12" v-show="busy">
-                <br/>
-                <br/>
-                <center>
-                    <i class="fa fa-refresh fa-4x fa-spin"></i>
-                </center>
-            </div>
-            <div class="col-lg-12" v-show="!busy">
-                <table class="table table-hover table-condensed sortable">
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Name</th>
-                            <th class="sorttable_numeric">Size</th>
-                            <th class="sorttable_numeric">Modified</th>
-                            <th class="sorttable_nosort" style="text-align: right;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-show="entries.length === 0">
-                            <td colspan="5"><i>Empty folder</i></td>
-                        </tr>
-                        <tr v-for="entry in entries" v-on:click="open(entry)" class="hand">
-                            <td sorttable_customkey="{{ entry.extension }}">
-                                <img v-bind:src="entry.previewUrl" height="48px" width="48px"/>
-                            </td>
-                            <td>{{ entry.filePath }}</td>
-                            <td sorttable_customkey="{{ entry.size }}">{{ entry.size | prettyFileSize }}</td>
-                            <td><span v-my-tooltip="foobar" data-toggle="tooltip" title="{{ entry.mtime }}">{{ entry.mtime | prettyDate }}</span></td>
-                            <td style="text-align: right;">
-                                <span class="entry-toolbar">
-                                    <button class="btn btn-sm btn-default" v-on:click.stop="download(entry)" title="Download" v-show="entry.isFile"><i class="fa fa-download"></i></button>
-                                    <button class="btn btn-sm btn-default" v-on:click.stop="renameAsk(entry)" title="Rename"><i class="fa fa-pencil"></i></button>
-                                    <button class="btn btn-sm btn-danger" v-on:click.stop="delAsk(entry)" title="Delete"><i class="fa fa-trash"></i></button>
-                                </span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+  </el-main>
+  <el-footer style="height: 24px">Built by the <a href="https://cloudron.io" target="_blank">Cloudron.io</a> team. <a href="https://git.cloudron.io/cloudron/surfer" target="_blank">Get the code</a></el-footer>
+</el-container>
 
-    <!-- Footer -->
-    <footer class="text-center">
-        <span class="text-muted">Created by the <a href="https://cloudron.io" target="_blank">Cloudron</a> team. <a href="https://git.cloudron.io/cloudron/surfer" target="_blank">Get the code</a></span>
-    </footer>
-
-    <script src="/_admin/js/jquery-1.12.1.min.js"></script>
-    <script src="/_admin/js/bootstrap.min.js"></script>
-    <script src="/_admin/js/vue.min.js"></script>
-    <script src="/_admin/js/filesize.min.js"></script>
-    <script src="/_admin/js/superagent.js"></script>
-    <script src="/_admin/js/sorttable.js"></script>
-    <script src="/_admin/js/app.js"></script>
+<script src="/_admin/js/app.js"></script>
 
 </body>
 </html>
