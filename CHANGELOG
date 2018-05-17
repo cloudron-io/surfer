@@ -55,3 +55,7 @@
 [4.1.1]
 * Add directory listing sorting
 * Replace github links with our own gitlab
+
+[5.0.0]
+* Allow directory listing to be configurable
+* Refactor the UI
