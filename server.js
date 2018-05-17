@@ -35,10 +35,8 @@ router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); 
 // welcome screen in case / does not serve up any file yet
 function welcomePage(req, res, next) {
     if (req.path !== '/') return next();
-
     res.status(200).sendFile(path.join(__dirname, '/frontend/welcome.html'));
 }
-// router.get('/', function (req, res) { res.status(200).sendFile(path.join(__dirname, '/frontend/welcome.html')); });
 
 var rootFolder = path.resolve(__dirname, process.argv[2] || 'files');
 
