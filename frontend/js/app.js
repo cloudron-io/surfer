@@ -35,7 +35,13 @@ function getProfile(accessToken, callback) {
         app.session.username = result.body.username;
         app.session.valid = true;
 
-        callback();
+        superagent.get('/api/settings').query({ access_token: localStorage.accessToken }).end(function (error, result) {
+            if (error) console.error(error);
+
+            app.folderListingEnabled = !!result.body.folderListingEnabled;
+
+            callback();
+        });
     });
 }
 
@@ -339,12 +345,6 @@ getProfile(localStorage.accessToken, function (error) {
     if (error) return console.error(error);
 
     loadDirectory(window.location.hash.slice(1));
-
-    superagent.get('/api/settings').query({ access_token: localStorage.accessToken }).end(function (error, result) {
-        if (error) console.error(error);
-
-        app.folderListingEnabled = !!result.body.folderListingEnabled;
-    });
 });
 
 $(window).on('hashchange', function () {

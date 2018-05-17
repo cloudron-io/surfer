@@ -23,7 +23,7 @@ var express = require('express'),
 
 
 var rootFolder = path.resolve(__dirname, process.argv[2] || 'files');
-var configFile = path.resolve(__dirname, process.argv[3] || './config.json');
+var configFile = path.resolve(__dirname, process.argv[3] || '.config.json');
 
 // Ensure the root folder exists
 mkdirp.sync(rootFolder);
