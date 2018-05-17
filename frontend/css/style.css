@@ -6,7 +6,7 @@ body {
     color: rgb(96, 98, 102);
 }
 
-body > .el-container {
+.el-container {
     height: 100%;
 }
 

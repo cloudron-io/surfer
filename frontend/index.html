@@ -19,7 +19,9 @@
 </head>
 <body>
 
-<el-container id="app" @drop="drop" @dragover="dragOver">
+<div id="app" @drop="drop" @dragover="dragOver">
+
+<el-container>
   <input type="file" ref="upload" style="display: none" id="uploadInput" multiple/>
 
   <el-dialog title="Login" :visible.sync="ready && !session.valid" width="30%" :close-on-press-escape="false" :show-close="false">
@@ -110,6 +112,8 @@
   </el-main>
   <el-footer style="height: 24px">Built by the <a href="https://cloudron.io" target="_blank">Cloudron.io</a> team. <a href="https://git.cloudron.io/cloudron/surfer" target="_blank">Get the code</a></el-footer>
 </el-container>
+
+</div>
 
 <script src="/_admin/js/app.js"></script>
 
