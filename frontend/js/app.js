@@ -124,10 +124,6 @@ function open(row, event, column) {
     window.open(encode(path));
 }
 
-function up() {
-    window.location.hash = sanitize(app.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
-}
-
 function uploadFiles(files) {
     if (!files || !files.length) return;
 
@@ -328,7 +324,9 @@ var app = new Vue({
             return filesize(cellValue);
         },
         loadDirectory: loadDirectory,
-        up: up,
+        onUp: function () {
+            window.location.hash = sanitize(app.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
+        },
         open: open,
         drop: drop,
         dragOver: dragOver
