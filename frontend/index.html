@@ -41,7 +41,7 @@
         <span>Surfer</span>
       </div>
       <div>
-        <el-button type="primary" size="small" icon="el-icon-arrow-left" v-show="pathParts.slice(-1).length" @click="onUp"></el-button>
+        <el-button type="primary" size="small" icon="el-icon-arrow-left" :disabled="!pathParts.slice(-1).length" @click="onUp"></el-button>
       </div>
       <div style="flex-grow: 2; padding: 0 7px;" v-show="session.valid">
         <el-breadcrumb separator-class="el-icon-arrow-right">
