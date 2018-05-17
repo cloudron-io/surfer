@@ -23,9 +23,9 @@
     "localstorage": {}
   },
   "mediaLinks": [
-    "https://s3.amazonaws.com/cloudron-app-screenshots/io.cloudron.surfer/8c87c0db33704755c3ff9a48fd0089d6ae72928d/img01.png",
-    "https://s3.amazonaws.com/cloudron-app-screenshots/io.cloudron.surfer/8c87c0db33704755c3ff9a48fd0089d6ae72928d/img02.png",
-    "https://s3.amazonaws.com/cloudron-app-screenshots/io.cloudron.surfer/8c87c0db33704755c3ff9a48fd0089d6ae72928d/img03.png"
+    "https://s3.amazonaws.com/cloudron-app-screenshots/io.cloudron.surfer/645cb5c8b40d99355d83555d0c3a40afb1b4d754/img01.png",
+    "https://s3.amazonaws.com/cloudron-app-screenshots/io.cloudron.surfer/645cb5c8b40d99355d83555d0c3a40afb1b4d754/img02.png",
+    "https://s3.amazonaws.com/cloudron-app-screenshots/io.cloudron.surfer/645cb5c8b40d99355d83555d0c3a40afb1b4d754/img03.png"
   ],
   "changelog": "file://CHANGELOG",
   "postInstallMessage": "file://POSTINSTALL.md"
