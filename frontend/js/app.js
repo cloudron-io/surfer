@@ -275,9 +275,7 @@ var app = new Vue({
 
                     refresh();
                 });
-            }).catch(function () {
-                console.log('delete error:', arguments);
-            });
+            }).catch(function () {});
         },
         onRename: function (entry) {
             var that = this;
@@ -294,9 +292,7 @@ var app = new Vue({
 
                     refresh();
                 });
-            }).catch(function (error) {
-                that.$message.error(error.message);
-            });
+            }).catch(function () {});
         },
         onNewFolder: function () {
             var that = this;
@@ -314,9 +310,7 @@ var app = new Vue({
 
                     refresh();
                 });
-            }).catch(function (error) {
-                that.$message.error(error.message);
-            });
+            }).catch(function () {});
         },
         prettyDate: function (row, column, cellValue, index) {
             var date = new Date(cellValue),
