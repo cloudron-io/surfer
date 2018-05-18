@@ -21,7 +21,7 @@
 <div id="app" @drop="drop" @dragover="dragOver">
 
 <el-container>
-  <input type="file" ref="upload" style="display: none" id="uploadInput" multiple/>
+  <input type="file" ref="upload" style="display: none" id="uploadInput" multiple  webkitdirectory="" directory=""/>
 
   <el-dialog title="Login" :visible.sync="ready && !session.valid" width="30%" :close-on-press-escape="false" :show-close="false">
     <el-form :model="loginData" label-position="top" @submit.native.prevent>

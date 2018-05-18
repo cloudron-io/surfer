@@ -136,7 +136,7 @@ function uploadFiles(files) {
     app.uploadStatus.percentDone = 0;
 
     asyncForEach(files, function (file, callback) {
-        var path = encode(sanitize(app.path + '/' + file.name));
+        var path = encode(sanitize(app.path + '/' + (file.webkitRelativePath || file.name)));
 
         var formData = new FormData();
         formData.append('file', file);
