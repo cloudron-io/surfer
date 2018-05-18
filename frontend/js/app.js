@@ -256,16 +256,27 @@ var app = new Vue({
             var that = this;
 
             $(this.$refs.upload).on('change', function () {
-
                 // detach event handler
                 $(that.$refs.upload).off('change');
-
                 uploadFiles(that.$refs.upload.files || []);
             });
 
             // reset the form first to make the change handler retrigger even on the same file selected
             this.$refs.upload.value = '';
             this.$refs.upload.click();
+        },
+        onUploadFolder: function () {
+            var that = this;
+
+            $(this.$refs.uploadFolder).on('change', function () {
+                // detach event handler
+                $(that.$refs.uploadFolder).off('change');
+                uploadFiles(that.$refs.uploadFolder.files || []);
+            });
+
+            // reset the form first to make the change handler retrigger even on the same file selected
+            this.$refs.uploadFolder.value = '';
+            this.$refs.uploadFolder.click();
         },
         onDelete: function (entry) {
             var that = this;

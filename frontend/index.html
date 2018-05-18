@@ -21,7 +21,8 @@
 <div id="app" @drop="drop" @dragover="dragOver">
 
 <el-container>
-  <input type="file" ref="upload" style="display: none" id="uploadInput" multiple  webkitdirectory="" directory=""/>
+  <input type="file" ref="upload" style="display: none" multiple/>
+  <input type="file" ref="uploadFolder" style="display: none" multiple webkitdirectory directory/>
 
   <el-dialog title="Login" :visible.sync="ready && !session.valid" width="30%" :close-on-press-escape="false" :show-close="false">
     <el-form :model="loginData" label-position="top" @submit.native.prevent>
@@ -51,7 +52,8 @@
       </div>
       <div align="right" v-show="session.valid">
         <el-button-group>
-          <el-button type="primary" icon="el-icon-upload" size="small" @click="onUpload">Upload</el-button>
+          <el-button type="primary" icon="el-icon-upload2" size="small" @click="onUpload">Upload File</el-button>
+          <el-button type="primary" icon="el-icon-upload" size="small" @click="onUploadFolder">Upload Folder</el-button>
           <el-button type="primary" icon="el-icon-plus" size="small" @click="onNewFolder">New Folder</el-button>
         </el-button-group>
         <el-dropdown @command="onOptionsMenu">
