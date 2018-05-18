@@ -59,3 +59,8 @@
 [5.0.0]
 * Allow directory listing to be configurable
 * Refactor the UI
+
+[5.1.0]
+* Add directory upload support
+* Improve drag'n'drop of files
+
