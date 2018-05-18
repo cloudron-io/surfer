@@ -19,10 +19,7 @@ function asyncForEach(items, handler, callback) {
 }
 
 function getProfile(accessToken, callback) {
-    callback = callback || function (error) { if (error) console.error(error); };
-
     superagent.get('/api/profile').query({ access_token: accessToken }).end(function (error, result) {
-        app.busy = false;
         app.ready = true;
 
         if (error && !error.response) return callback(error);
@@ -179,7 +176,7 @@ var app = new Vue({
     el: '#app',
     data: {
         ready: false,
-        busy: true,
+        busy: false,
         uploadStatus: {
             busy: false,
             count: 0,
@@ -194,19 +191,22 @@ var app = new Vue({
         folderListingEnabled: false,
         loginData: {
             username: '',
-            password: ''
+            password: '',
+            busy: false
         },
         entries: []
     },
     methods: {
         onLogin: function () {
-            app.busy = true;
+            var that = this;
 
-            superagent.post('/api/login').send({ username: app.loginData.username, password: app.loginData.password }).end(function (error, result) {
-                app.busy = false;
+            that.loginData.busy = true;
 
-                if (error) return console.error(error);
-                if (result.statusCode === 401) return console.error('Invalid credentials');
+            superagent.post('/api/login').send({ username: that.loginData.username, password: that.loginData.password }).end(function (error, result) {
+                that.loginData.busy = false;
+
+                if (error && !result) return that.$message.error(error.message);
+                if (result.statusCode === 401) return that.$message.error('Wrong username or password');
 
                 getProfile(result.body.accessToken, function (error) {
                     if (error) return console.error(error);
@@ -216,6 +216,8 @@ var app = new Vue({
             });
         },
         onOptionsMenu: function (command) {
+            var that = this;
+
             if (command === 'folderListing') {
                 superagent.put('/api/settings').send({ folderListingEnabled: this.folderListingEnabled }).query({ access_token: localStorage.accessToken }).end(function (error) {
                     if (error) console.error(error);
@@ -234,7 +236,7 @@ var app = new Vue({
                 superagent.post('/api/logout').query({ access_token: localStorage.accessToken }).end(function (error) {
                     if (error) console.error(error);
 
-                    app.session.valid = false;
+                    that.session.valid = false;
 
                     delete localStorage.accessToken;
                 });
@@ -242,30 +244,34 @@ var app = new Vue({
         },
         onDownload: function (entry) {
             if (entry.isDirectory) return;
-            window.location.href = encode('/api/files/' + sanitize(app.path + '/' + entry.filePath)) + '?access_token=' + localStorage.accessToken;
+            window.location.href = encode('/api/files/' + sanitize(this.path + '/' + entry.filePath)) + '?access_token=' + localStorage.accessToken;
         },
         onUpload: function () {
-            $(app.$refs.upload).on('change', function () {
+            var that = this;
+
+            $(this.$refs.upload).on('change', function () {
 
                 // detach event handler
-                $(app.$refs.upload).off('change');
+                $(that.$refs.upload).off('change');
 
-                uploadFiles(app.$refs.upload.files || []);
+                uploadFiles(that.$refs.upload.files || []);
             });
 
             // reset the form first to make the change handler retrigger even on the same file selected
-            app.$refs.upload.value = '';
-            app.$refs.upload.click();
+            this.$refs.upload.value = '';
+            this.$refs.upload.click();
         },
         onDelete: function (entry) {
+            var that = this;
+
             var title = 'Really delete ' + (entry.isDirectory ? 'folder ' : '') + entry.filePath;
             this.$confirm('', title, { confirmButtonText: 'Yes', cancelButtonText: 'No' }).then(function () {
-                var path = encode(sanitize(app.path + '/' + entry.filePath));
+                var path = encode(sanitize(that.path + '/' + entry.filePath));
 
                 superagent.del('/api/files' + path).query({ access_token: localStorage.accessToken, recursive: true }).end(function (error, result) {
                     if (result && result.statusCode === 401) return logout();
-                    if (result && result.statusCode !== 200) return console.error('Error deleting file: ', result.statusCode);
-                    if (error) return console.error(error);
+                    if (result && result.statusCode !== 200) return that.$message.error('Error deleting file: ' + result.statusCode);
+                    if (error) return that.$message.error(error.message);
 
                     refresh();
                 });
@@ -274,38 +280,42 @@ var app = new Vue({
             });
         },
         onRename: function (entry) {
+            var that = this;
+
             var title = 'Rename ' + entry.filePath;
             this.$prompt('', title, { confirmButtonText: 'Yes', cancelButtonText: 'No', inputPlaceholder: 'new filename', inputValue: entry.filePath }).then(function (data) {
-                var path = encode(sanitize(app.path + '/' + entry.filePath));
-                var newFilePath = sanitize(app.path + '/' + data.value);
+                var path = encode(sanitize(that.path + '/' + entry.filePath));
+                var newFilePath = sanitize(that.path + '/' + data.value);
 
                 superagent.put('/api/files' + path).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end(function (error, result) {
                     if (result && result.statusCode === 401) return logout();
-                    if (result && result.statusCode !== 200) return console.error('Error renaming file: ', result.statusCode);
-                    if (error) return console.error(error);
+                    if (result && result.statusCode !== 200) return that.$message.error('Error renaming file: ' + result.statusCode);
+                    if (error) return that.$message.error(error.message);
 
                     refresh();
                 });
-            }).catch(function () {
-                console.log('rename error:', arguments);
+            }).catch(function (error) {
+                that.$message.error(error.message);
             });
         },
         onNewFolder: function () {
+            var that = this;
+
             var title = 'Create New Folder';
             this.$prompt('', title, { confirmButtonText: 'Yes', cancelButtonText: 'No', inputPlaceholder: 'new foldername' }).then(function (data) {
-                var path = encode(sanitize(app.path + '/' + data.value));
+                var path = encode(sanitize(that.path + '/' + data.value));
 
                 superagent.post('/api/files' + path).query({ access_token: localStorage.accessToken, directory: true }).end(function (error, result) {
                     if (result && result.statusCode === 401) return logout();
-                    if (result && result.statusCode === 403) return console.error('Name not allowed');
-                    if (result && result.statusCode === 409) return console.error('Directory already exists');
-                    if (result && result.statusCode !== 201) return console.error('Error creating directory: ', result.statusCode);
-                    if (error) return console.error(error);
+                    if (result && result.statusCode === 403) return that.$message.error('Folder name not allowed');
+                    if (result && result.statusCode === 409) return that.$message.error('Folder already exists');
+                    if (result && result.statusCode !== 201) return that.$message.error('Error creating folder: ' + result.statusCode);
+                    if (error) return that.$message.error(error.message);
 
                     refresh();
                 });
-            }).catch(function () {
-                console.log('create folder error:', arguments);
+            }).catch(function (error) {
+                that.$message.error(error.message);
             });
         },
         prettyDate: function (row, column, cellValue, index) {
@@ -333,7 +343,7 @@ var app = new Vue({
         },
         loadDirectory: loadDirectory,
         onUp: function () {
-            window.location.hash = sanitize(app.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
+            window.location.hash = sanitize(this.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
         },
         open: open,
         drop: drop,
