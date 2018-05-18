@@ -164,10 +164,13 @@ function uploadFiles(files) {
 }
 
 function dragOver(event) {
+    event.stopPropagation();
     event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
 }
 
 function drop(event) {
+    event.stopPropagation();
     event.preventDefault();
     uploadFiles(event.dataTransfer.files || []);
 }
