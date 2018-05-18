@@ -62,6 +62,10 @@ a:hover, a:focus {
     visibility: visible;
 }
 
+.el-progress-bar__inner {
+    transition: width 250ms;
+}
+
 .el-breadcrumb {
     border: 1px solid #ebeef5;
     border-radius: 5px;
