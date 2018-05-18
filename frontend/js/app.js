@@ -136,9 +136,6 @@ function uploadFiles(files) {
     app.uploadStatus.percentDone = 0;
 
     asyncForEach(files, function (file, callback) {
-        // do not handle directories (file.type is empty in such a case)
-        if (file.type === '') return callback();
-
         var path = encode(sanitize(app.path + '/' + (file.webkitRelativePath || file.name)));
 
         var formData = new FormData();
@@ -175,7 +172,51 @@ function dragOver(event) {
 function drop(event) {
     event.stopPropagation();
     event.preventDefault();
-    uploadFiles(event.dataTransfer.files || []);
+
+    if (!event.dataTransfer.items[0]) return;
+
+    // figure if a folder was dropped on a modern browser, in this case the first would have to be a directory
+    var folderItem;
+    try {
+        folderItem = event.dataTransfer.items[0].webkitGetAsEntry();
+        if (folderItem.isFile) return uploadFiles(event.dataTransfer.files);
+    } catch (e) {
+        return uploadFiles(event.dataTransfer.files);
+    }
+
+    // if we got here we have a folder drop and a modern browser
+    // now traverse the folder tree and create a file list
+    app.uploadStatus.busy = true;
+    app.uploadStatus.uploadListCount = 0;
+
+    var fileList = [];
+    function traverseFileTree(item, path, callback) {
+        if (item.isFile) {
+            // Get file
+            item.file(function (file) {
+                fileList.push(file);
+                ++app.uploadStatus.uploadListCount;
+                callback();
+            });
+        } else if (item.isDirectory) {
+            // Get folder contents
+            var dirReader = item.createReader();
+            dirReader.readEntries(function (entries) {
+                asyncForEach(entries, function (entry, callback) {
+                    traverseFileTree(entry, path + item.name + '/', callback);
+                }, callback);
+            });
+        }
+    }
+
+    traverseFileTree(folderItem, '', function (error) {
+        app.uploadStatus.busy = false;
+        app.uploadStatus.uploadListCount = 0;
+
+        if (error) return console.error(error);
+
+        uploadFiles(fileList);
+    });
 }
 
 var app = new Vue({
@@ -187,7 +228,8 @@ var app = new Vue({
             busy: false,
             count: 0,
             done: 0,
-            percentDone: 50
+            percentDone: 50,
+            uploadListCount: 0
         },
         path: '/',
         pathParts: [],

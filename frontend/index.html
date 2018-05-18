@@ -101,7 +101,10 @@
 
   </el-main>
   <el-footer v-show="uploadStatus.busy">
-    <el-row>
+    <el-row v-if="uploadStatus.uploadListCount">
+      <center><i class="el-icon-loading"></i> Fetching file information for upload <el-badge class="mark" :value="uploadStatus.uploadListCount"/></center>
+    </el-row>
+    <el-row v-else>
       <el-col :span="4">
         Uploading files ({{ uploadStatus.done }} / {{ uploadStatus.count }})
       </el-col>
