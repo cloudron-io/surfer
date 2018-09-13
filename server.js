@@ -29,7 +29,7 @@ var configFile = path.resolve(__dirname, process.argv[3] || '.config.json');
 mkdirp.sync(rootFolder);
 
 var config = {
-    folderListingEnabled: true
+    folderListingEnabled: false
 };
 
 function getSettings(req, res, next) {
@@ -87,7 +87,7 @@ app.use(router);
 app.use('/_admin', express.static(__dirname + '/frontend'));
 app.use('/', express.static(rootFolder));
 app.use('/', function welcomePage(req, res, next) {
-    if (req.path !== '/') return next();
+    if (config.folderListingEnabled || req.path !== '/') return next();
     res.status(200).sendFile(path.join(__dirname, '/frontend/welcome.html'));
 });
 app.use('/', function (req, res, next) {
