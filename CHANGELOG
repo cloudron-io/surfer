@@ -64,3 +64,6 @@
 * Add directory upload support
 * Improve drag'n'drop of files
 
+[5.2.0]
+* Disable folder listing by default
+* Do not render welcome screen if folder listing is enabled
