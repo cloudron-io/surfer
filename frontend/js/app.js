@@ -60,7 +60,7 @@ var mimeTypes = {
     text: [ '.txt', '.md' ],
     pdf: [ '.pdf' ],
     html: [ '.html', '.htm', '.php' ],
-    video: [ '.mp4', '.mpg', '.mpeg', '.ogg', '.mkv' ]
+    video: [ '.mp4', '.mpg', '.mpeg', '.ogg', '.mkv', '.avi', '.mov' ]
 };
 
 function getPreviewUrl(entry, basePath) {
