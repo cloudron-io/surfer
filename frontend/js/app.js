@@ -132,8 +132,13 @@ function uploadFiles(files) {
 
     app.uploadStatus.busy = true;
     app.uploadStatus.count = files.length;
+    app.uploadStatus.size = 0;
     app.uploadStatus.done = 0;
     app.uploadStatus.percentDone = 0;
+
+    for (var i = 0; i < files.length; ++i) {
+        app.uploadStatus.size += files[i].size;
+    }
 
     asyncForEach(files, function (file, callback) {
         var path = encode(sanitize(app.path + '/' + (file.webkitRelativePath || file.name)));
@@ -141,13 +146,16 @@ function uploadFiles(files) {
         var formData = new FormData();
         formData.append('file', file);
 
-        superagent.post('/api/files' + path).query({ access_token: localStorage.accessToken }).send(formData).end(function (error, result) {
+        superagent.post('/api/files' + path)
+          .query({ access_token: localStorage.accessToken })
+          .send(formData)
+          .on('progress', function (event) {
+            app.uploadStatus.done += event.loaded;
+            app.uploadStatus.percentDone = Math.round(app.uploadStatus.done / app.uploadStatus.size * 100);
+        }).end(function (error, result) {
             if (result && result.statusCode === 401) return logout();
             if (result && result.statusCode !== 201) return callback('Error uploading file: ', result.statusCode);
             if (error) return callback(error);
-
-            app.uploadStatus.done += 1;
-            app.uploadStatus.percentDone = Math.round(app.uploadStatus.done / app.uploadStatus.count * 100);
 
             callback();
         });
@@ -156,6 +164,7 @@ function uploadFiles(files) {
 
         app.uploadStatus.busy = false;
         app.uploadStatus.count = 0;
+        app.uploadStatus.size = 0;
         app.uploadStatus.done = 0;
         app.uploadStatus.percentDone = 100;
 

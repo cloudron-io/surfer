@@ -106,7 +106,7 @@
     </el-row>
     <el-row v-else>
       <el-col :span="4">
-        Uploading files ({{ uploadStatus.done }} / {{ uploadStatus.count }})
+        Uploading {{ uploadStatus.count }} files ({{ Math.round(uploadStatus.done/1000/1000) }}MB / {{ Math.round(uploadStatus.size/1000/1000) }}MB)
       </el-col>
       <el-col :span="20">
         <el-progress :text-inside="true" :stroke-width="18" :percentage="uploadStatus.percentDone"></el-progress>
