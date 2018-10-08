@@ -146,11 +146,16 @@ function uploadFiles(files) {
         var formData = new FormData();
         formData.append('file', file);
 
+        var finishedUploadSize = app.uploadStatus.done;
+
         superagent.post('/api/files' + path)
           .query({ access_token: localStorage.accessToken })
           .send(formData)
           .on('progress', function (event) {
-            app.uploadStatus.done += event.loaded;
+            // only handle upload events
+            if (!(event.target instanceof XMLHttpRequestUpload)) return;
+
+            app.uploadStatus.done = finishedUploadSize + event.loaded;
             app.uploadStatus.percentDone = Math.round(app.uploadStatus.done / app.uploadStatus.size * 100);
         }).end(function (error, result) {
             if (result && result.statusCode === 401) return logout();
