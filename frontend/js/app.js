@@ -1,6 +1,11 @@
 (function () {
 'use strict';
 
+/* global superagent */
+/* global Vue */
+/* global $ */
+/* global filesize */
+
 // poor man's async
 function asyncForEach(items, handler, callback) {
     var cur = 0;
@@ -84,6 +89,16 @@ function getExtension(entry) {
 
 function refresh() {
     loadDirectory(app.path);
+}
+
+function logout() {
+    superagent.post('/api/logout').query({ access_token: localStorage.accessToken }).end(function (error) {
+        if (error) console.error(error);
+
+        app.session.valid = false;
+
+        delete localStorage.accessToken;
+    });
 }
 
 function loadDirectory(filePath) {
@@ -278,8 +293,6 @@ var app = new Vue({
             });
         },
         onOptionsMenu: function (command) {
-            var that = this;
-
             if (command === 'folderListing') {
                 superagent.put('/api/settings').send({ folderListingEnabled: this.folderListingEnabled }).query({ access_token: localStorage.accessToken }).end(function (error) {
                     if (error) console.error(error);
@@ -295,13 +308,7 @@ var app = new Vue({
                     center: true
                   }).then(function () {}).catch(function () {});
             } else if (command === 'logout') {
-                superagent.post('/api/logout').query({ access_token: localStorage.accessToken }).end(function (error) {
-                    if (error) console.error(error);
-
-                    that.session.valid = false;
-
-                    delete localStorage.accessToken;
-                });
+                logout();
             }
         },
         onDownload: function (entry) {
