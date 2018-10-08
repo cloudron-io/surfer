@@ -40,7 +40,6 @@
     "passport-http-bearer": "^1.0.1",
     "passport-ldapjs": "^1.0.3",
     "readline-sync": "^1.4.9",
-    "redis": "^2.8.0",
     "request": "^2.83.0",
     "safetydance": "^0.1.1",
     "serve-index": "^1.9.1",

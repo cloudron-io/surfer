@@ -67,3 +67,6 @@
 [5.2.0]
 * Disable folder listing by default
 * Do not render welcome screen if folder listing is enabled
+
+[5.3.0]
+* Replacing redis token store with local json file

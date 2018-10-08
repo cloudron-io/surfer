@@ -22,11 +22,11 @@ var express = require('express'),
     files = require('./src/files.js')(path.resolve(__dirname, process.argv[2] || 'files'));
 
 
-var rootFolder = path.resolve(__dirname, process.argv[2] || 'files');
-var configFile = path.resolve(__dirname, process.argv[3] || '.config.json');
+const ROOT_FOLDER = path.resolve(__dirname, process.argv[2] || 'files');
+const CONFIG_FILE = path.resolve(__dirname, process.argv[3] || '.config.json');
 
 // Ensure the root folder exists
-mkdirp.sync(rootFolder);
+mkdirp.sync(ROOT_FOLDER);
 
 var config = {
     folderListingEnabled: false
@@ -41,7 +41,7 @@ function setSettings(req, res, next) {
 
     config.folderListingEnabled = !!req.body.folderListingEnabled;
 
-    fs.writeFile(configFile, JSON.stringify(config), function (error) {
+    fs.writeFile(CONFIG_FILE, JSON.stringify(config), function (error) {
         if (error) return next(new HttpError(500, 'unable to save settings'));
 
         next(new HttpSuccess(201, {}));
@@ -50,10 +50,11 @@ function setSettings(req, res, next) {
 
 // Load the config file
 try {
-    config = require(configFile);
+    console.log(`Using config file: ${CONFIG_FILE}`);
+    config = require(CONFIG_FILE);
 } catch (e) {
-    if (e.code === 'MODULE_NOT_FOUND') console.log(`Config file ${configFile} not found`);
-    else console.log(`Cannot load config file ${configFile}`, e);
+    if (e.code === 'MODULE_NOT_FOUND') console.log(`Config file ${CONFIG_FILE} not found`);
+    else console.log(`Cannot load config file ${CONFIG_FILE}`, e);
 }
 
 if (typeof config.folderListingEnabled === 'undefined') config.folderListingEnabled = true;
@@ -85,7 +86,7 @@ app.use('/api', passport.initialize());
 app.use('/api', passport.session());
 app.use(router);
 app.use('/_admin', express.static(__dirname + '/frontend'));
-app.use('/', express.static(rootFolder));
+app.use('/', express.static(ROOT_FOLDER));
 app.use('/', function welcomePage(req, res, next) {
     if (config.folderListingEnabled || req.path !== '/') return next();
     res.status(200).sendFile(path.join(__dirname, '/frontend/welcome.html'));
@@ -94,7 +95,7 @@ app.use('/', function (req, res, next) {
     if (config.folderListingEnabled) return next();
     res.sendFile(__dirname + '/frontend/404.html');
 });
-app.use('/', serveIndex(rootFolder, { icons: true }));
+app.use('/', serveIndex(ROOT_FOLDER, { icons: true }));
 app.use(lastMile());
 
 var server = app.listen(3000, function () {
@@ -102,5 +103,5 @@ var server = app.listen(3000, function () {
     var port = server.address().port;
 
     console.log('Surfer listening on http://%s:%s', host, port);
-    console.log('Using base path', rootFolder);
+    console.log('Using base path', ROOT_FOLDER);
 });

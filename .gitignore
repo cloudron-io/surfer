@@ -2,3 +2,4 @@ node_modules/
 files/
 .users.json
 .config.json
+.tokens.json

@@ -3,53 +3,47 @@
 var passport = require('passport'),
     path = require('path'),
     safe = require('safetydance'),
+    fs = require('fs'),
     bcrypt = require('bcryptjs'),
     uuid = require('uuid/v4'),
-    redis = require('redis'),
     BearerStrategy = require('passport-http-bearer').Strategy,
     LdapStrategy = require('passport-ldapjs').Strategy,
     HttpError = require('connect-lastmile').HttpError,
     HttpSuccess = require('connect-lastmile').HttpSuccess;
 
-var LOCAL_AUTH_FILE = path.resolve(process.env.LOCAL_AUTH_FILE || './.users.json');
+const LOCAL_AUTH_FILE = path.resolve(process.env.LOCAL_AUTH_FILE || './.users.json');
+const TOKENSTORE_FILE = path.resolve(process.env.TOKENSTORE_FILE || './.tokens.json');
 
 var tokenStore = {
     data: {},
+    save: function () {
+        try {
+            fs.writeFileSync(TOKENSTORE_FILE, JSON.stringify(tokenStore.data), 'utf-8');
+        } catch (e) {
+            console.error(`Unable to save tokenstore file at ${TOKENSTORE_FILE}`, e);
+        }
+    },
     get: function (token, callback) {
         callback(tokenStore.data[token] ? null : 'not found', tokenStore.data[token]);
     },
     set: function (token, data, callback) {
         tokenStore.data[token] = data;
+        tokenStore.save();
         callback(null);
     },
     del: function (token, callback) {
         delete tokenStore.data[token];
+        tokenStore.save();
         callback(null);
     }
 };
 
-if (process.env.REDIS_URL) {
-    console.log('Enable redis token store');
-
-    var redisClient = redis.createClient(process.env.REDIS_URL);
-
-    if (process.env.REDIS_PASSWORD) {
-        console.log('Using redis auth');
-        redisClient.auth(process.env.REDIS_PASSWORD);
-    }
-
-    // overwrite the tokenStore api
-    tokenStore.get = function (token, callback) {
-        redisClient.get(token, function (error, result) {
-            callback(error || null, safe.JSON.parse(result));
-        });
-    };
-    tokenStore.set = function (token, data, callback) {
-        redisClient.set(token, JSON.stringify(data), callback);
-    };
-    tokenStore.del = redisClient.del.bind(redisClient);
-} else {
-    console.log('Use in-memory token store');
+// load token store data if any
+try {
+    console.log(`Using tokenstore file: ${TOKENSTORE_FILE}`);
+    tokenStore.data = JSON.parse(fs.readFileSync(TOKENSTORE_FILE, 'utf-8'));
+} catch (e) {
+    // start with empty token store
 }
 
 function issueAccessToken() {
@@ -77,11 +71,11 @@ var LDAP_URL = process.env.LDAP_URL;
 var LDAP_USERS_BASE_DN = process.env.LDAP_USERS_BASE_DN;
 
 if (LDAP_URL && LDAP_USERS_BASE_DN) {
-    console.log('Enable ldap auth');
+    console.log('Using ldap auth');
 
     exports.login = [ passport.authenticate('ldap'), issueAccessToken() ];
 } else {
-    console.log('Use local user file:', LOCAL_AUTH_FILE);
+    console.log(`Using local user file: ${LOCAL_AUTH_FILE}`);
 
     exports.login = [
         function (req, res, next) {

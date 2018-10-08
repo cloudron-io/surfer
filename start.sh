@@ -3,6 +3,7 @@
 set -eu
 
 export NODE_ENV=production
+export TOKENSTORE_FILE=/app/data/tokens.json
 
 if [[ ! -d "/app/data/surfer_root" ]]; then
     echo "=> Migrating root folder from /app/data to /app/data/surfer_root"

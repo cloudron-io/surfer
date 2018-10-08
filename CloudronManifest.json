@@ -19,7 +19,6 @@
   "icon": "logo.png",
   "addons": {
     "ldap": {},
-    "redis": {},
     "localstorage": {}
   },
   "mediaLinks": [
