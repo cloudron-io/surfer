@@ -288,7 +288,7 @@ var app = new Vue({
                 getProfile(result.body.accessToken, function (error) {
                     if (error) return console.error(error);
 
-                    loadDirectory(window.location.hash.slice(1));
+                    loadDirectory(decode(window.location.hash.slice(1)));
                 });
             });
         },
@@ -428,11 +428,11 @@ var app = new Vue({
 getProfile(localStorage.accessToken, function (error) {
     if (error) return console.error(error);
 
-    loadDirectory(window.location.hash.slice(1));
+    loadDirectory(decode(window.location.hash.slice(1)));
 });
 
 $(window).on('hashchange', function () {
-    loadDirectory(window.location.hash.slice(1));
+    loadDirectory(decode(window.location.hash.slice(1)));
 });
 
 })();
