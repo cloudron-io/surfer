@@ -72,3 +72,6 @@
 * Replacing redis token store with local json file
 * Add upload progress reporting
 * Minor interface improvements
+
+[5.4.0]
+* Use new Cloudron base image
