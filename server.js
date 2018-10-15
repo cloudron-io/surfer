@@ -93,7 +93,7 @@ app.use('/', function welcomePage(req, res, next) {
 });
 app.use('/', function (req, res, next) {
     if (config.folderListingEnabled) return next();
-    res.sendFile(__dirname + '/frontend/404.html');
+    res.status(404).sendFile(__dirname + '/frontend/404.html');
 });
 app.use('/', serveIndex(ROOT_FOLDER, { icons: true }));
 app.use(lastMile());

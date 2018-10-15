@@ -75,3 +75,5 @@
 
 [5.4.0]
 * Use new Cloudron base image
+* Send 404 status code correctly
+
