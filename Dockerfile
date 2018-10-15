@@ -5,7 +5,7 @@ WORKDIR /app/code
 
 ADD src /app/code/src
 ADD frontend /app/code/frontend
-ADD package.json server.js start.sh /app/code/
+ADD package.json package-lock.json server.js start.sh /app/code/
 
 RUN npm install --production
 
