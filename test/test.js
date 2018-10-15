@@ -2,43 +2,44 @@
 
 'use strict';
 
+/* global describe */
+/* global before */
+/* global after */
+/* global it */
+
 var execSync = require('child_process').execSync,
     expect = require('expect.js'),
     path = require('path'),
     util = require('util'),
-    fs = require('fs'),
     superagent = require('superagent'),
     webdriver = require('selenium-webdriver');
 
 var by = webdriver.By,
-    Keys = webdriver.Key,
     until = webdriver.until;
-
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 if (!process.env.USERNAME || !process.env.PASSWORD) {
     console.log('USERNAME and PASSWORD env vars need to be set');
     process.exit(1);
 }
 
+const EXEC_OPTIONS = { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' };
+
 describe('Application life cycle test', function () {
     this.timeout(0);
 
-    var chrome = require('selenium-webdriver/chrome');
-    var server, browser = new chrome.Driver();
+    var browser;
 
     before(function (done) {
-        var seleniumJar= require('selenium-server-standalone-jar');
-        var SeleniumServer = require('selenium-webdriver/remote').SeleniumServer;
-        server = new SeleniumServer(seleniumJar.path, { port: 4444 });
-        server.start();
+        browser = new webdriver.Builder()
+          .forBrowser('chrome')
+        //   .setChromeOptions(new chrome.Options().addArguments(['no-sandbox', 'headless']))
+          .build();
 
         done();
     });
 
     after(function (done) {
         browser.quit();
-        server.stop();
         done();
     });
 
@@ -48,20 +49,24 @@ describe('Application life cycle test', function () {
     var TEST_FILE_NAME_1 = 'test.txt';
     var app;
 
+    function waitForElement(elem) {
+        return browser.wait(until.elementLocated(elem), TEST_TIMEOUT).then(function () {
+            return browser.wait(until.elementIsVisible(browser.findElement(elem)), TEST_TIMEOUT);
+        });
+    }
+
     // tests which are used more than once
     function login(done) {
         browser.manage().deleteAllCookies();
         browser.get('https://' + app.fqdn + '/_admin');
 
-        browser.wait(until.elementLocated(by.id('inputUsername')), TEST_TIMEOUT).then(function () {
-            browser.wait(until.elementIsVisible(browser.findElement(by.id('inputUsername'))), TEST_TIMEOUT).then(function () {
-                browser.findElement(by.id('inputUsername')).sendKeys(process.env.USERNAME);
-                browser.findElement(by.id('inputPassword')).sendKeys(process.env.PASSWORD);
-                browser.findElement(by.id('loginForm')).submit();
+        waitForElement(by.id('loginUsernameInput')).then(function () {
+            browser.findElement(by.id('loginUsernameInput')).sendKeys(process.env.USERNAME);
+            browser.findElement(by.id('loginPasswordInput')).sendKeys(process.env.PASSWORD);
+            browser.findElement(by.id('loginSubmitButton')).click();
 
-                browser.wait(until.elementIsVisible(browser.findElement(by.id('logoutButton'))), TEST_TIMEOUT).then(function () {
-                    done();
-                });
+            waitForElement(by.id('burgerMenuButton')).then(function () {
+                done();
             });
         });
     }
@@ -69,11 +74,16 @@ describe('Application life cycle test', function () {
     function logout(done) {
         browser.get('https://' + app.fqdn + '/_admin');
 
-        browser.wait(until.elementLocated(by.id('logoutButton')), TEST_TIMEOUT).then(function () {
-            browser.wait(until.elementIsVisible(browser.findElement(by.id('logoutButton'))), TEST_TIMEOUT).then(function () {
+        waitForElement(by.id('burgerMenuButton')).then(function () {
+            browser.findElement(by.id('burgerMenuButton')).click();
+
+            // wait for open animation
+            browser.sleep(5000);
+
+            waitForElement(by.id('logoutButton')).then(function () {
                 browser.findElement(by.id('logoutButton')).click();
 
-                browser.wait(until.elementIsVisible(browser.findElement(by.id('inputPassword'))), TEST_TIMEOUT).then(function () {
+                waitForElement(by.id('loginUsernameInput')).then(function () {
                     done();
                 });
             });
@@ -83,7 +93,7 @@ describe('Application life cycle test', function () {
     function checkFileIsListed(name, done) {
         browser.get('https://' + app.fqdn + '/_admin');
 
-        browser.wait(until.elementLocated(by.xpath('//*[text()="' + name + '"]')), TEST_TIMEOUT).then(function () {
+        waitForElement(by.xpath('//*[text()="' + name + '"]')).then(function () {
             done();
         });
     }
@@ -91,7 +101,7 @@ describe('Application life cycle test', function () {
     function checkFileIsPresent(done) {
         browser.get('https://' + app.fqdn + '/' + TEST_FILE_NAME_0);
 
-        browser.wait(until.elementLocated(by.xpath('//*[text()="test"]')), TEST_TIMEOUT).then(function () {
+        waitForElement(by.xpath('//*[text()="test"]')).then(function () {
             done();
         });
     }
@@ -99,7 +109,7 @@ describe('Application life cycle test', function () {
     function checkIndexFileIsServedUp(done) {
         browser.get('https://' + app.fqdn);
 
-        browser.wait(until.elementLocated(by.xpath('//*[text()="test"]')), TEST_TIMEOUT).then(function () {
+        waitForElement(by.xpath('//*[text()="test"]')).then(function () {
             done();
         });
     }
@@ -107,7 +117,8 @@ describe('Application life cycle test', function () {
     function checkFileIsGone(name, done) {
         superagent.get('https://' + app.fqdn + '/' + name).end(function (error, result) {
             expect(error).to.be.an('object');
-            expect(result.statusCode).to.equal(404);
+            expect(error.response.status).to.equal(404);
+            expect(result).to.be.an('object');
             done();
         });
     }
@@ -125,11 +136,11 @@ describe('Application life cycle test', function () {
     }
 
     xit('build app', function () {
-        execSync('cloudron build', { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
+        execSync('cloudron build', EXEC_OPTIONS);
     });
 
     it('install app', function () {
-        execSync('cloudron install --new --wait --location ' + LOCATION, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
+        execSync('cloudron install --new --wait --location ' + LOCATION, EXEC_OPTIONS);
     });
 
     it('can get app information', function () {
@@ -156,11 +167,11 @@ describe('Application life cycle test', function () {
     it('can logout', logout);
 
     it('backup app', function () {
-        execSync('cloudron backup create --app ' + app.id, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
+        execSync('cloudron backup create --app ' + app.id, EXEC_OPTIONS);
     });
 
     it('restore app', function () {
-        execSync('cloudron restore --app ' + app.id, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
+        execSync('cloudron restore --app ' + app.id, EXEC_OPTIONS);
     });
 
     it('can login', login);
@@ -170,12 +181,17 @@ describe('Application life cycle test', function () {
     it('second file is still gone', checkFileIsGone.bind(null, TEST_FILE_NAME_1));
     it('can logout', logout);
 
-    it('move to different location', function () {
+    it('move to different location', function (done) {
         browser.manage().deleteAllCookies();
-        execSync('cloudron configure --location ' + LOCATION + '2 --app ' + app.id, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
-        var inspect = JSON.parse(execSync('cloudron inspect'));
-        app = inspect.apps.filter(function (a) { return a.location === LOCATION + '2'; })[0];
-        expect(app).to.be.an('object');
+
+        // ensure we don't hit NXDOMAIN in the mean time
+        browser.get('about:blank').then(function () {
+            execSync('cloudron configure --location ' + LOCATION + '2 --app ' + app.id, EXEC_OPTIONS);
+            var inspect = JSON.parse(execSync('cloudron inspect'));
+            app = inspect.apps.filter(function (a) { return a.location === LOCATION + '2'; })[0];
+            expect(app).to.be.an('object');
+            done();
+        });
     });
 
     it('can login', login);
@@ -184,7 +200,11 @@ describe('Application life cycle test', function () {
     it('file is served up', checkIndexFileIsServedUp);
     it('can logout', logout);
 
-    it('uninstall app', function () {
-        execSync('cloudron uninstall --app ' + app.id, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
+    it('uninstall app', function (done) {
+        // ensure we don't hit NXDOMAIN in the mean time
+        browser.get('about:blank').then(function () {
+            execSync('cloudron uninstall --app ' + app.id, EXEC_OPTIONS);
+            done();
+        });
     });
 });

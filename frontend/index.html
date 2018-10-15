@@ -26,12 +26,12 @@
 
   <el-dialog title="Login" :visible.sync="ready && !session.valid" width="30%" :close-on-press-escape="false" :show-close="false">
     <el-form :model="loginData" label-position="top" @submit.native.prevent>
-      <el-form-item label="Username"><el-input v-model="loginData.username" required autofocus :disabled="loginData.busy"></el-input></el-form-item>
-      <el-form-item label="Password"><el-input v-model="loginData.password" type="password" required :disabled="loginData.busy"></el-input></el-form-item>
+      <el-form-item label="Username"><el-input v-model="loginData.username" id="loginUsernameInput" required autofocus :disabled="loginData.busy"></el-input></el-form-item>
+      <el-form-item label="Password"><el-input v-model="loginData.password" id="loginPasswordInput" type="password" required :disabled="loginData.busy"></el-input></el-form-item>
       <input type="submit" @click="onLogin" v-show="false"/>
     </el-form>
     <span slot="footer" class="dialog-footer">
-      <el-button type="primary" @click="onLogin"><i class="el-icon-loading" v-show="loginData.busy"></i><span v-show="!loginData.busy">Login</span></el-button>
+      <el-button type="primary" @click="onLogin" id="loginSubmitButton"><i class="el-icon-loading" v-show="loginData.busy"></i><span v-show="!loginData.busy">Login</span></el-button>
     </span>
   </el-dialog>
 
@@ -57,7 +57,7 @@
           <el-button type="primary" icon="el-icon-plus" size="small" @click="onNewFolder">New Folder</el-button>
         </el-button-group>
         <el-dropdown @command="onOptionsMenu" :hide-on-click="false">
-          <el-button size="small" icon="el-icon-more"></el-button>
+          <el-button size="small" icon="el-icon-more" id="burgerMenuButton"></el-button>
           <el-dropdown-menu slot="dropdown">
             <el-dropdown-item disabled>Public Folder Listing</el-dropdown-item>
             <el-dropdown-item command="folderListing">
@@ -65,7 +65,7 @@
             </el-switch>
             </el-dropdown-item>
             <el-dropdown-item command="about" divided><i class="el-icon-info"></i> About</el-dropdown-item>
-            <el-dropdown-item command="logout"><i class="el-icon-circle-close"></i> Logout</el-dropdown-item>
+            <el-dropdown-item command="logout" id="logoutButton"><i class="el-icon-circle-close"></i> Logout</el-dropdown-item>
           </el-dropdown-menu>
         </el-dropdown>
       </div>

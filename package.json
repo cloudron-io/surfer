@@ -50,7 +50,6 @@
   "devDependencies": {
     "expect.js": "^0.3.1",
     "mocha": "^2.4.5",
-    "selenium-server-standalone-jar": "^2.52.0",
     "selenium-webdriver": "^2.52.0"
   }
 }
