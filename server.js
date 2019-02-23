@@ -2,7 +2,6 @@
 
 'use strict';
 
-
 var express = require('express'),
     morgan = require('morgan'),
     passport = require('passport'),
@@ -19,6 +18,7 @@ var express = require('express'),
     mkdirp = require('mkdirp'),
     auth = require('./src/auth.js'),
     serveIndex = require('serve-index'),
+    webdav = require('webdav-server').v2,
     files = require('./src/files.js')(path.resolve(__dirname, process.argv[2] || 'files'));
 
 
@@ -63,6 +63,15 @@ if (typeof config.folderListingEnabled === 'undefined') config.folderListingEnab
 var app = express();
 var router = new express.Router();
 
+var webdavServer = new webdav.WebDAVServer({
+    requireAuthentification: true,
+    httpAuthentication: new webdav.HTTPBasicAuthentication(new auth.WebdavUserManager(), 'Cloudron Surfer')
+});
+
+webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(ROOT_FOLDER), function (success) {
+    console.log(`Mounting ${ROOT_FOLDER} as webdav resource`, success);
+});
+
 var multipart = multipart({ maxFieldsSize: 2 * 1024, limit: '512mb', timeout: 3 * 60 * 1000 });
 
 router.post  ('/api/login', auth.login);
@@ -78,6 +87,7 @@ router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); 
 
 app.use(morgan('dev'));
 app.use(compression());
+app.use(webdav.extensions.express('/webdav', webdavServer));
 app.use('/api', bodyParser.json());
 app.use('/api', bodyParser.urlencoded({ extended: false, limit: '100mb' }));
 app.use('/api', cookieParser());

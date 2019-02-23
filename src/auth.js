@@ -9,7 +9,8 @@ var passport = require('passport'),
     BearerStrategy = require('passport-http-bearer').Strategy,
     LdapStrategy = require('passport-ldapjs').Strategy,
     HttpError = require('connect-lastmile').HttpError,
-    HttpSuccess = require('connect-lastmile').HttpSuccess;
+    HttpSuccess = require('connect-lastmile').HttpSuccess,
+    webdavErrors = require('webdav-server').v2.Errors;
 
 const LOCAL_AUTH_FILE = path.resolve(process.env.LOCAL_AUTH_FILE || './.users.json');
 const TOKENSTORE_FILE = path.resolve(process.env.TOKENSTORE_FILE || './.tokens.json');
@@ -139,4 +140,40 @@ exports.logout = function (req, res, next) {
 
 exports.getProfile = function (req, res, next) {
     next(new HttpSuccess(200, { username: req.user.username }));
+};
+
+// webdav usermanager
+exports.WebdavUserManager = WebdavUserManager;
+
+// This implements the required interface only for the Basic Authentication for webdav-server
+function WebdavUserManager() {};
+
+WebdavUserManager.prototype.getDefaultUser = function (callback) {
+    // this is only a dummy user, since we always require authentication
+    var user = {
+        username: 'DefaultUser',
+        password: null,
+        isAdministrator: false,
+        isDefaultUser: true,
+        uid: 'DefaultUser'
+    };
+
+    callback(user);
+};
+
+WebdavUserManager.prototype.getUserByNamePassword = function (username, password, callback) {
+    var users = safe.JSON.parse(safe.fs.readFileSync(LOCAL_AUTH_FILE));
+    if (!users) return callback(webdavErrors.UserNotFound);
+    if (!users[username]) return callback(webdavErrors.UserNotFound);
+
+    bcrypt.compare(password, users[username].passwordHash, function (error, valid) {
+        if (error || !valid) return callback(webdavErrors.UserNotFound);
+
+        callback(null, {
+            username: username,
+            isAdministrator: true,
+            isDefaultUser: false,
+            uid: username
+        });
+    });
 };

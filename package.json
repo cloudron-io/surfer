@@ -45,7 +45,8 @@
     "serve-index": "^1.9.1",
     "superagent": "^1.7.2",
     "underscore": "^1.8.3",
-    "uuid": "^3.2.1"
+    "uuid": "^3.2.1",
+    "webdav-server": "^2.4.6"
   },
   "devDependencies": {
     "expect.js": "^0.3.1",
