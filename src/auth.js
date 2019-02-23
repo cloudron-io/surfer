@@ -7,13 +7,22 @@ var passport = require('passport'),
     bcrypt = require('bcryptjs'),
     uuid = require('uuid/v4'),
     BearerStrategy = require('passport-http-bearer').Strategy,
-    LdapStrategy = require('passport-ldapjs').Strategy,
+    ldapjs = require('ldapjs'),
     HttpError = require('connect-lastmile').HttpError,
     HttpSuccess = require('connect-lastmile').HttpSuccess,
     webdavErrors = require('webdav-server').v2.Errors;
 
+const LDAP_URL = process.env.LDAP_URL;
+const LDAP_USERS_BASE_DN = process.env.LDAP_USERS_BASE_DN;
 const LOCAL_AUTH_FILE = path.resolve(process.env.LOCAL_AUTH_FILE || './.users.json');
 const TOKENSTORE_FILE = path.resolve(process.env.TOKENSTORE_FILE || './.tokens.json');
+const AUTH_METHOD = (LDAP_URL && LDAP_USERS_BASE_DN) ? 'ldap' : 'local';
+
+if (AUTH_METHOD === 'ldap') {
+    console.log('Use ldap auth');
+} else {
+    console.log(`Use local auth file ${LOCAL_AUTH_FILE}`);
+}
 
 var tokenStore = {
     data: {},
@@ -68,54 +77,62 @@ passport.deserializeUser(function (id, done) {
     done(null, { uid: id });
 });
 
-var LDAP_URL = process.env.LDAP_URL;
-var LDAP_USERS_BASE_DN = process.env.LDAP_USERS_BASE_DN;
+function verifyUser(username, password, callback) {
+    if (AUTH_METHOD === 'ldap') {
+        var ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL });
+        ldapClient.on('error', function (error) {
+            console.error('LDAP error', error);
+        });
 
-if (LDAP_URL && LDAP_USERS_BASE_DN) {
-    console.log('Using ldap auth');
+        ldapClient.bind(process.env.LDAP_BIND_DN, process.env.LDAP_BIND_PASSWORD, function (error) {
+            if (error) return callback(error);
 
-    exports.login = [ passport.authenticate('ldap'), issueAccessToken() ];
-} else {
-    console.log(`Using local user file: ${LOCAL_AUTH_FILE}`);
+            var filter = `(|(uid=${username})(mail=${username})(username=${username})(sAMAccountName=${username}))`;
+            ldapClient.search(process.env.LDAP_USERS_BASE_DN, { filter: filter }, function (error, result) {
+                if (error) return callback(error);
 
-    exports.login = [
-        function (req, res, next) {
-            var users = safe.JSON.parse(safe.fs.readFileSync(LOCAL_AUTH_FILE));
-            if (!users) return res.send(401);
-            if (!users[req.body.username]) return res.send(401);
+                var items = [];
 
-            bcrypt.compare(req.body.password, users[req.body.username].passwordHash, function (error, valid) {
-                if (error || !valid) return res.send(401);
+                result.on('searchEntry', function(entry) { items.push(entry.object); });
+                result.on('error', callback);
+                result.on('end', function (result) {
+                    if (result.status !== 0 || items.length === 0) return callback(error);
 
-                req.user = {
-                    username: req.body.username
-                };
+                    // pick the first found
+                    var user = items[0];
 
-                next();
+                    ldapClient.bind(user.dn, password, function (error) {
+                        if (error) return callback('Invalid credentials');
+
+                        callback(null, { username: username });
+                    });
+                });
             });
-        },
-        issueAccessToken()
-    ];
+        });
+    } else {
+        var users = safe.JSON.parse(safe.fs.readFileSync(LOCAL_AUTH_FILE));
+        if (!users || !users[username]) return callback('Invalid credentials');
+
+        bcrypt.compare(password, users[username].passwordHash, function (error, valid) {
+            if (error || !valid) return callback('Invalid credentials');
+
+            callback(null, { username: username });
+        });
+    }
 }
 
-var opts = {
-    server: {
-        url: LDAP_URL,
-    },
-    base: LDAP_USERS_BASE_DN,
-    search: {
-        filter: '(|(username={{username}})(mail={{username}}))',
-        attributes: ['displayname', 'username', 'mail', 'uid'],
-        scope: 'sub'
-    },
-    uidTag: 'cn',
-    usernameField: 'username',
-    passwordField: 'password',
-};
+exports.login = [
+    function (req, res, next) {
+        verifyUser(req.body.username, req.body.password, function (error, user) {
+            if (error) return next(new HttpError(401, 'Invalid credentials'));
 
-passport.use(new LdapStrategy(opts, function (profile, done) {
-    done(null, profile);
-}));
+            req.user = user;
+
+            next();
+        });
+    },
+    issueAccessToken()
+];
 
 exports.verify = passport.authenticate('bearer', { session: false });
 
@@ -162,18 +179,14 @@ WebdavUserManager.prototype.getDefaultUser = function (callback) {
 };
 
 WebdavUserManager.prototype.getUserByNamePassword = function (username, password, callback) {
-    var users = safe.JSON.parse(safe.fs.readFileSync(LOCAL_AUTH_FILE));
-    if (!users) return callback(webdavErrors.UserNotFound);
-    if (!users[username]) return callback(webdavErrors.UserNotFound);
-
-    bcrypt.compare(password, users[username].passwordHash, function (error, valid) {
-        if (error || !valid) return callback(webdavErrors.UserNotFound);
+    verifyUser(username, password, function (error, user) {
+        if (error) return callback(webdavErrors.UserNotFound);
 
         callback(null, {
-            username: username,
+            username: user.username,
             isAdministrator: true,
             isDefaultUser: false,
-            uid: username
+            uid: user.username
         });
     });
 };
