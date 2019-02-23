@@ -96,7 +96,7 @@ function verifyUser(username, password, callback) {
                 result.on('searchEntry', function(entry) { items.push(entry.object); });
                 result.on('error', callback);
                 result.on('end', function (result) {
-                    if (result.status !== 0 || items.length === 0) return callback(error);
+                    if (result.status !== 0 || items.length === 0) return callback('Invalid credentials');
 
                     // pick the first found
                     var user = items[0];
