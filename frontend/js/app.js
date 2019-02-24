@@ -116,6 +116,8 @@ function loadDirectory(filePath) {
         app.entries = result.body.entries.map(function (entry) {
             entry.previewUrl = getPreviewUrl(entry, filePath);
             entry.extension = getExtension(entry);
+            entry.rename = false;
+            entry.filePathNew = entry.filePath;
             return entry;
         });
         app.path = filePath;
@@ -132,6 +134,9 @@ function loadDirectory(filePath) {
 }
 
 function open(row, event, column) {
+    // ignore item open on row clicks if we are renaming this entry
+    if (row.rename) return;
+
     var path = sanitize(app.path + '/' + row.filePath);
 
     if (row.isDirectory) {
@@ -358,22 +363,42 @@ var app = new Vue({
                 });
             }).catch(function () {});
         },
-        onRename: function (entry) {
+        onRename: function (entry, scope) {
+            if (entry.rename) return entry.rename = false;
+
+            entry.rename = true;
+
+            Vue.nextTick(function () {
+                var elem = document.getElementById('filePathRenameInputId-' + scope.$index);
+                elem.focus();
+
+                if (typeof elem.selectionStart != "undefined") {
+                    elem.selectionStart = 0;
+                    elem.selectionEnd = entry.filePath.lastIndexOf('.');
+                }
+            });
+        },
+        onRenameEnd: function (entry) {
+            entry.rename = false;
+            entry.filePathNew = entry.filePath;
+        },
+        onRenameSubmit: function (entry) {
             var that = this;
 
-            var title = 'Rename ' + entry.filePath;
-            this.$prompt('', title, { confirmButtonText: 'Yes', cancelButtonText: 'No', inputPlaceholder: 'new filename', inputValue: entry.filePath }).then(function (data) {
-                var path = encode(sanitize(that.path + '/' + entry.filePath));
-                var newFilePath = sanitize(that.path + '/' + data.value);
+            entry.rename = false;
 
-                superagent.put('/api/files' + path).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end(function (error, result) {
-                    if (result && result.statusCode === 401) return logout();
-                    if (result && result.statusCode !== 200) return that.$message.error('Error renaming file: ' + result.statusCode);
-                    if (error) return that.$message.error(error.message);
+            if (entry.filePathNew === entry.filePath) return;
 
-                    refresh();
-                });
-            }).catch(function () {});
+            var path = encode(sanitize(this.path + '/' + entry.filePath));
+            var newFilePath = sanitize(this.path + '/' + entry.filePathNew);
+
+            superagent.put('/api/files' + path).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end(function (error, result) {
+                if (result && result.statusCode === 401) return logout();
+                if (result && result.statusCode !== 200) return that.$message.error('Error renaming file: ' + result.statusCode);
+                if (error) return that.$message.error(error.message);
+
+                entry.filePath = entry.filePathNew;
+            });
         },
         onNewFolder: function () {
             var that = this;

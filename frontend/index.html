@@ -85,13 +85,18 @@
               <img v-bind:src="scope.row.previewUrl" height="48px" width="48px"/>
             </template>
           </el-table-column>
-          <el-table-column prop="filePath" label="Name" sortable></el-table-column>
+          <el-table-column prop="filePath" label="Name" sortable>
+            <template slot-scope="scope">
+              <el-input v-on:keyup.native.enter="onRenameSubmit(scope.row)" v-on:keyup.native.esc="onRenameEnd(scope.row)" @blur="onRenameEnd(scope.row)" v-model="scope.row.filePathNew" :id="'filePathRenameInputId-' + scope.$index" v-show="scope.row.rename"></el-input>
+              <span v-show="!scope.row.rename">{{ scope.row.filePath }}</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="size" label="Size" width="150px" sortable :formatter="prettyFileSize"></el-table-column>
           <el-table-column prop="mtime" label="Modified" width="150px" sortable :formatter="prettyDate"></el-table-column>
           <el-table-column label="Actions" align="right" width="200px" class-name="list-actions">
             <template slot-scope="scope">
               <el-button size="small" icon="el-icon-download" circle v-show="scope.row.isFile" @click.stop="onDownload(scope.row)"></el-button>
-              <el-button size="small" icon="el-icon-edit" circle @click.stop="onRename(scope.row)"></el-button>
+              <el-button size="small" icon="el-icon-edit" circle @click.stop="onRename(scope.row, scope)"></el-button>
               <el-button size="small" icon="el-icon-delete" circle @click.stop="onDelete(scope.row)"></el-button>
             </template>
           </el-table-column>
