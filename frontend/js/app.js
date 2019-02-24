@@ -171,7 +171,8 @@ function uploadFiles(files) {
             if (!(event.target instanceof XMLHttpRequestUpload)) return;
 
             app.uploadStatus.done = finishedUploadSize + event.loaded;
-            app.uploadStatus.percentDone = Math.round(app.uploadStatus.done / app.uploadStatus.size * 100);
+            var tmp = Math.round(app.uploadStatus.done / app.uploadStatus.size * 100);
+            app.uploadStatus.percentDone = tmp > 100 ? 100 : tmp;
         }).end(function (error, result) {
             if (result && result.statusCode === 401) return logout();
             if (result && result.statusCode !== 201) return callback('Error uploading file: ', result.statusCode);
