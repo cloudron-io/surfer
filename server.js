@@ -87,7 +87,6 @@ router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); 
 
 app.use(morgan('dev'));
 app.use(compression());
-app.use(webdav.extensions.express('/webdav', webdavServer));
 app.use('/api', bodyParser.json());
 app.use('/api', bodyParser.urlencoded({ extended: false, limit: '100mb' }));
 app.use('/api', cookieParser());
@@ -95,6 +94,7 @@ app.use('/api', session({ secret: 'surfin surfin', resave: false, saveUninitiali
 app.use('/api', passport.initialize());
 app.use('/api', passport.session());
 app.use(router);
+app.use(webdav.extensions.express('/_webdav', webdavServer));
 app.use('/_admin', express.static(__dirname + '/frontend'));
 app.use('/', express.static(ROOT_FOLDER));
 app.use('/', function welcomePage(req, res, next) {
