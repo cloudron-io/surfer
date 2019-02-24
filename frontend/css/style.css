@@ -1,9 +1,15 @@
 
-body {
+[v-cloak] {
+    display: none;
+}
+
+html, body {
     margin: 0;
     font-family: Helvetica Neue,Helvetica,PingFang SC,Hiragino Sans GB,Microsoft YaHei,SimSun,sans-serif;
     font-weight: 400;
     color: rgb(96, 98, 102);
+    height: 100%;
+    width: 100%;
 }
 
 .el-container {
@@ -72,58 +78,10 @@ a:hover, a:focus {
     padding: 7px;
 }
 
-/* old */
-
-.wrapper {
-    display: table;
-    width: 100%;
+/* welcome and 404 page */
+.container-center {
+    display: flex;
     height: 100%;
-}
-
-.content {
-    display: table-cell;
-    width: 100%;
-    height: 100%;
-    text-align: center;
-    vertical-align: middle;
-}
-
-pre {
-    margin: auto;
-    text-align: left;
-    width: 400px;
-}
-
-[v-cloak] {
-  display: none;
-}
-
-.hand {
-    cursor: pointer;
-}
-
-.main {
-    margin-bottom: 40px;
-}
-
-td {
-    vertical-align: middle !important;
-    overflow: hidden;
-}
-
-.entry-toolbar {
-    opacity: 0;
-    transition: opacity .25s;
-}
-
-tr:hover .entry-toolbar {
-    opacity: 1;
-}
-
-table.sortable th:not(.sorttable_sorted):not(.sorttable_sorted_reverse):not(.sorttable_nosort):after {
-    content: " \25B4\25BE"
-}
-
-th {
-    cursor: pointer;
+    align-items: center;
+    justify-content: center;
 }
