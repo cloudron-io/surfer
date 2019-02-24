@@ -77,3 +77,6 @@
 * Use new Cloudron base image
 * Send 404 status code correctly
 
+[5.5.0]
+* Add webdav endpoint support
+* Use inline edit for rename
