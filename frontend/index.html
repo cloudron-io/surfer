@@ -56,7 +56,7 @@
           <el-button type="primary" icon="el-icon-upload" size="small" @click="onUploadFolder">Upload Folder</el-button>
           <el-button type="primary" icon="el-icon-plus" size="small" @click="onNewFolder">New Folder</el-button>
         </el-button-group>
-        <el-dropdown @command="onOptionsMenu" :hide-on-click="false">
+        <el-dropdown @command="onOptionsMenu" :hide-on-click="false" trigger="click">
           <el-button size="small" icon="el-icon-more" id="burgerMenuButton"></el-button>
           <el-dropdown-menu slot="dropdown">
             <el-dropdown-item disabled>Public Folder Listing</el-dropdown-item>
