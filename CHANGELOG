@@ -80,3 +80,5 @@
 [5.5.0]
 * Add webdav endpoint support
 * Use inline edit for rename
+* Various interface layout fixes
+
