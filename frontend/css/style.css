@@ -78,6 +78,10 @@ a:hover, a:focus {
     padding: 7px;
 }
 
+.el-switch__label {
+    height: auto;
+}
+
 /* welcome and 404 page */
 .container-center {
     display: flex;
