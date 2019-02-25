@@ -62,8 +62,10 @@
             <el-dropdown-item disabled>Public Folder Listing</el-dropdown-item>
             <el-dropdown-item command="folderListing">
               <el-switch v-model="folderListingEnabled" active-text="Enabled" inactive-text="Disabled">
-            </el-switch>
+              </el-switch>
             </el-dropdown-item>
+            <el-dropdown-item disabled divided>WebDAV Endpoint</el-dropdown-item>
+            <el-dropdown-item><a href="/_webdav/" target="_blank">{{ origin }}/_webdav/</a></el-dropdown-item>
             <el-dropdown-item command="about" divided><i class="el-icon-info"></i> About</el-dropdown-item>
             <el-dropdown-item command="logout" id="logoutButton"><i class="el-icon-circle-close"></i> Logout</el-dropdown-item>
           </el-dropdown-menu>

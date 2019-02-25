@@ -259,6 +259,7 @@ var app = new Vue({
     data: {
         ready: false,
         busy: false,
+        origin: window.location.origin,
         uploadStatus: {
             busy: false,
             count: 0,
