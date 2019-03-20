@@ -15,6 +15,7 @@
   "httpPort": 3000,
   "manifestVersion": 1,
   "website": "https://git.cloudron.io/cloudron/surfer",
+  "documentationUrl": "https://cloudron.io/documentation/apps/surfer/",
   "contactEmail": "support@cloudron.io",
   "icon": "logo.png",
   "addons": {
