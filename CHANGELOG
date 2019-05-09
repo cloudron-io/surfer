@@ -82,3 +82,6 @@
 * Use inline edit for rename
 * Various interface layout fixes
 
+[5.6.0]
+* Add SFTP support
+
