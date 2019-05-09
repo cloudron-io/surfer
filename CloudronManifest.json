@@ -20,7 +20,12 @@
   "icon": "logo.png",
   "addons": {
     "ldap": {},
-    "localstorage": {}
+    "localstorage": {
+      "ftp": {
+        "uid": 1000,
+        "uname": "cloudron"
+      }
+    }
   },
   "mediaLinks": [
     "https://s3.amazonaws.com/cloudron-app-screenshots/io.cloudron.surfer/645cb5c8b40d99355d83555d0c3a40afb1b4d754/img01.png",
