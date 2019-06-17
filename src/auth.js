@@ -12,8 +12,8 @@ var passport = require('passport'),
     HttpSuccess = require('connect-lastmile').HttpSuccess,
     webdavErrors = require('webdav-server').v2.Errors;
 
-const LDAP_URL = process.env.LDAP_URL;
-const LDAP_USERS_BASE_DN = process.env.LDAP_USERS_BASE_DN;
+const LDAP_URL = process.env.CLOUDRON_LDAP_URL;
+const LDAP_USERS_BASE_DN = process.env.CLOUDRON_LDAP_USERS_BASE_DN;
 const LOCAL_AUTH_FILE = path.resolve(process.env.LOCAL_AUTH_FILE || './.users.json');
 const TOKENSTORE_FILE = path.resolve(process.env.TOKENSTORE_FILE || './.tokens.json');
 const AUTH_METHOD = (LDAP_URL && LDAP_USERS_BASE_DN) ? 'ldap' : 'local';
@@ -79,16 +79,16 @@ passport.deserializeUser(function (id, done) {
 
 function verifyUser(username, password, callback) {
     if (AUTH_METHOD === 'ldap') {
-        var ldapClient = ldapjs.createClient({ url: process.env.LDAP_URL });
+        var ldapClient = ldapjs.createClient({ url: process.env.CLOUDRON_LDAP_URL });
         ldapClient.on('error', function (error) {
             console.error('LDAP error', error);
         });
 
-        ldapClient.bind(process.env.LDAP_BIND_DN, process.env.LDAP_BIND_PASSWORD, function (error) {
+        ldapClient.bind(process.env.CLOUDRON_LDAP_BIND_DN, process.env.CLOUDRON_LDAP_BIND_PASSWORD, function (error) {
             if (error) return callback(error);
 
             var filter = `(|(uid=${username})(mail=${username})(username=${username})(sAMAccountName=${username}))`;
-            ldapClient.search(process.env.LDAP_USERS_BASE_DN, { filter: filter }, function (error, result) {
+            ldapClient.search(process.env.CLOUDRON_LDAP_USERS_BASE_DN, { filter: filter }, function (error, result) {
                 if (error) return callback(error);
 
                 var items = [];
