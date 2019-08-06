@@ -1,12 +1,10 @@
 'use strict';
 
-var passport = require('passport'),
-    path = require('path'),
+var path = require('path'),
     safe = require('safetydance'),
     fs = require('fs'),
     bcrypt = require('bcryptjs'),
     uuid = require('uuid/v4'),
-    BearerStrategy = require('passport-http-bearer').Strategy,
     ldapjs = require('ldapjs'),
     HttpError = require('connect-lastmile').HttpError,
     HttpSuccess = require('connect-lastmile').HttpSuccess,
@@ -56,27 +54,6 @@ try {
     // start with empty token store
 }
 
-function issueAccessToken() {
-    return function (req, res, next) {
-        var accessToken = uuid();
-
-        tokenStore.set(accessToken, req.user, function (error) {
-            if (error) return next(new HttpError(500, error));
-            next(new HttpSuccess(201, { accessToken: accessToken, user: req.user }));
-        });
-    };
-}
-
-passport.serializeUser(function (user, done) {
-    console.log('serializeUser', user);
-    done(null, user.uid);
-});
-
-passport.deserializeUser(function (id, done) {
-    console.log('deserializeUser', id);
-    done(null, { uid: id });
-});
-
 function verifyUser(username, password, callback) {
     if (AUTH_METHOD === 'ldap') {
         var ldapClient = ldapjs.createClient({ url: process.env.CLOUDRON_LDAP_URL });
@@ -121,34 +98,37 @@ function verifyUser(username, password, callback) {
     }
 }
 
-exports.login = [
-    function (req, res, next) {
-        verifyUser(req.body.username, req.body.password, function (error, user) {
-            if (error) return next(new HttpError(401, 'Invalid credentials'));
+exports.login = function (req, res, next) {
+    verifyUser(req.body.username, req.body.password, function (error, user) {
+        if (error) return next(new HttpError(401, 'Invalid credentials'));
 
-            req.user = user;
+        var accessToken = uuid();
 
-            next();
+        tokenStore.set(accessToken, user, function (error) {
+            if (error) return next(new HttpError(500, error));
+
+            next(new HttpSuccess(201, { accessToken: accessToken, user: user }));
         });
-    },
-    issueAccessToken()
-];
-
-exports.verify = passport.authenticate('bearer', { session: false });
-
-passport.use(new BearerStrategy(function (token, done) {
-    tokenStore.get(token, function (error, result) {
-        if (error) {
-            console.error(error);
-            return done(null, false);
-        }
-
-        done(null, result, { accessToken: token });
     });
-}));
+};
+
+exports.verify = function (req, res, next) {
+    var accessToken = req.query.access_token || req.body.accessToken;
+
+    tokenStore.get(accessToken, function (error, user) {
+        if (error) return next(new HttpError(401, 'Invalid Access Token'));
+
+        req.user = user;
+
+        next();
+    });
+
+};
 
 exports.logout = function (req, res, next) {
-    tokenStore.del(req.authInfo.accessToken, function (error) {
+    var accessToken = req.query.access_token || req.body.accessToken;
+
+    tokenStore.del(accessToken, function (error) {
         if (error) console.error(error);
 
         next(new HttpSuccess(200, {}));

@@ -4,7 +4,6 @@
 
 var express = require('express'),
     morgan = require('morgan'),
-    passport = require('passport'),
     path = require('path'),
     fs = require('fs'),
     compression = require('compression'),
@@ -91,8 +90,6 @@ app.use('/api', bodyParser.json());
 app.use('/api', bodyParser.urlencoded({ extended: false, limit: '100mb' }));
 app.use('/api', cookieParser());
 app.use('/api', session({ secret: 'surfin surfin', resave: false, saveUninitialized: false }));
-app.use('/api', passport.initialize());
-app.use('/api', passport.session());
 app.use(router);
 app.use(webdav.extensions.express('/_webdav', webdavServer));
 app.use('/_admin', express.static(__dirname + '/frontend'));

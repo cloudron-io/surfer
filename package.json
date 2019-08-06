@@ -37,8 +37,6 @@
     "mkdirp": "^0.5.1",
     "morgan": "^1.9.0",
     "multiparty": "^4.1.2",
-    "passport": "^0.2.2",
-    "passport-http-bearer": "^1.0.1",
     "readline-sync": "^1.4.9",
     "request": "^2.83.0",
     "safetydance": "^0.1.1",

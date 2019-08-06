@@ -23,14 +23,14 @@ function asyncForEach(items, handler, callback) {
     })();
 }
 
-function getProfile(accessToken, callback) {
+function initWithToken(accessToken) {
     superagent.get('/api/profile').query({ access_token: accessToken }).end(function (error, result) {
         app.ready = true;
 
-        if (error && !error.response) return callback(error);
+        if (error && !error.response) return console.error(error);
         if (result.statusCode !== 200) {
             delete localStorage.accessToken;
-            return callback('Invalid access token');
+            return;
         }
 
         localStorage.accessToken = accessToken;
@@ -42,7 +42,7 @@ function getProfile(accessToken, callback) {
 
             app.folderListingEnabled = !!result.body.folderListingEnabled;
 
-            callback();
+            loadDirectory(decode(window.location.hash.slice(1)));
         });
     });
 }
@@ -292,11 +292,7 @@ var app = new Vue({
                 if (error && !result) return that.$message.error(error.message);
                 if (result.statusCode === 401) return that.$message.error('Wrong username or password');
 
-                getProfile(result.body.accessToken, function (error) {
-                    if (error) return console.error(error);
-
-                    loadDirectory(decode(window.location.hash.slice(1)));
-                });
+                initWithToken(result.body.accessToken);
             });
         },
         onOptionsMenu: function (command) {
@@ -452,11 +448,7 @@ var app = new Vue({
     }
 });
 
-getProfile(localStorage.accessToken, function (error) {
-    if (error) return console.error(error);
-
-    loadDirectory(decode(window.location.hash.slice(1)));
-});
+initWithToken(localStorage.accessToken);
 
 $(window).on('hashchange', function () {
     loadDirectory(decode(window.location.hash.slice(1)));
