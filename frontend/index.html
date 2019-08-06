@@ -97,9 +97,9 @@
           <el-table-column prop="mtime" label="Modified" width="150px" sortable :formatter="prettyDate"></el-table-column>
           <el-table-column label="Actions" align="right" width="200px" class-name="list-actions">
             <template slot-scope="scope">
-              <el-button size="small" icon="el-icon-download" circle v-show="scope.row.isFile" @click.stop="onDownload(scope.row)"></el-button>
               <el-button size="small" icon="el-icon-edit" circle v-show="!scope.row.rename" @click.stop="onRename(scope.row, scope)"></el-button>
-              <el-button size="small" icon="el-icon-delete" circle @click.stop="onDelete(scope.row)"></el-button>
+              <el-button size="small" icon="el-icon-download" circle v-show="!scope.row.rename && scope.row.isFile" @click.stop="onDownload(scope.row)"></el-button>
+              <el-button size="small" icon="el-icon-delete" circle v-show="!scope.row.rename" @click.stop="onDelete(scope.row)"></el-button>
             </template>
           </el-table-column>
         </el-table>
