@@ -87,3 +87,8 @@
 
 [5.7.0]
 * Update to latest app package manifest
+
+[5.8.0]
+* Add access token support for better CI/CD integration
+* Various UI fixes for preview thumbnails
+
