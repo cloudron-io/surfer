@@ -37,9 +37,11 @@
   </el-dialog>
 
   <el-dialog title="Access Tokens" :visible.sync="accessTokensDialogVisible" width="30%">
-    Tokens can be used with the surfer <a href="https://www.npmjs.com/package/cloudron-surfer" target="_blank">cli tool</a> or using the Api directly.
-    They are shared between all users.
+    Access tokens are useful to programmatically deploy assets for example within a CI/CD pipeline.
+    For this they can be used with the surfer <a href="https://www.npmjs.com/package/cloudron-surfer" target="_blank">cli tool</a> or using the Api directly.
     <br/>
+    <br/>
+    <el-alert title="Tokens are shared between all users." type="warning" show-icon :closable="false"></el-alert>
     <br/>
     <div>
       <div v-for="accessToken in accessTokens">
