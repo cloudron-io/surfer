@@ -89,3 +89,12 @@ a:hover, a:focus {
     align-items: center;
     justify-content: center;
 }
+
+.access-token-input {
+    padding: 5px 0;
+    width: 450px;
+}
+
+.access-token-input > input, .access-token-input i {
+    cursor: copy !important;
+}

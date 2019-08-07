@@ -15,6 +15,8 @@ const LDAP_USERS_BASE_DN = process.env.CLOUDRON_LDAP_USERS_BASE_DN;
 const LOCAL_AUTH_FILE = path.resolve(process.env.LOCAL_AUTH_FILE || './.users.json');
 const TOKENSTORE_FILE = path.resolve(process.env.TOKENSTORE_FILE || './.tokens.json');
 const AUTH_METHOD = (LDAP_URL && LDAP_USERS_BASE_DN) ? 'ldap' : 'local';
+const LOGIN_TOKEN_PREFIX = 'login-';
+const API_TOKEN_PREFIX = 'api-';
 
 if (AUTH_METHOD === 'ldap') {
     console.log('Use ldap auth');
@@ -34,8 +36,11 @@ var tokenStore = {
     get: function (token, callback) {
         callback(tokenStore.data[token] ? null : 'not found', tokenStore.data[token]);
     },
-    set: function (token, data, callback) {
-        tokenStore.data[token] = data;
+    getApiTokens: function (callback) {
+        callback(null, Object.keys(tokenStore.data).filter(function (t) { return t.indexOf(API_TOKEN_PREFIX) === 0; }))
+    },
+    set: function (token, user, callback) {
+        tokenStore.data[token] = user;
         tokenStore.save();
         callback(null);
     },
@@ -102,7 +107,7 @@ exports.login = function (req, res, next) {
     verifyUser(req.body.username, req.body.password, function (error, user) {
         if (error) return next(new HttpError(401, 'Invalid credentials'));
 
-        var accessToken = uuid();
+        var accessToken = LOGIN_TOKEN_PREFIX + uuid();
 
         tokenStore.set(accessToken, user, function (error) {
             if (error) return next(new HttpError(500, error));
@@ -137,6 +142,32 @@ exports.logout = function (req, res, next) {
 
 exports.getProfile = function (req, res, next) {
     next(new HttpSuccess(200, { username: req.user.username }));
+};
+
+exports.getTokens = function (req, res, next) {
+    tokenStore.getApiTokens(function (error, result) {
+        if (error) return next(new HttpError(500, error));
+
+        next(new HttpSuccess(200, { accessTokens: result }));
+    });
+};
+
+exports.createToken = function (req, res, next) {
+    var accessToken = API_TOKEN_PREFIX + uuid();
+
+    tokenStore.set(accessToken, req.user, function (error) {
+        if (error) return next(new HttpError(500, error));
+
+        next(new HttpSuccess(201, { accessToken: accessToken }));
+    });
+};
+
+exports.delToken = function (req, res, next) {
+    tokenStore.del(req.params.token, function (error) {
+        if (error) console.error(error);
+
+        next(new HttpSuccess(200, {}));
+    });
 };
 
 // webdav usermanager

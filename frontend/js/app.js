@@ -43,6 +43,8 @@ function initWithToken(accessToken) {
             app.folderListingEnabled = !!result.body.folderListingEnabled;
 
             loadDirectory(decode(window.location.hash.slice(1)));
+
+            app.refreshAccessTokens();
         });
     });
 }
@@ -278,7 +280,9 @@ var app = new Vue({
             password: '',
             busy: false
         },
-        entries: []
+        entries: [],
+        accessTokens: [],
+        accessTokensDialogVisible: false
     },
     methods: {
         onLogin: function () {
@@ -312,6 +316,8 @@ var app = new Vue({
                   }).then(function () {}).catch(function () {});
             } else if (command === 'logout') {
                 logout();
+            } else if (command === 'apiAccess') {
+                this.accessTokensDialogVisible = true;
             }
         },
         onDownload: function (entry) {
@@ -414,6 +420,42 @@ var app = new Vue({
                     refresh();
                 });
             }).catch(function () {});
+        },
+        refreshAccessTokens: function () {
+            var that = this;
+
+            superagent.get('/api/tokens').query({ access_token: localStorage.accessToken }).end(function (error, result) {
+                if (error && !result) return that.$message.error(error.message);
+
+                that.accessTokens = result.body.accessTokens;
+            });
+        },
+        onCopyAccessToken: function (event) {
+            event.target.select();
+            document.execCommand('copy');
+
+            this.$message({ type: 'success', message: 'Access token copied to clipboard' });
+        },
+        onCreateAccessToken: function () {
+            var that = this;
+
+            superagent.post('/api/tokens').query({ access_token: localStorage.accessToken }).end(function (error, result) {
+                if (error && !result) return that.$message.error(error.message);
+
+                that.refreshAccessTokens();
+            });
+        },
+        onDeleteAccessToken: function (token) {
+            var that = this;
+
+            this.$confirm('All actions from apps using this token will fail!', 'Really delete this access token?', { confirmButtonText: 'Yes Delete', cancelButtonText: 'No' }).then(function () {
+                superagent.delete('/api/tokens/' + token).query({ access_token: localStorage.accessToken }).end(function (error, result) {
+                    if (error && !result) return that.$message.error(error.message);
+
+                    that.refreshAccessTokens();
+                });
+            }).catch(function () {});
+
         },
         prettyDate: function (row, column, cellValue, index) {
             var date = new Date(cellValue),

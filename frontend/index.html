@@ -36,6 +36,21 @@
     </span>
   </el-dialog>
 
+  <el-dialog title="Access Tokens" :visible.sync="accessTokensDialogVisible" width="30%">
+    Tokens can be used with the surfer <a href="https://www.npmjs.com/package/cloudron-surfer" target="_blank">cli tool</a> or using the Api directly.
+    They are shared between all users.
+    <br/>
+    <br/>
+    <div>
+      <div v-for="accessToken in accessTokens">
+        <el-input suffix-icon="el-icon-copy-document" v-model="accessToken" class="access-token-input" @focus="onCopyAccessToken" size="small"></el-input>
+        <el-button icon="el-icon-delete" type="danger" size="small" @click="onDeleteAccessToken(accessToken)"></el-button>
+      </div>
+    </div>
+    <br/>
+    <el-button @click="onCreateAccessToken()" size="small" type="primary">Create Access Token</el-button>
+  </el-dialog>
+
   <el-header>
     <el-row type="flex" justify="space-between">
       <div style="padding: 7px;">
@@ -66,6 +81,7 @@
             </el-dropdown-item>
             <el-dropdown-item disabled divided>WebDAV Endpoint</el-dropdown-item>
             <el-dropdown-item><a href="/_webdav/" target="_blank">{{ origin }}/_webdav/</a></el-dropdown-item>
+            <el-dropdown-item command="apiAccess" divided><i class="el-icon-connection"></i> Access Tokens</el-dropdown-item>
             <el-dropdown-item command="about" divided><i class="el-icon-info"></i> About</el-dropdown-item>
             <el-dropdown-item command="logout" id="logoutButton"><i class="el-icon-circle-close"></i> Logout</el-dropdown-item>
           </el-dropdown-menu>
