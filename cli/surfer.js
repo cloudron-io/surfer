@@ -7,6 +7,10 @@ var program = require('commander'),
 
 program.version(require('../package.json').version);
 
+// Those override the login settings if provided
+program.option('-s, --server <url>', 'Server URL (optional)');
+program.option('-t, --token <access token>', 'Server Access Token (optional)');
+
 program.command('login <url>')
     .description('Login to server')
     .option('--username [username]', 'Username (optional)')
@@ -37,9 +41,9 @@ program.parse(process.argv);
 if (!process.argv.slice(2).length) {
     program.outputHelp();
 } else { // https://github.com/tj/commander.js/issues/338
-    var knownCommand = program.commands.some(function (command) { return command._name === process.argv[2]; });
-    if (!knownCommand) {
-        console.error('Unknown command: ' + process.argv[2]);
-        process.exit(1);
-    }
+    // var knownCommand = program.commands.some(function (command) { return command._name === process.argv[2]; });
+    // if (!knownCommand) {
+    //     console.error('Unknown command: ' + process.argv[2]);
+    //     process.exit(1);
+    // }
 }

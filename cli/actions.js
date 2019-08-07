@@ -20,17 +20,24 @@ require('colors');
 
 var API = '/api/files/';
 
+var gServer = '';
 var gQuery = {};
 
-function checkConfig() {
-    if (!config.server() || !config.accessToken()) {
-        console.log('Run %s first', 'surfer login'.yellow);
+function checkConfig(options) {
+    if (!options.parent.server && !config.server()) {
+        console.log('Run %s first, or provide %s', 'surfer login'.bold, '--server <url>'.bold);
         process.exit(1);
     }
 
-    gQuery = { access_token: config.accessToken() };
+    if (!options.parent.token && !config.accessToken()) {
+        console.log('Run %s first or provide %s', 'surfer login'.bold, '--token <access token>'.bold);
+        process.exit(1);
+    }
 
-    console.error('Using server %s', config.server().cyan);
+    gServer = options.parent.server || config.server();
+    gQuery = { access_token: options.parent.token || config.accessToken() };
+
+    console.error('Using server %s', gServer.cyan);
 }
 
 function collectFiles(filesOrFolders, options) {
@@ -100,7 +107,7 @@ function login(uri, options) {
 function logout() {
     if (!config.accessToken()) return console.log('Done'.green);
 
-    superagent.post(config.server() + '/api/logout').query({ access_token: config.accessToken() }).end(function (error, result) {
+    superagent.post(gServer + '/api/logout').query({ access_token: config.accessToken() }).end(function (error, result) {
         if (result && result.statusCode !== 200) console.log('Failed to logout: ' + result.statusCode);
         if (error) console.log(error);
 
@@ -115,7 +122,7 @@ function logout() {
 }
 
 function put(filePath, otherFilePaths, options) {
-    checkConfig();
+    checkConfig(options);
 
     var destination = '';
 
@@ -141,12 +148,12 @@ function put(filePath, otherFilePaths, options) {
         var destinationPath = (destination ? '/' + destination : '') + '/' + relativeFilePath;
         console.log('Uploading file %s -> %s', relativeFilePath.cyan, destinationPath.cyan);
 
-        superagent.post(config.server() + API + destinationPath).query(gQuery).attach('file', file).end(function (error, result) {
+        superagent.post(gServer + API + destinationPath).query(gQuery).attach('file', file).end(function (error, result) {
             if (result && result.statusCode === 403) return callback(new Error('Upload destination ' + destinationPath + ' not allowed'));
             if (result && result.statusCode !== 201) return callback(new Error('Error uploading file: ' + result.statusCode));
             if (error) return callback(error);
 
-            console.log('Uploaded to ' + config.server() + destinationPath);
+            console.log('Uploaded to ' + gServer + destinationPath);
 
             callback(null);
         });
@@ -160,13 +167,13 @@ function put(filePath, otherFilePaths, options) {
     });
 }
 
-function get(filePath) {
-    checkConfig();
+function get(filePath, options) {
+    checkConfig(options);
 
     // if no argument provided, fetch root
     filePath = filePath || '/';
 
-    request.get(config.server() + API + filePath, { qs: gQuery }, function (error, result, body) {
+    request.get(gServer + API + filePath, { qs: gQuery }, function (error, result, body) {
         if (result && result.statusCode === 401) return console.log('Login failed');
         if (result && result.statusCode === 404) return console.log('No such file or directory %s', filePath.yellow);
         if (error) return console.error(error);
@@ -186,7 +193,7 @@ function get(filePath) {
             process.stdout.write(body);
         }
     });
-    // var req = superagent.get(config.server() + API + filePath);
+    // var req = superagent.get(gServer + API + filePath);
     // req.query(gQuery);
     // req.end(function (error, result) {
     //     if (error && error.status === 401) return console.log('Login failed');
@@ -205,14 +212,14 @@ function get(filePath) {
 }
 
 function del(filePath, options) {
-    checkConfig();
+    checkConfig(options);
 
     var query = safe.JSON.parse(safe.JSON.stringify(gQuery));
     query.recursive = options.recursive;
     query.dryRun = options.dryRun;
 
     var relativeFilePath = path.resolve(filePath).slice(process.cwd().length + 1);
-    superagent.del(config.server() + API + relativeFilePath).query(query).end(function (error, result) {
+    superagent.del(gServer + API + relativeFilePath).query(query).end(function (error, result) {
         if (error && error.status === 401) return console.log('Login failed'.red);
         if (error && error.status === 404) return console.log('No such file or directory');
         if (error && error.status === 403) return console.log('Failed. Target is a directory. Use %s to delete directories.', '--recursive'.yellow);
