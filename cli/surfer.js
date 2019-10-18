@@ -21,10 +21,21 @@ program.command('logout')
     .description('Logout from server')
     .action(actions.logout);
 
-program.command('put <file|dir> [files...]')
+program.command('put <file|dir...>')
     .option('-a --all', 'Also include hidden files and folders.', false)
-    .description('Put a file, last argument is destination if provided')
-    .action(actions.put);
+    .description('Puts a list of files or dirs to the destination. The last argument is destination dir')
+    .action(actions.put)
+    .on('--help', function() {
+        console.log();
+        console.log('  Examples:');
+        console.log();
+        console.log('    $ surfer put file.txt /                # puts to /file.txt');
+        console.log('    $ surfer put file.txt /data            # puts to /data/file.txt');
+        console.log('    $ surfer put dir /data                 # puts dir/* as /data/dir/*');
+        console.log('    $ surfer put dir/. /                   # puts dir/* as /app/data/*');
+        console.log('    $ surfer put dir1 dir2 file1 /         # puts as /dir1/* /dir2/* and /file');
+        console.log();
+    });
 
 program.command('get [file|dir]')
     .description('Get a file or directory listing')

@@ -128,32 +128,27 @@ function logout() {
     });
 }
 
-function put(filePath, otherFilePaths, options) {
-    checkConfig(options);
+function putOne(filePath, destination, options, callback) {
+    const absoluteFilePath = path.resolve(filePath);
+    const stat = safe.fs.statSync(absoluteFilePath);
+    if (!stat) return callback(`Could not stat ${filePath}: ${safe.error.message}`);
 
-    var destination = '';
+    let files, base;
 
-    // take the last argument as destination
-    if (otherFilePaths.length > 0) {
-        destination = otherFilePaths.pop();
-        if (otherFilePaths.length > 0 && destination[destination.length-1] !== '/') destination += '/';
+    if (stat.isFile()) {
+        base = destination + path.basename(filePath);
+        files = [ absoluteFilePath ];
+    } else if (stat.isDirectory()) {
+        base = destination + (filePath.endsWith('.') ? '' : path.basename(filePath) + '/');
+        files = collectFiles([ absoluteFilePath ], options);
+    } else {
+        return callback(); // ignore
     }
 
-    var files = collectFiles([ filePath ].concat(otherFilePaths), options);
-
     async.eachSeries(files, function (file, callback) {
-        var relativeFilePath;
-
-        if (path.isAbsolute(file)) {
-            relativeFilePath = path.basename(file);
-        } else if (path.resolve(file).indexOf(process.cwd()) === 0) { // relative to current dir
-            relativeFilePath = path.resolve(file).slice(process.cwd().length + 1);
-        } else { // relative but somewhere else
-            relativeFilePath = path.basename(file);
-        }
-
-        var destinationPath = (destination ? '/' + destination : '') + '/' + relativeFilePath;
-        console.log('Uploading file %s -> %s', relativeFilePath.cyan, destinationPath.cyan);
+        let relativeFilePath = file.slice(absoluteFilePath.length + 1); // will be '' when filePath is a file
+        let destinationPath = base + relativeFilePath;
+        console.log('Uploading file %s -> %s', file.cyan, destinationPath.cyan);
 
         superagent.post(gServer + API + destinationPath).query(gQuery).attach('file', file).end(function (error, result) {
             if (result && result.statusCode === 403) return callback(new Error('Upload destination ' + destinationPath + ' not allowed'));
@@ -164,7 +159,25 @@ function put(filePath, otherFilePaths, options) {
 
             callback(null);
         });
-    }, function (error) {
+    }, callback);
+}
+
+function put(filePaths, options) {
+    checkConfig(options);
+
+    if (filePaths.length < 2) {
+        console.log('target directory is required.'.red);
+        process.exit(1);
+    }
+
+    let destination = filePaths.pop();
+    if (!path.isAbsolute(destination)) {
+        console.log('target directory must be absolute'.red);
+        process.exit(1);
+    }
+    if (!destination.endsWith('/')) destination += '/';
+
+    async.eachSeries(filePaths, (filePath, iteratorDone) => putOne(filePath, destination, options, iteratorDone), function (error) {
         if (error) {
             console.log('Failed to put file.', error.message.red);
             process.exit(1);
