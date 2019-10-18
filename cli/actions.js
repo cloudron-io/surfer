@@ -29,12 +29,19 @@ function checkConfig(options) {
         process.exit(1);
     }
 
+    if (options.parent.server) {
+        var tmp = url.parse(options.parent.server);
+        if (!tmp.slashes) tmp = url.parse('https://' + options.parent.server);
+        gServer = tmp.protocol + '//' + tmp.host;
+    } else {
+        gServer = config.server();
+    }
+
     if (!options.parent.token && !config.accessToken()) {
         console.log('Run %s first or provide %s', 'surfer login'.bold, '--token <access token>'.bold);
         process.exit(1);
     }
 
-    gServer = options.parent.server || config.server();
     gQuery = { access_token: options.parent.token || config.accessToken() };
 
     console.error('Using server %s', gServer.cyan);
