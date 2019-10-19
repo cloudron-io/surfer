@@ -92,3 +92,7 @@
 * Add access token support for better CI/CD integration
 * Various UI fixes for preview thumbnails
 
+[5.9.0]
+* Rename `surfer_root` to `public`
+* `surfer put` CLI has changed
+
