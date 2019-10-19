@@ -131,7 +131,7 @@ describe('Application life cycle test', function () {
     function uploadFile(name, done) {
         // File upload can't be tested with selenium, since the file input is not visible and thus can't be interacted with :-(
 
-        execSync(path.join(__dirname, '/../cli/surfer.js') + ' put ' + path.join(__dirname, name),  { stdio: 'inherit' } );
+        execSync(path.join(__dirname, '/../cli/surfer.js') + ' put ' + path.join(__dirname, name) + '/',  { stdio: 'inherit' } );
         done();
     }
 
