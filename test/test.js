@@ -40,10 +40,17 @@ describe('Application life cycle test', function () {
         browser.quit();
     });
 
-    function getAppInfo() {
+    function getAppInfo(location, done) {
+        if (!done) {
+            done = location;
+            location = LOCATION;
+        }
+
         var inspect = JSON.parse(execSync('cloudron inspect'));
-        app = inspect.apps.filter(function (a) { return a.location === LOCATION; })[0];
+        app = inspect.apps.filter(function (a) { return a.location === location; })[0];
         expect(app).to.be.an('object');
+
+        done();
     }
 
     function waitForElement(elem) {
@@ -135,7 +142,6 @@ describe('Application life cycle test', function () {
     xit('build app', function () { execSync('cloudron build', EXEC_ARGS); });
 
     it('install app', function () { execSync(`cloudron install --location ${LOCATION}`, EXEC_ARGS); });
-
     it('can get app information', getAppInfo);
 
     it('can login', login);
@@ -168,10 +174,7 @@ describe('Application life cycle test', function () {
         // ensure we don't hit NXDOMAIN in the mean time
         browser.get('about:blank').then(function () {
             execSync(`cloudron configure --location ${LOCATION}2 --app ${app.id}`, EXEC_ARGS);
-
-            getAppInfo();
-
-            done();
+            getAppInfo(`${LOCATION}2`, done);
         });
     });
 
