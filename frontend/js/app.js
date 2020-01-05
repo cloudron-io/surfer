@@ -135,7 +135,7 @@ function loadDirectory(filePath) {
     });
 }
 
-function open(row, event, column) {
+function open(row, column, event) {
     // ignore item open on row clicks if we are renaming this entry
     if (row.rename) return;
 
