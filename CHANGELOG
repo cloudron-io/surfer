@@ -96,3 +96,8 @@
 * Rename `surfer_root` to `public`
 * `surfer put` CLI has changed
 
+[5.9.1]
+* Visual improvements to give more space to content
+* Add preview sidebar
+* Update dependencies for securty fixes
+
