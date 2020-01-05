@@ -55,9 +55,6 @@
 
   <el-header>
     <el-row type="flex" justify="space-between">
-      <div style="padding: 7px;">
-        <span>Surfer</span>
-      </div>
       <div v-show="session.valid">
         <el-button type="primary" size="small" icon="el-icon-arrow-left" :disabled="!pathParts.slice(-1).length" @click="onUp"></el-button>
       </div>
@@ -102,22 +99,22 @@
         <el-table :data="entries" style="max-width: 1280px;width: 100%" height="100%" empty-text="Folder is emtpy" :default-sort="{ prop: 'filePath', order: 'descending' }" @row-click="open">
           <el-table-column prop="previewUrl" label="Type" width="100px" sortable>
             <template slot-scope="scope">
-              <img v-bind:src="scope.row.previewUrl" height="32px" width="32px" style="object-fit: cover;"/>
+              <img v-bind:src="scope.row.previewUrl" class="list-icon" height="32px" width="32px" style="object-fit: cover;"/>
             </template>
           </el-table-column>
           <el-table-column prop="filePath" label="Name" sortable>
             <template slot-scope="scope">
               <el-input v-on:keyup.native.enter="onRenameSubmit(scope.row)" v-on:keyup.native.esc="onRenameEnd(scope.row)" @blur="onRenameEnd(scope.row)" v-model="scope.row.filePathNew" :id="'filePathRenameInputId-' + scope.$index" v-show="scope.row.rename"></el-input>
               <span v-show="!scope.row.rename">{{ scope.row.filePath }}</span>
+              <el-button size="small" icon="el-icon-edit" type="text" plain circle class="rename-action" v-show="!scope.row.rename" @click.stop="onRename(scope.row, scope)"></el-button>
             </template>
           </el-table-column>
           <el-table-column prop="size" label="Size" width="150px" sortable :formatter="prettyFileSize"></el-table-column>
           <el-table-column prop="mtime" label="Modified" width="150px" sortable :formatter="prettyDate"></el-table-column>
           <el-table-column label="Actions" align="right" width="200px" class-name="list-actions">
             <template slot-scope="scope">
-              <el-button size="small" icon="el-icon-edit" circle v-show="!scope.row.rename" @click.stop="onRename(scope.row, scope)"></el-button>
-              <el-button size="small" icon="el-icon-download" circle v-show="!scope.row.rename && scope.row.isFile" @click.stop="onDownload(scope.row)"></el-button>
-              <el-button size="small" icon="el-icon-delete" circle v-show="!scope.row.rename" @click.stop="onDelete(scope.row)"></el-button>
+              <el-button size="small" icon="el-icon-download" type="text" plain circle v-show="!scope.row.rename && scope.row.isFile" @click.stop="onDownload(scope.row)"></el-button>
+              <el-button size="small" icon="el-icon-delete" type="text" plain circle v-show="!scope.row.rename" @click.stop="onDelete(scope.row)"></el-button>
             </template>
           </el-table-column>
         </el-table>

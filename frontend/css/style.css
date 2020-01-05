@@ -59,11 +59,15 @@ a:hover, a:focus {
     font-size: 12px;
 }
 
-.el-table__row .list-actions .el-button {
+.rename-action {
+    margin-left: 20px;
+}
+
+.el-table__row .rename-action {
     visibility: hidden;
 }
 
-.el-table__row:hover .list-actions .el-button {
+.el-table__row:hover .rename-action {
     visibility: visible;
 }
 
