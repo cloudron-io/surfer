@@ -85,8 +85,8 @@ router.get   ('/api/files/*', auth.verify, files.get);
 router.post  ('/api/files/*', auth.verify, multipart, files.post);
 router.put   ('/api/files/*', auth.verify, files.put);
 router.delete('/api/files/*', auth.verify, files.del);
-router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });
 
+app.use('/api/healthcheck', function (req, res) { res.status(200).send(); });
 app.use(morgan('dev'));
 app.use(compression());
 app.use('/api', bodyParser.json());
