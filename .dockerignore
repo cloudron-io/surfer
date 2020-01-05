@@ -1,5 +1,6 @@
-test/*
-node_modules/*
-files/*
-.git/*
-screenshots
+test/
+node_modules/
+files/
+.git/
+screenshots/
+cli/
