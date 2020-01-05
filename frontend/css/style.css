@@ -81,6 +81,10 @@ a:hover, a:focus {
     height: auto;
 }
 
+.el-table--enable-row-transition .el-table__body td {
+    transition: background-color .1s ease;
+}
+
 /* welcome and 404 page */
 .container-center {
     display: flex;
