@@ -26,7 +26,7 @@
     "colors": "^1.1.2",
     "commander": "^2.14.1",
     "compression": "^1.7.2",
-    "connect-lastmile": "0.0.10",
+    "connect-lastmile": "^1.2.2",
     "connect-timeout": "^1.6.2",
     "cookie-parser": "^1.4.1",
     "debug": "^2.6.9",
@@ -35,20 +35,20 @@
     "express-session": "^1.15.6",
     "ldapjs": "^1.0.2",
     "mkdirp": "^0.5.1",
-    "morgan": "^1.9.0",
+    "morgan": "^1.9.1",
     "multiparty": "^4.1.2",
     "readline-sync": "^1.4.9",
     "request": "^2.83.0",
     "safetydance": "^0.1.1",
     "serve-index": "^1.9.1",
-    "superagent": "^1.7.2",
+    "superagent": "^5.1.3",
     "underscore": "^1.8.3",
     "uuid": "^3.2.1",
     "webdav-server": "^2.4.6"
   },
   "devDependencies": {
     "expect.js": "^0.3.1",
-    "mocha": "^2.4.5",
-    "selenium-webdriver": "^2.52.0"
+    "mocha": "^7.0.0",
+    "selenium-webdriver": "^3.6.0"
   }
 }
