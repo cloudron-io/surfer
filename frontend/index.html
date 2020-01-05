@@ -104,7 +104,7 @@
           </el-table-column>
           <el-table-column prop="filePath" label="Name" sortable>
             <template slot-scope="scope">
-              <el-input v-on:keyup.native.enter="onRenameSubmit(scope.row)" v-on:keyup.native.esc="onRenameEnd(scope.row)" @blur="onRenameEnd(scope.row)" v-model="scope.row.filePathNew" :id="'filePathRenameInputId-' + scope.$index" v-show="scope.row.rename"></el-input>
+              <el-input size="small" v-on:keyup.native.enter="onRenameSubmit(scope.row)" v-on:keyup.native.esc="onRenameEnd(scope.row)" @blur="onRenameEnd(scope.row)" v-model="scope.row.filePathNew" :id="'filePathRenameInputId-' + scope.$index" v-show="scope.row.rename"></el-input>
               <span v-show="!scope.row.rename">{{ scope.row.filePath }}</span>
               <el-button size="small" icon="el-icon-edit" type="text" plain circle class="rename-action" v-show="!scope.row.rename" @click.stop="onRename(scope.row, scope)"></el-button>
             </template>
