@@ -23,7 +23,7 @@ if (!process.env.USERNAME || !process.env.PASSWORD) {
 describe('Application life cycle test', function () {
     this.timeout(0);
 
-    const EXEC_OPTIONS = { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' };
+    const EXEC_ARGS = { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' };
     const LOCATION = 'test';
     const TEST_TIMEOUT = 10000;
     const TEST_FILE_NAME_0 = 'index.html';
@@ -39,6 +39,12 @@ describe('Application life cycle test', function () {
     after(function () {
         browser.quit();
     });
+
+    function getAppInfo() {
+        var inspect = JSON.parse(execSync('cloudron inspect'));
+        app = inspect.apps.filter(function (a) { return a.location === LOCATION; })[0];
+        expect(app).to.be.an('object');
+    }
 
     function waitForElement(elem) {
         return browser.wait(until.elementLocated(elem), TEST_TIMEOUT).then(function () {
@@ -126,15 +132,11 @@ describe('Application life cycle test', function () {
         done();
     }
 
-    xit('build app', function () { execSync('cloudron build', EXEC_OPTIONS); });
+    xit('build app', function () { execSync('cloudron build', EXEC_ARGS); });
 
-    it('install app', function () { execSync(`cloudron install --location ${LOCATION}`, EXEC_OPTIONS); });
+    it('install app', function () { execSync(`cloudron install --location ${LOCATION}`, EXEC_ARGS); });
 
-    it('can get app information', function () {
-        var inspect = JSON.parse(execSync('cloudron inspect'));
-        app = inspect.apps.filter(function (a) { return a.location === LOCATION; })[0];
-        expect(app).to.be.an('object');
-    });
+    it('can get app information', getAppInfo);
 
     it('can login', login);
     it('can cli login', cliLogin);
@@ -150,8 +152,8 @@ describe('Application life cycle test', function () {
     it('second file is gone', checkFileIsGone.bind(null, TEST_FILE_NAME_1));
     it('can logout', logout);
 
-    it('backup app', function () { execSync(`cloudron backup create --app ${app.id}`, EXEC_OPTIONS); });
-    it('restore app', function () { execSync(`cloudron restore --app ${app.id}`, EXEC_OPTIONS); });
+    it('backup app', function () { execSync(`cloudron backup create --app ${app.id}`, EXEC_ARGS); });
+    it('restore app', function () { execSync(`cloudron restore --app ${app.id}`, EXEC_ARGS); });
 
     it('can login', login);
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
@@ -165,11 +167,9 @@ describe('Application life cycle test', function () {
 
         // ensure we don't hit NXDOMAIN in the mean time
         browser.get('about:blank').then(function () {
-            execSync(`cloudron configure --location ${LOCATION}2 --app ${app.id}`, EXEC_OPTIONS);
+            execSync(`cloudron configure --location ${LOCATION}2 --app ${app.id}`, EXEC_ARGS);
 
-            var inspect = JSON.parse(execSync('cloudron inspect'));
-            app = inspect.apps.filter(function (a) { return a.location === LOCATION + '2'; })[0];
-            expect(app).to.be.an('object');
+            getAppInfo();
 
             done();
         });
@@ -184,7 +184,39 @@ describe('Application life cycle test', function () {
     it('uninstall app', function (done) {
         // ensure we don't hit NXDOMAIN in the mean time
         browser.get('about:blank').then(function () {
-            execSync(`cloudron uninstall --app ${app.id}`, EXEC_OPTIONS);
+            execSync(`cloudron uninstall --app ${app.id}`, EXEC_ARGS);
+            done();
+        });
+    });
+
+    // test update
+    it('can install app', function () {
+        execSync(`cloudron install --appstore-id io.cloudron.surfer --location ${LOCATION}`, EXEC_ARGS);
+    });
+
+    it('can get app information', getAppInfo);
+    it('can login', login);
+    it('can cli login', cliLogin);
+    it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
+    it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
+    it('file is served up', checkFileIsPresent);
+    it('file is served up', checkIndexFileIsServedUp);
+    it('can logout', logout);
+
+    it('can update', function () {
+        execSync(`cloudron update --app ${LOCATION}`, EXEC_ARGS);
+    });
+
+    it('can login', login);
+    it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
+    it('file is served up', checkFileIsPresent);
+    it('file is served up', checkIndexFileIsServedUp);
+    it('can logout', logout);
+
+    it('uninstall app', function (done) {
+        // ensure we don't hit NXDOMAIN in the mean time
+        browser.get('about:blank').then(function () {
+            execSync(`cloudron uninstall --app ${app.id}`, EXEC_ARGS);
             done();
         });
     });
