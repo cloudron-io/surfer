@@ -89,6 +89,10 @@ a:hover, a:focus {
     transition: background-color .1s ease;
 }
 
+.el-drawer__header {
+    margin-bottom: 10px;
+}
+
 /* welcome and 404 page */
 .container-center {
     display: flex;

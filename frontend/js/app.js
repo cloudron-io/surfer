@@ -146,7 +146,11 @@ function open(row, column, event) {
         return;
     }
 
-    window.open(encode(path));
+    app.activeEntry = row;
+    app.activeEntry.fullPath = encode(sanitize(app.path + '/' + row.filePath));
+    app.previewDrawerVisible = true
+
+    // window.open(encode(path));
 }
 
 function uploadFiles(files) {
@@ -280,6 +284,8 @@ var app = new Vue({
             password: '',
             busy: false
         },
+        previewDrawerVisible: false,
+        activeEntry: {},
         entries: [],
         accessTokens: [],
         accessTokensDialogVisible: false
