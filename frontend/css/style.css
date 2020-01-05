@@ -57,6 +57,7 @@ a:hover, a:focus {
 
 .el-table th {
     font-size: 12px;
+    padding: 0;
 }
 
 .rename-action {
