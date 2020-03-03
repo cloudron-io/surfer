@@ -19,10 +19,12 @@ const LOGIN_TOKEN_PREFIX = 'login-';
 const API_TOKEN_PREFIX = 'api-';
 
 if (AUTH_METHOD === 'ldap') {
-    console.log('Use ldap auth');
+    console.log('Using ldap auth');
 } else {
-    console.log(`Use local auth file ${LOCAL_AUTH_FILE}`);
+    console.log(`Using local auth file at: ${LOCAL_AUTH_FILE}`);
 }
+
+var gConfig = {};
 
 var tokenStore = {
     data: {},
@@ -53,7 +55,7 @@ var tokenStore = {
 
 // load token store data if any
 try {
-    console.log(`Using tokenstore file: ${TOKENSTORE_FILE}`);
+    console.log(`Using tokenstore file at: ${TOKENSTORE_FILE}`);
     tokenStore.data = JSON.parse(fs.readFileSync(TOKENSTORE_FILE, 'utf-8'));
 } catch (e) {
     // start with empty token store
@@ -103,6 +105,10 @@ function verifyUser(username, password, callback) {
     }
 }
 
+exports.init = function (config) {
+    gConfig = config;
+};
+
 exports.login = function (req, res, next) {
     verifyUser(req.body.username, req.body.password, function (error, user) {
         if (error) return next(new HttpError(401, 'Invalid credentials'));
@@ -128,6 +134,11 @@ exports.verify = function (req, res, next) {
         next();
     });
 
+};
+
+exports.verifyIfNeeded = function (req, res, next) {
+    if (!gConfig.folderListingEnabled) return exports.verify(req, res, next);
+    next();
 };
 
 exports.logout = function (req, res, next) {

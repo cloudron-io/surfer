@@ -1,0 +1,89 @@
+<html>
+<head>
+    <title> Surfer </title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+    <link rel="icon" type="image/png" href="/_admin/img/logo.png">
+
+    <link rel="stylesheet" href="/_admin/css/theme-chalk_2.11.1.css">
+    <link rel="stylesheet" href="/_admin/css/style.css">
+
+    <script src="/_admin/js/jquery-1.12.1.min.js"></script>
+    <script src="/_admin/js/vue.min.js"></script>
+    <script src="/_admin/js/element-ui_2.11.1.min.js"></script>
+    <script src="/_admin/js/element-ui_en_2.11.1.min.js"></script>
+    <script src="/_admin/js/filesize.min.js"></script>
+    <script src="/_admin/js/superagent.js"></script>
+
+</head>
+<body>
+
+<div id="app">
+
+<el-container>
+  <el-header>
+    <el-row type="flex" justify="space-between">
+      <div style="flex-grow: 2; padding: 0 7px;">
+        <p style="font-size: 24px; margin: 4px 0;">{{ path }}</p>
+      </div>
+      <div>
+        <a href="/_admin">
+          <el-button type="primary" icon="el-icon-user" size="small">Login</el-button>
+        </a>
+      </div>
+    </el-row>
+  </el-header>
+  <el-main>
+
+    <div v-show="busy">
+      <center><h1><i class="el-icon-loading"></i></h1></center>
+    </div>
+
+    <div v-show="!busy && entries.length" v-cloak>
+      <center>
+        <el-table :data="entries" style="max-width: 1280px; width: 100%" height="100%" empty-text="Folder is emtpy" :default-sort="{ prop: 'filePath', order: 'descending' }" @row-click="open">
+          <el-table-column prop="previewUrl" label="Type" width="80px" sortable>
+            <template slot-scope="scope">
+              <el-image v-bind:src="scope.row.previewUrl" class="list-icon" style="width: 32px; height: 32px" fit="cover"></el-image>
+            </template>
+          </el-table-column>
+          <el-table-column prop="filePath" label="Name" sortable></el-table-column>
+          <el-table-column prop="size" label="Size" width="150px" sortable :formatter="prettyFileSize"></el-table-column>
+          <el-table-column prop="mtime" label="Modified" width="150px" sortable :formatter="prettyDate"></el-table-column>
+          <el-table-column label="Actions" align="right" width="200px" class-name="list-actions">
+            <template slot-scope="scope">
+              <el-button size="small" icon="el-icon-download" type="text" plain circle v-show="scope.row.isFile" @click.stop="onDownload(scope.row)"></el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </center>
+    </div>
+
+    <div v-show="!busy && !entries.length">
+      <center>
+        Folder is empty
+      </center>
+    </div>
+
+    <el-drawer :title="activeEntry.filePath":with-header="false" :visible.sync="previewDrawerVisible" direction="rtl" size="50%">
+      <div style="display: flex; flex-direction: column; height: 100%;">
+        <iframe :src="activeEntry.fullPath" style="width: 100%; height: 100%; border: none; margin: 10px;"></iframe>
+        <center>
+          <el-button size="small" icon="el-icon-download" style="margin: 10px;" @click.stop="onDownload(activeEntry)">Download</el-button>
+          <a :href="activeEntry.fullPath" target="_blank">
+            <el-button size="small" icon="el-icon-link" style="margin: 10px;">Open</el-button>
+          </a>
+        </center>
+      </div>
+    </el-drawer>
+
+  </el-main>
+</el-container>
+
+</div>
+
+<script src="/_admin/js/public.js"></script>
+
+</body>
+</html>

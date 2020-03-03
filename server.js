@@ -16,7 +16,6 @@ var express = require('express'),
     multipart = require('./src/multipart'),
     mkdirp = require('mkdirp'),
     auth = require('./src/auth.js'),
-    serveIndex = require('serve-index'),
     webdav = require('webdav-server').v2,
     files = require('./src/files.js')(path.resolve(__dirname, process.argv[2] || 'files'));
 
@@ -49,7 +48,7 @@ function setSettings(req, res, next) {
 
 // Load the config file
 try {
-    console.log(`Using config file: ${CONFIG_FILE}`);
+    console.log(`Using config file at: ${CONFIG_FILE}`);
     config = require(CONFIG_FILE);
 } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') console.log(`Config file ${CONFIG_FILE} not found`);
@@ -68,7 +67,7 @@ var webdavServer = new webdav.WebDAVServer({
 });
 
 webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(ROOT_FOLDER), function (success) {
-    console.log(`Mounting ${ROOT_FOLDER} as webdav resource`, success);
+    if (success) console.log(`Mounting webdav resource from: ${ROOT_FOLDER}`);
 });
 
 var multipart = multipart({ maxFieldsSize: 2 * 1024, limit: '512mb', timeout: 3 * 60 * 1000 });
@@ -81,7 +80,7 @@ router.get   ('/api/tokens', auth.verify, auth.getTokens);
 router.post  ('/api/tokens', auth.verify, auth.createToken);
 router.delete('/api/tokens/:token', auth.verify, auth.delToken);
 router.get   ('/api/profile', auth.verify, auth.getProfile);
-router.get   ('/api/files/*', auth.verify, files.get);
+router.get   ('/api/files/*', auth.verifyIfNeeded, files.get);
 router.post  ('/api/files/*', auth.verify, multipart, files.post);
 router.put   ('/api/files/*', auth.verify, files.put);
 router.delete('/api/files/*', auth.verify, files.del);
@@ -101,17 +100,22 @@ app.use('/', function welcomePage(req, res, next) {
     if (config.folderListingEnabled || req.path !== '/') return next();
     res.status(200).sendFile(path.join(__dirname, '/frontend/welcome.html'));
 });
-app.use('/', function (req, res, next) {
-    if (config.folderListingEnabled) return next();
-    res.status(404).sendFile(__dirname + '/frontend/404.html');
+app.use('/', function (req, res) {
+    if (!config.folderListingEnabled) return res.status(404).sendFile(__dirname + '/frontend/404.html');
+
+    if (!fs.existsSync(path.join(ROOT_FOLDER, req.path))) return res.status(404).sendFile(__dirname + '/frontend/404.html');
+
+    res.status(200).sendFile(__dirname + '/frontend/public.html');
 });
-app.use('/', serveIndex(ROOT_FOLDER, { icons: true }));
 app.use(lastMile());
 
 var server = app.listen(3000, function () {
     var host = server.address().address;
     var port = server.address().port;
 
-    console.log('Surfer listening on http://%s:%s', host, port);
-    console.log('Using base path', ROOT_FOLDER);
+    console.log(`Base path: ${ROOT_FOLDER}`);
+    console.log();
+    console.log(`Listening on http://${host}:${port}`);
+
+    auth.init(config);
 });
