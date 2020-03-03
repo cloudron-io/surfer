@@ -96,8 +96,8 @@
 
     <div v-show="!busy && session.valid" v-cloak>
       <center>
-        <el-table :data="entries" style="max-width: 1280px;width: 100%" height="100%" empty-text="Folder is emtpy" :default-sort="{ prop: 'filePath', order: 'descending' }" @row-click="open">
-          <el-table-column prop="previewUrl" label="Type" width="100px" sortable>
+        <el-table :data="entries" style="max-width: 1280px; width: 100%" height="100%" empty-text="Folder is emtpy" :default-sort="{ prop: 'filePath', order: 'descending' }" @row-click="open">
+          <el-table-column prop="previewUrl" label="Type" width="80px" sortable>
             <template slot-scope="scope">
               <el-image v-bind:src="scope.row.previewUrl" class="list-icon" style="width: 32px; height: 32px" fit="cover"></el-image>
             </template>

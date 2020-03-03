@@ -150,7 +150,15 @@ function open(row, column, event) {
     app.activeEntry.fullPath = encode(sanitize(app.path + '/' + row.filePath));
     app.previewDrawerVisible = true
 
-    // window.open(encode(path));
+    // need to wait for DOM element to exist
+    setTimeout(function () {
+        $('iframe').on('load', function (e) {
+            if (!e.target.contentWindow.document.body) return;
+
+            e.target.contentWindow.document.body.style.display = 'flex'
+            e.target.contentWindow.document.body.style.justifyContent = 'center'
+        });
+    }, 0);
 }
 
 function uploadFiles(files) {
