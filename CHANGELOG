@@ -101,3 +101,6 @@
 * Add preview sidebar
 * Update dependencies for securty fixes
 
+[5.9.2]
+* Improve public folder listing
+
