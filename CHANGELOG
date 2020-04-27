@@ -104,3 +104,6 @@
 [5.9.2]
 * Improve public folder listing
 
+[5.10.0]
+* Update to new Cloudron base image
+

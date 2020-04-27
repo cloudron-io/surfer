@@ -1,4 +1,4 @@
-This app packages Surfer <upstream>5.8.2</upstream>
+This app packages Surfer <upstream>5.10.0</upstream>
 
 ### Overview
 
