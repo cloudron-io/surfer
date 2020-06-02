@@ -52,6 +52,12 @@
         var filePath = sanitize(window.location.pathname);
 
         app.path = filePath;
+        decode(filePath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
+            return {
+                name: e,
+                link: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
+            };
+        });
 
         superagent.get('/api/files/' + encode(filePath)).query({ access_token: localStorage.accessToken }).end(function (error, result) {
             app.busy = false;
@@ -67,11 +73,13 @@
                 entry.filePathNew = entry.filePath;
                 return entry;
             });
+
             app.path = filePath;
+
             app.pathParts = decode(filePath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
                 return {
                     name: e,
-                    link: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
+                    link: sanitize('/' + a.slice(0, i).join('/') + '/' + e)
                 };
             });
         });
@@ -103,6 +111,7 @@
             ready: false,
             busy: false,
             path: '',
+            pathParts: [],
             previewDrawerVisible: false,
             activeEntry: {},
             entries: []
@@ -137,6 +146,9 @@
             },
             loadDirectory: loadDirectory,
             open: open,
+            onUp: function () {
+                window.location.href = sanitize(this.path.split('/').filter(function (p) { return !!p; }).slice(0, -1).join('/'));
+            }
         }
     });
 
