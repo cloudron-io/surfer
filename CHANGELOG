@@ -107,3 +107,7 @@
 [5.10.0]
 * Update to new Cloudron base image
 
+[5.10.1]
+* Add breadcrumbs to public folder listing
+* Minor UI improvements
+
