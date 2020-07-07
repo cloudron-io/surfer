@@ -14,7 +14,6 @@ var express = require('express'),
     HttpError = require('connect-lastmile').HttpError,
     HttpSuccess = require('connect-lastmile').HttpSuccess,
     multipart = require('./src/multipart'),
-    mkdirp = require('mkdirp'),
     auth = require('./src/auth.js'),
     webdav = require('webdav-server').v2,
     files = require('./src/files.js')(path.resolve(__dirname, process.argv[2] || 'files'));
@@ -24,7 +23,7 @@ const ROOT_FOLDER = path.resolve(__dirname, process.argv[2] || 'files');
 const CONFIG_FILE = path.resolve(__dirname, process.argv[3] || '.config.json');
 
 // Ensure the root folder exists
-mkdirp.sync(ROOT_FOLDER);
+fs.mkdirSync(ROOT_FOLDER, { recursive: true });
 
 var config = {
     folderListingEnabled: false

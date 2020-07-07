@@ -2,10 +2,10 @@
 
 var async = require('async'),
     fs = require('fs'),
+    util = require('util'),
     path = require('path'),
     rm = require('del'),
     debug = require('debug')('files'),
-    mkdirp = require('mkdirp'),
     HttpError = require('connect-lastmile').HttpError,
     HttpSuccess = require('connect-lastmile').HttpSuccess;
 
@@ -22,12 +22,20 @@ exports = module.exports = function (basePath) {
     };
 };
 
+function boolLike(arg) {
+    if (!arg) return false;
+    if (util.isNumber(arg)) return !!arg;
+    if (util.isString(arg) && arg.toLowerCase() === 'false') return false;
+
+    return true;
+}
+
 // http://stackoverflow.com/questions/11293857/fastest-way-to-copy-file-in-node-js
 function copyFile(source, target, cb) {
     var cbCalled = false;
 
     // ensure directory
-    mkdirp(path.dirname(target), function (error) {
+    fs.mkdir(path.dirname(target), { recursive: true }, function (error) {
         if (error) return cb(error);
 
         var rd = fs.createReadStream(source);
@@ -56,7 +64,7 @@ function copyFile(source, target, cb) {
 }
 
 function createDirectory(targetPath, callback) {
-    mkdirp(targetPath, function (error) {
+    fs.mkdir(targetPath, { recursive: true }, function (error) {
         if (error) return callback(error);
         callback(null);
     });
@@ -114,9 +122,10 @@ function get(req, res, next) {
 
 function post(req, res, next) {
     var filePath = decodeURIComponent(req.params[0]);
+    var isDirectory = boolLike(req.query.directory);
 
-    if (!(req.files && req.files.file) && !req.query.directory) return next(new HttpError(400, 'missing file or directory'));
-    if ((req.files && req.files.file) && req.query.directory) return next(new HttpError(400, 'either file or directory'));
+    if (!(req.files && req.files.file) && !isDirectory) return next(new HttpError(400, 'missing file or directory'));
+    if ((req.files && req.files.file) && isDirectory) return next(new HttpError(400, 'either file or directory'));
 
     debug('post:', filePath);
 
@@ -126,10 +135,10 @@ function post(req, res, next) {
     fs.stat(absoluteFilePath, function (error, result) {
         if (error && error.code !== 'ENOENT') return next(new HttpError(500, error));
 
-        if (result && req.query.directory) return next(new HttpError(409, 'name already exists'));
+        if (result && isDirectory) return next(new HttpError(409, 'name already exists'));
         if (result && result.isDirectory()) return next(new HttpError(409, 'cannot post on directories'));
 
-        if (req.query.directory) {
+        if (isDirectory) {
             return createDirectory(absoluteFilePath, function (error) {
                 if (error) return next(new HttpError(500, error));
                 next(new HttpSuccess(201, {}));
@@ -171,8 +180,8 @@ function put(req, res, next) {
 
 function del(req, res, next) {
     var filePath = decodeURIComponent(req.params[0]);
-    var recursive = !!req.query.recursive;
-    var dryRun = !!req.query.dryRun;
+    var recursive = boolLike(req.query.recursive);
+    var dryRun = boolLike(req.query.dryRun);
 
     var absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath) return next(new HttpError(404, 'Not found'));
