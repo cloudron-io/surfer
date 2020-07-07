@@ -10,7 +10,7 @@
     "hosting",
     "server"
   ],
-  "version": "5.10.1",
+  "version": "5.10.2",
   "healthCheckPath": "/api/healthcheck",
   "configurePath": "/_admin",
   "httpPort": 3000,
@@ -20,7 +20,7 @@
   "documentationUrl": "https://cloudron.io/documentation/apps/surfer/",
   "forumUrl": "https://forum.cloudron.io/category/28/surfer",
   "contactEmail": "support@cloudron.io",
-  "icon": "logo.png",
+  "icon": "file://logo.png",
   "addons": {
     "ldap": {},
     "localstorage": {

@@ -111,3 +111,7 @@
 * Add breadcrumbs to public folder listing
 * Minor UI improvements
 
+[5.10.2]
+* Fix public folder listing if path contains spaces #14
+* Improve breadcrumb layout
+* Fix chrome bug on file rename #15
