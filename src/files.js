@@ -196,9 +196,6 @@ function del(req, res, next) {
 
         if (result.isDirectory() && !recursive) return next(new HttpError(403, 'Is directory'));
 
-        // add globs to get file listing
-        if (result.isDirectory()) absoluteFilePath += '/**';
-
         rm(absoluteFilePath, { dryRun: dryRun, force: true }).then(function (result) {
             result = result.map(removeBasePath);
             next(new HttpSuccess(200, { entries: result }));

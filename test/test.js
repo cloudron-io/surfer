@@ -139,6 +139,22 @@ describe('Application life cycle test', function () {
         done();
     }
 
+    function checkFolderExists(done) {
+        var result;
+        result = execSync(path.join(__dirname, '/../cli/surfer.js') + ' get').toString();
+        expect(result.indexOf('test/')).to.not.equal(-1);
+        result = execSync(path.join(__dirname, '/../cli/surfer.js') + ' get test/').toString();
+        expect(result.indexOf('test.txt')).to.not.equal(-1);
+        done();
+    }
+
+    function checkFolderIsGone(done) {
+        var result;
+        result = execSync(path.join(__dirname, '/../cli/surfer.js') + ' get').toString();
+        expect(result.indexOf('test/')).to.equal(-1);
+        done();
+    }
+
     xit('build app', function () { execSync('cloudron build', EXEC_ARGS); });
 
     it('install app', function () { execSync(`cloudron install --location ${LOCATION}`, EXEC_ARGS); });
@@ -156,6 +172,8 @@ describe('Application life cycle test', function () {
         execSync(path.join(__dirname, '/../cli/surfer.js') + ' del ' + TEST_FILE_NAME_1,  { stdio: 'inherit' } );
     });
     it('second file is gone', checkFileIsGone.bind(null, TEST_FILE_NAME_1));
+    it('can upload folder', uploadFile.bind(null, '.'));
+    it('folder exists', checkFolderExists);
     it('can logout', logout);
 
     it('backup app', function () { execSync(`cloudron backup create --app ${app.id}`, EXEC_ARGS); });
@@ -166,6 +184,7 @@ describe('Application life cycle test', function () {
     it('file is served up', checkFileIsPresent);
     it('file is served up', checkIndexFileIsServedUp);
     it('second file is still gone', checkFileIsGone.bind(null, TEST_FILE_NAME_1));
+    it('folder exists', checkFolderExists);
     it('can logout', logout);
 
     it('move to different location', function (done) {
@@ -179,9 +198,13 @@ describe('Application life cycle test', function () {
     });
 
     it('can login', login);
+    it('can cli login', cliLogin);
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
     it('file is served up', checkFileIsPresent);
     it('file is served up', checkIndexFileIsServedUp);
+    it('folder exists', checkFolderExists);
+    it('can delete folder', function () { execSync(path.join(__dirname, '/../cli/surfer.js') + ' del --recursive test',  { stdio: 'inherit' } ); });
+    it('folder is gone', checkFolderIsGone);
     it('can logout', logout);
 
     it('uninstall app', function (done) {
