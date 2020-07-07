@@ -103,7 +103,7 @@ app.use('/', function welcomePage(req, res, next) {
 app.use('/', function (req, res) {
     if (!config.folderListingEnabled) return res.status(404).sendFile(__dirname + '/frontend/404.html');
 
-    if (!fs.existsSync(path.join(ROOT_FOLDER, req.path))) return res.status(404).sendFile(__dirname + '/frontend/404.html');
+    if (!fs.existsSync(path.join(ROOT_FOLDER, decodeURIComponent(req.path)))) return res.status(404).sendFile(__dirname + '/frontend/404.html');
 
     res.status(200).sendFile(__dirname + '/frontend/public.html');
 });
