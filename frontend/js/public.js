@@ -49,17 +49,16 @@
     function loadDirectory() {
         app.busy = true;
 
-        var filePath = sanitize(window.location.pathname);
+        app.path = sanitize(decode(window.location.pathname));
 
-        app.path = filePath;
-        decode(filePath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
+        app.path.split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
             return {
                 name: e,
                 link: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
             };
         });
 
-        superagent.get('/api/files/' + encode(filePath)).query({ access_token: localStorage.accessToken }).end(function (error, result) {
+        superagent.get('/api/files/' + encode(app.path)).query({ access_token: localStorage.accessToken }).end(function (error, result) {
             app.busy = false;
 
             if (result && result.statusCode === 401) return logout();
@@ -67,16 +66,14 @@
 
             result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
             app.entries = result.body.entries.map(function (entry) {
-                entry.previewUrl = getPreviewUrl(entry, filePath);
+                entry.previewUrl = getPreviewUrl(entry, app.path);
                 entry.extension = getExtension(entry);
                 entry.rename = false;
                 entry.filePathNew = entry.filePath;
                 return entry;
             });
 
-            app.path = filePath;
-
-            app.pathParts = decode(filePath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
+            app.pathParts = app.path.split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
                 return {
                     name: e,
                     link: sanitize('/' + a.slice(0, i).join('/') + '/' + e)
