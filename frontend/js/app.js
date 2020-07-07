@@ -383,6 +383,7 @@ var app = new Vue({
         onRename: function (entry, scope) {
             if (entry.rename) return entry.rename = false;
 
+            entry.filePathNew = entry.filePath;
             entry.rename = true;
 
             Vue.nextTick(function () {
@@ -397,7 +398,6 @@ var app = new Vue({
         },
         onRenameEnd: function (entry) {
             entry.rename = false;
-            entry.filePathNew = entry.filePath;
         },
         onRenameSubmit: function (entry) {
             var that = this;
