@@ -61,7 +61,20 @@ try {
     // start with empty token store
 }
 
+// https://tools.ietf.org/search/rfc4515#section-3
+var sanitizeInput = function (username) {
+  return username
+    .replace(/\*/g, '\\2a')
+    .replace(/\(/g, '\\28')
+    .replace(/\)/g, '\\29')
+    .replace(/\\/g, '\\5c')
+    .replace(/\0/g, '\\00')
+    .replace(/\//g, '\\2f');
+};
+
 function verifyUser(username, password, callback) {
+    username = sanitizeInput(username);
+
     if (AUTH_METHOD === 'ldap') {
         var ldapClient = ldapjs.createClient({ url: process.env.CLOUDRON_LDAP_URL });
         ldapClient.on('error', function (error) {
