@@ -115,3 +115,6 @@
 * Fix public folder listing if path contains spaces #14
 * Improve breadcrumb layout
 * Fix chrome bug on file rename #15
+
+[5.10.3]
+* Sanitize username input to prevent LDAP DoS attack. Thanks to Alessio (d3lla) for reporting!
