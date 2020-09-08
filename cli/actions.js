@@ -145,17 +145,15 @@ function putOne(filePath, destination, options, callback) {
         return callback(); // ignore
     }
 
-    async.eachSeries(files, function (file, callback) {
+    async.eachLimit(files, 10, function (file, callback) {
         let relativeFilePath = file.slice(absoluteFilePath.length + 1); // will be '' when filePath is a file
         let destinationPath = base + relativeFilePath;
-        console.log('Uploading file %s -> %s', file.cyan, destinationPath.cyan);
+        console.log('Uploading %s -> %s', file.cyan, destinationPath.cyan);
 
         superagent.post(gServer + API + destinationPath).query(gQuery).attach('file', file).end(function (error, result) {
             if (result && result.statusCode === 403) return callback(new Error('Upload destination ' + destinationPath + ' not allowed'));
             if (result && result.statusCode !== 201) return callback(new Error('Error uploading file: ' + result.statusCode));
             if (error) return callback(error);
-
-            console.log('Uploaded to ' + gServer + destinationPath);
 
             callback(null);
         });
@@ -179,7 +177,7 @@ function put(filePaths, options) {
 
     async.eachSeries(filePaths, (filePath, iteratorDone) => putOne(filePath, destination, options, iteratorDone), function (error) {
         if (error) {
-            console.log('Failed to put file.', error.message.red);
+            console.log('Failed to upload file.', error.message.red);
             process.exit(1);
         }
 
