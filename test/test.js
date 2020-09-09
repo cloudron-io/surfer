@@ -7,6 +7,8 @@
 /* global after */
 /* global it */
 
+require('chromedriver');
+
 var execSync = require('child_process').execSync,
     expect = require('expect.js'),
     path = require('path'),
@@ -29,15 +31,19 @@ describe('Application life cycle test', function () {
     const TEST_FILE_NAME_0 = 'index.html';
     const TEST_FILE_NAME_1 = 'test.txt';
 
+    var server, browser = new Builder().forBrowser('chrome').build();
     var app;
-    var browser;
 
     before(function () {
-        browser = new Builder().forBrowser('chrome').setChromeOptions(new Options().windowSize({ width: 1280, height: 1024 })).build();
+        var seleniumJar= require('selenium-server-standalone-jar');
+        var SeleniumServer = require('selenium-webdriver/remote').SeleniumServer;
+        server = new SeleniumServer(seleniumJar.path, { port: 4444 });
+        server.start();
     });
 
     after(function () {
         browser.quit();
+        server.stop();
     });
 
     function getAppInfo(location, done) {
