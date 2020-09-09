@@ -4,7 +4,7 @@ var path = require('path'),
     safe = require('safetydance'),
     fs = require('fs'),
     bcrypt = require('bcryptjs'),
-    uuid = require('uuid').v4,
+    crypto = require('crypto'),
     ldapjs = require('ldapjs'),
     HttpError = require('connect-lastmile').HttpError,
     HttpSuccess = require('connect-lastmile').HttpSuccess,
@@ -16,7 +16,7 @@ const LOCAL_AUTH_FILE = path.resolve(process.env.LOCAL_AUTH_FILE || './.users.js
 const TOKENSTORE_FILE = path.resolve(process.env.TOKENSTORE_FILE || './.tokens.json');
 const AUTH_METHOD = (LDAP_URL && LDAP_USERS_BASE_DN) ? 'ldap' : 'local';
 const LOGIN_TOKEN_PREFIX = 'login-';
-const API_TOKEN_PREFIX = 'api-';
+const API_TOKEN_PREFIX = 'api'; // keep this base64 for CI systems. see gitlab masked variables requirements
 
 if (AUTH_METHOD === 'ldap') {
     console.log('Using ldap auth');
@@ -39,7 +39,7 @@ var tokenStore = {
         callback(tokenStore.data[token] ? null : 'not found', tokenStore.data[token]);
     },
     getApiTokens: function (callback) {
-        callback(null, Object.keys(tokenStore.data).filter(function (t) { return t.indexOf(API_TOKEN_PREFIX) === 0; }))
+        callback(null, Object.keys(tokenStore.data).filter(function (t) { return t.indexOf(API_TOKEN_PREFIX) === 0; }));
     },
     set: function (token, user, callback) {
         tokenStore.data[token] = user;
@@ -62,15 +62,19 @@ try {
 }
 
 // https://tools.ietf.org/search/rfc4515#section-3
-var sanitizeInput = function (username) {
-  return username
-    .replace(/\*/g, '\\2a')
-    .replace(/\(/g, '\\28')
-    .replace(/\)/g, '\\29')
-    .replace(/\\/g, '\\5c')
-    .replace(/\0/g, '\\00')
-    .replace(/\//g, '\\2f');
-};
+function sanitizeInput(username) {
+    return username
+        .replace(/\*/g, '\\2a')
+        .replace(/\(/g, '\\28')
+        .replace(/\)/g, '\\29')
+        .replace(/\\/g, '\\5c')
+        .replace(/\0/g, '\\00')
+        .replace(/\//g, '\\2f');
+}
+
+function hat (bits) {
+    return crypto.randomBytes(bits / 8).toString('hex');
+}
 
 function verifyUser(username, password, callback) {
     username = sanitizeInput(username);
@@ -126,7 +130,7 @@ exports.login = function (req, res, next) {
     verifyUser(req.body.username, req.body.password, function (error, user) {
         if (error) return next(new HttpError(401, 'Invalid credentials'));
 
-        var accessToken = LOGIN_TOKEN_PREFIX + uuid();
+        var accessToken = LOGIN_TOKEN_PREFIX + hat(128);
 
         tokenStore.set(accessToken, user, function (error) {
             if (error) return next(new HttpError(500, error));
@@ -177,7 +181,7 @@ exports.getTokens = function (req, res, next) {
 };
 
 exports.createToken = function (req, res, next) {
-    var accessToken = API_TOKEN_PREFIX + uuid();
+    var accessToken = API_TOKEN_PREFIX + hat(128);
 
     tokenStore.set(accessToken, req.user, function (error) {
         if (error) return next(new HttpError(500, error));
@@ -198,7 +202,7 @@ exports.delToken = function (req, res, next) {
 exports.WebdavUserManager = WebdavUserManager;
 
 // This implements the required interface only for the Basic Authentication for webdav-server
-function WebdavUserManager() {};
+function WebdavUserManager() {}
 
 WebdavUserManager.prototype.getDefaultUser = function (callback) {
     // this is only a dummy user, since we always require authentication
