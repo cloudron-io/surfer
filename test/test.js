@@ -183,12 +183,14 @@ describe('Application life cycle test', function () {
     it('can logout', logout);
 
     it('backup app', function () { execSync(`cloudron backup create --app ${app.id}`, EXEC_ARGS); });
-    it('restore app', function () {
+    it('restore app', function (done) {
         const backups = JSON.parse(execSync('cloudron backup list --raw'));
         execSync('cloudron uninstall --app ' + app.id, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
         execSync('cloudron install --location ' + LOCATION, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
-        getAppInfo();
-        execSync(`cloudron restore --backup ${backups[0].id} --app ${app.id}`, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
+        getAppInfo(function () {
+            execSync(`cloudron restore --backup ${backups[0].id} --app ${app.id}`, { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' });
+            done();
+        });
     });
 
     it('can login', login);
