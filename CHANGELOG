@@ -118,3 +118,8 @@
 
 [5.10.3]
 * Sanitize username input to prevent LDAP DoS attack. Thanks to Alessio (d3lla) for reporting!
+
+[5.10.4]
+* Update screenshots
+* (security) Use crypto.random instead of uuid to generate API tokens
+* API tokens are now base64 safe (to make it suitable for masked GitLab CI variables)
