@@ -85,7 +85,50 @@ function removeBasePath(filePath) {
     return filePath.slice(gBasePath.length);
 }
 
+function collectFiles(folderPath, recursive, callback) {
+    let results = [];
+
+    fs.readdir(folderPath, function (error, list) {
+        if (error) return callback(error);
+
+        var pending = list.length;
+        if (!pending) return callback(null, results);
+
+        list.forEach(function (file) {
+            var filePath = path.resolve(folderPath, file);
+
+            fs.stat(filePath, function (error, stat) {
+                if (error) return callback(error);
+
+                results.push({
+                    isDirectory: stat.isDirectory(),
+                    isFile: stat.isFile(),
+                    atime: stat.atime,
+                    mtime: stat.mtime,
+                    ctime: stat.ctime,
+                    birthtime: stat.birthtime,
+                    size: stat.size,
+                    fileName: file,
+                    filePath: filePath
+                });
+
+                if (stat.isDirectory() && recursive) {
+                    collectFiles(filePath, recursive, function (error, result) {
+                        if (error) return callback(error);
+
+                        results = results.concat(result);
+                        if (!--pending) callback(null, results);
+                    });
+                } else {
+                    if (!--pending) callback(null, results);
+                }
+            });
+        });
+    });
+};
+
 function get(req, res, next) {
+    var recursive = boolLike(req.query.recursive);
     var filePath = decodeURIComponent(req.params[0]);
     var absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath) return next(new HttpError(403, 'Path not allowed'));
@@ -98,22 +141,7 @@ function get(req, res, next) {
         if (!result.isDirectory() && !result.isFile()) return next(new HttpError(500, 'unsupported type'));
         if (result.isFile()) return res.download(absoluteFilePath);
 
-        async.map(fs.readdirSync(absoluteFilePath), function (filePath, callback) {
-            fs.stat(path.join(absoluteFilePath, filePath), function (error, result) {
-                if (error) return callback(error);
-
-                callback(null, {
-                    isDirectory: result.isDirectory(),
-                    isFile: result.isFile(),
-                    atime: result.atime,
-                    mtime: result.mtime,
-                    ctime: result.ctime,
-                    birthtime: result.birthtime,
-                    size: result.size,
-                    filePath: filePath
-                });
-            });
-        }, function (error, results) {
+        collectFiles(absoluteFilePath, recursive, function (error, results) {
             if (error) return next(new HttpError(500, error));
             res.status(222).send({ entries: results });
         });

@@ -100,16 +100,16 @@
 
     <div v-show="!busy && session.valid" v-cloak>
       <center>
-        <el-table :data="entries" style="max-width: 1280px; width: 100%" height="100%" empty-text="Folder is emtpy" :default-sort="{ prop: 'filePath', order: 'descending' }" @row-click="open">
+        <el-table :data="entries" style="max-width: 1280px; width: 100%" height="100%" empty-text="Folder is emtpy" :default-sort="{ prop: 'fileName', order: 'descending' }" @row-click="open">
           <el-table-column prop="previewUrl" label="Type" width="80px" sortable>
             <template slot-scope="scope">
               <el-image v-bind:src="scope.row.previewUrl" class="list-icon" style="width: 32px; height: 32px" fit="cover"></el-image>
             </template>
           </el-table-column>
-          <el-table-column prop="filePath" label="Name" sortable>
+          <el-table-column prop="fileName" label="Name" sortable>
             <template slot-scope="scope">
               <el-input size="small" v-on:keyup.native.enter="onRenameSubmit(scope.row)" v-on:keyup.native.esc="onRenameEnd(scope.row)" @blur="onRenameEnd(scope.row)" v-model="scope.row.filePathNew" :id="'filePathRenameInputId-' + scope.$index" v-show="scope.row.rename"></el-input>
-              <span v-show="!scope.row.rename">{{ scope.row.filePath }}</span>
+              <span v-show="!scope.row.rename">{{ scope.row.fileName }}</span>
               <el-button size="small" icon="el-icon-edit" type="text" plain circle class="rename-action" v-show="!scope.row.rename" @click.stop="onRename(scope.row, scope)"></el-button>
             </template>
           </el-table-column>
@@ -125,7 +125,7 @@
       </center>
     </div>
 
-    <el-drawer :title="activeEntry.filePath":with-header="false" :visible.sync="previewDrawerVisible" direction="rtl" size="50%">
+    <el-drawer :title="activeEntry.fileName":with-header="false" :visible.sync="previewDrawerVisible" direction="rtl" size="50%">
       <div style="display: flex; flex-direction: column; height: 100%;">
         <iframe :src="activeEntry.fullPath" style="width: 100%; height: 100%; border: none; margin: 10px;"></iframe>
         <center>

@@ -49,17 +49,17 @@ function initWithToken(accessToken) {
     });
 }
 
-function sanitize(filePath) {
-    filePath = '/' + filePath;
-    return filePath.replace(/\/+/g, '/');
+function sanitize(path) {
+    path = '/' + path;
+    return path.replace(/\/+/g, '/');
 }
 
-function encode(filePath) {
-    return filePath.split('/').map(encodeURIComponent).join('/');
+function encode(path) {
+    return path.split('/').map(encodeURIComponent).join('/');
 }
 
-function decode(filePath) {
-    return filePath.split('/').map(decodeURIComponent).join('/');
+function decode(path) {
+    return path.split('/').map(decodeURIComponent).join('/');
 }
 
 var mimeTypes = {
@@ -74,18 +74,18 @@ function getPreviewUrl(entry, basePath) {
     var path = '/_admin/img/';
 
     if (entry.isDirectory) return path + 'directory.png';
-    if (mimeTypes.images.some(function (e) { return entry.filePath.endsWith(e); })) return sanitize(basePath + '/' + entry.filePath);
-    if (mimeTypes.text.some(function (e) { return entry.filePath.endsWith(e); })) return path +'text.png';
-    if (mimeTypes.pdf.some(function (e) { return entry.filePath.endsWith(e); })) return path + 'pdf.png';
-    if (mimeTypes.html.some(function (e) { return entry.filePath.endsWith(e); })) return path + 'html.png';
-    if (mimeTypes.video.some(function (e) { return entry.filePath.endsWith(e); })) return path + 'video.png';
+    if (mimeTypes.images.some(function (e) { return entry.fileName.endsWith(e); })) return sanitize(basePath + '/' + entry.fileName);
+    if (mimeTypes.text.some(function (e) { return entry.fileName.endsWith(e); })) return path +'text.png';
+    if (mimeTypes.pdf.some(function (e) { return entry.fileName.endsWith(e); })) return path + 'pdf.png';
+    if (mimeTypes.html.some(function (e) { return entry.fileName.endsWith(e); })) return path + 'html.png';
+    if (mimeTypes.video.some(function (e) { return entry.fileName.endsWith(e); })) return path + 'video.png';
 
     return path + 'unknown.png';
 }
 
 // simple extension detection, does not work with double extension like .tar.gz
 function getExtension(entry) {
-    if (entry.isFile) return entry.filePath.slice(entry.filePath.lastIndexOf('.') + 1);
+    if (entry.isFile) return entry.fileName.slice(entry.fileName.lastIndexOf('.') + 1);
     return '';
 }
 
@@ -103,12 +103,12 @@ function logout() {
     });
 }
 
-function loadDirectory(filePath) {
+function loadDirectory(folderPath) {
     app.busy = true;
 
-    filePath = filePath ? sanitize(filePath) : '/';
+    folderPath = folderPath ? sanitize(folderPath) : '/';
 
-    superagent.get('/api/files/' + encode(filePath)).query({ access_token: localStorage.accessToken }).end(function (error, result) {
+    superagent.get('/api/files/' + encode(folderPath)).query({ access_token: localStorage.accessToken }).end(function (error, result) {
         app.busy = false;
 
         if (result && result.statusCode === 401) return logout();
@@ -116,14 +116,14 @@ function loadDirectory(filePath) {
 
         result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
         app.entries = result.body.entries.map(function (entry) {
-            entry.previewUrl = getPreviewUrl(entry, filePath);
+            entry.previewUrl = getPreviewUrl(entry, folderPath);
             entry.extension = getExtension(entry);
             entry.rename = false;
-            entry.filePathNew = entry.filePath;
+            entry.filePathNew = entry.fileName;
             return entry;
         });
-        app.path = filePath;
-        app.pathParts = decode(filePath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
+        app.path = folderPath;
+        app.pathParts = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
             return {
                 name: e,
                 link: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
@@ -139,7 +139,7 @@ function open(row, column, event) {
     // ignore item open on row clicks if we are renaming this entry
     if (row.rename) return;
 
-    var path = sanitize(app.path + '/' + row.filePath);
+    var path = sanitize(app.path + '/' + row.fileName);
 
     if (row.isDirectory) {
         window.location.hash = path;
@@ -147,7 +147,7 @@ function open(row, column, event) {
     }
 
     app.activeEntry = row;
-    app.activeEntry.fullPath = encode(sanitize(app.path + '/' + row.filePath));
+    app.activeEntry.fullPath = encode(sanitize(app.path + '/' + row.fileName));
     app.previewDrawerVisible = true
 
     // need to wait for DOM element to exist
@@ -336,7 +336,7 @@ var app = new Vue({
         },
         onDownload: function (entry) {
             if (entry.isDirectory) return;
-            window.location.href = encode('/api/files/' + sanitize(this.path + '/' + entry.filePath)) + '?access_token=' + localStorage.accessToken;
+            window.location.href = encode('/api/files/' + sanitize(this.path + '/' + entry.fileName)) + '?access_token=' + localStorage.accessToken;
         },
         onUpload: function () {
             var that = this;
@@ -367,9 +367,9 @@ var app = new Vue({
         onDelete: function (entry) {
             var that = this;
 
-            var title = 'Really delete ' + (entry.isDirectory ? 'folder ' : '') + entry.filePath;
+            var title = 'Really delete ' + (entry.isDirectory ? 'folder ' : '') + entry.fileName;
             this.$confirm('', title, { confirmButtonText: 'Yes', cancelButtonText: 'No' }).then(function () {
-                var path = encode(sanitize(that.path + '/' + entry.filePath));
+                var path = encode(sanitize(that.path + '/' + entry.fileName));
 
                 superagent.del('/api/files' + path).query({ access_token: localStorage.accessToken, recursive: true }).end(function (error, result) {
                     if (result && result.statusCode === 401) return logout();
@@ -383,7 +383,7 @@ var app = new Vue({
         onRename: function (entry, scope) {
             if (entry.rename) return entry.rename = false;
 
-            entry.filePathNew = entry.filePath;
+            entry.filePathNew = entry.fileName;
             entry.rename = true;
 
             Vue.nextTick(function () {
@@ -392,7 +392,7 @@ var app = new Vue({
 
                 if (typeof elem.selectionStart != "undefined") {
                     elem.selectionStart = 0;
-                    elem.selectionEnd = entry.filePath.lastIndexOf('.');
+                    elem.selectionEnd = entry.fileName.lastIndexOf('.');
                 }
             });
         },
@@ -404,9 +404,9 @@ var app = new Vue({
 
             entry.rename = false;
 
-            if (entry.filePathNew === entry.filePath) return;
+            if (entry.filePathNew === entry.fileName) return;
 
-            var path = encode(sanitize(this.path + '/' + entry.filePath));
+            var path = encode(sanitize(this.path + '/' + entry.fileName));
             var newFilePath = sanitize(this.path + '/' + entry.filePathNew);
 
             superagent.put('/api/files' + path).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end(function (error, result) {
@@ -414,7 +414,7 @@ var app = new Vue({
                 if (result && result.statusCode !== 200) return that.$message.error('Error renaming file: ' + result.statusCode);
                 if (error) return that.$message.error(error.message);
 
-                entry.filePath = entry.filePathNew;
+                entry.fileName = entry.filePathNew;
             });
         },
         onNewFolder: function () {
