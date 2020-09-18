@@ -109,7 +109,7 @@ function collectFiles(folderPath, recursive, callback) {
                     birthtime: stat.birthtime,
                     size: stat.size,
                     fileName: file,
-                    filePath: filePath
+                    filePath: removeBasePath(filePath)
                 });
 
                 if (stat.isDirectory() && recursive) {

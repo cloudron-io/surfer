@@ -47,6 +47,14 @@ program.command('del <file>')
     .description('Delete a file or directory')
     .action(actions.del);
 
+program.command('sync-up <src> [dest]')
+    .description('Syncs a local folder tree at src to remote destination')
+    .action(actions.syncUp);
+
+program.command('sync-down <src> [dest]')
+    .description('Syncs a remote folder tree at src to local destination')
+    .action(actions.syncDown);
+
 program.parse(process.argv);
 
 if (!process.argv.slice(2).length) {

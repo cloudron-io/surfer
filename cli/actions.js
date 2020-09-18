@@ -5,6 +5,8 @@ exports.logout = logout;
 exports.put = put;
 exports.get = get;
 exports.del = del;
+exports.syncUp = syncUp;
+exports.syncDown = syncDown;
 
 var superagent = require('superagent'),
     config = require('./config.js'),
@@ -47,24 +49,40 @@ function checkConfig(options) {
     console.error('Using server %s', gServer.cyan);
 }
 
-function collectFiles(filesOrFolders, options) {
+function collectFiles(filePath, basePath, options) {
     var tmp = [];
 
-    filesOrFolders.forEach(function (filePath) {
-        var baseName = path.basename(filePath);
-        if (!options.all && baseName[0] === '.' && baseName.length > 1) return;
+    var absoluteFilePath = path.resolve(basePath, filePath);
 
-        var stat = fs.statSync(filePath);
+    var fileName = path.basename(absoluteFilePath);
+    if (!options.all && fileName[0] === '.' && fileName.length > 1) return;
 
-        if (stat.isFile()) {
-            tmp.push(filePath);
-        } else if (stat.isDirectory()) {
-            var files = fs.readdirSync(filePath).map(function (file) { return path.join(filePath, file); });
-            tmp = tmp.concat(collectFiles(files, options));
-        } else {
-            console.log('Skipping %s', filePath.cyan);
-        }
-    });
+    var stat = fs.statSync(absoluteFilePath);
+
+    var file = {
+        isDirectory: stat.isDirectory(),
+        isFile: stat.isFile(),
+        atime: stat.atime.toISOString(),
+        mtime: stat.mtime.toISOString(),
+        ctime: stat.ctime.toISOString(),
+        birthtime: stat.birthtime,
+        size: stat.size,
+        fileName: fileName,
+        filePath: absoluteFilePath.slice(basePath.length), // this is relative to basePath
+        absoluteFilePath: absoluteFilePath
+    };
+
+    if (stat.isFile()) {
+        tmp.push(file);
+    } else if (stat.isDirectory()) {
+        tmp.push(file);
+
+        fs.readdirSync(absoluteFilePath).forEach(function (fileName) {
+            tmp = tmp.concat(collectFiles(path.join(absoluteFilePath, fileName), basePath, options));
+        });
+    } else {
+        console.log('Skipping %s', filePath.cyan);
+    }
 
     return tmp;
 }
@@ -128,36 +146,36 @@ function logout() {
     });
 }
 
-function putOne(filePath, destination, options, callback) {
-    const absoluteFilePath = path.resolve(filePath);
-    const stat = safe.fs.statSync(absoluteFilePath);
-    if (!stat) return callback(`Could not stat ${filePath}: ${safe.error.message}`);
+function putOne(file, destination, callback) {
+    let destinationPath = path.join(destination, file.filePath);
 
-    let files, base;
+    if (file.isFile) {
+        console.log('Uploading %s -> %s', file.filePath.cyan, destinationPath.cyan);
 
-    if (stat.isFile()) {
-        base = destination + path.basename(filePath);
-        files = [ absoluteFilePath ];
-    } else if (stat.isDirectory()) {
-        base = destination + (filePath.endsWith('.') ? '' : path.basename(filePath) + '/');
-        files = collectFiles([ absoluteFilePath ], options);
-    } else {
-        return callback(); // ignore
-    }
-
-    async.eachLimit(files, 10, function (file, callback) {
-        let relativeFilePath = file.slice(absoluteFilePath.length + 1); // will be '' when filePath is a file
-        let destinationPath = base + relativeFilePath;
-        console.log('Uploading %s -> %s', file.cyan, destinationPath.cyan);
-
-        superagent.post(gServer + API + destinationPath).query(gQuery).attach('file', file).end(function (error, result) {
-            if (result && result.statusCode === 403) return callback(new Error('Upload destination ' + destinationPath + ' not allowed'));
+        superagent.post(gServer + path.join(API, destinationPath)).query(gQuery).attach('file', file.absoluteFilePath).end(function (error, result) {
+            if (result && result.statusCode === 403) return callback(new Error('Destination ' + destinationPath + ' not allowed'));
             if (result && result.statusCode !== 201) return callback(new Error('Error uploading file: ' + result.statusCode));
             if (error) return callback(error);
 
             callback(null);
         });
-    }, callback);
+    } else if (file.isDirectory) {
+        console.log('Creating directory %s', destinationPath.cyan);
+
+        var query = safe.JSON.parse(safe.JSON.stringify(gQuery));
+        query.directory = true;
+
+        superagent.post(gServer + path.join(API, destinationPath)).query(query).end(function (error, result) {
+            if (result && result.statusCode === 409) return callback(null); // already exists, fine
+            if (result && result.statusCode === 403) return callback(new Error('Destination ' + destinationPath + ' not allowed'));
+            if (result && result.statusCode !== 201) return callback(new Error('Error creating directory: ' + result.statusCode));
+            if (error) return callback(error);
+
+            callback(null);
+        });
+    } else {
+        callback(); // ignore
+    }
 }
 
 function put(filePaths, options) {
@@ -175,7 +193,15 @@ function put(filePaths, options) {
     }
     if (!destination.endsWith('/')) destination += '/';
 
-    async.eachSeries(filePaths, (filePath, iteratorDone) => putOne(filePath, destination, options, iteratorDone), function (error) {
+    var files = [];
+    filePaths.forEach(function (filePath) {
+        var absoluteFilePath = path.resolve(process.cwd(), filePath);
+        var baseFilePath = path.dirname(absoluteFilePath);
+
+        files = files.concat(collectFiles(absoluteFilePath, baseFilePath, options));
+    });
+
+    async.eachLimit(files, 10, (file, iteratorDone) => putOne(file, destination, iteratorDone), function (error) {
         if (error) {
             console.log('Failed to upload file.', error.message.red);
             process.exit(1);
@@ -211,22 +237,6 @@ function get(filePath, options) {
             process.stdout.write(body);
         }
     });
-    // var req = superagent.get(gServer + API + filePath);
-    // req.query(gQuery);
-    // req.end(function (error, result) {
-    //     if (error && error.status === 401) return console.log('Login failed');
-    //     if (error && error.status === 404) return console.log('No such file or directory');
-    //     if (error) return console.log('Failed', result ? result.body : error);
-
-    //     if (result.body && result.body.entries) {
-    //         console.log('Files:');
-    //         result.body.entries.forEach(function (entry) {
-    //             console.log('\t %s', entry);
-    //         });
-    //     } else {
-    //         req.pipe(process.stdout);
-    //     }
-    // });
 }
 
 function del(filePath, options) {
@@ -252,4 +262,96 @@ function del(filePath, options) {
             console.log('Success. Removed %s files.', result.body.entries.length);
         }
     });
+}
+
+function syncUp(src, dest, options) {
+    checkConfig(options);
+
+    var absoluteSrcPath = path.resolve(process.cwd(), src);
+    var absoluteDestPath = dest || '.';
+
+    // if src is a directory, we want to upload the directory itself
+    var stat = fs.statSync(absoluteSrcPath);
+    if (stat.isDirectory()) {
+        absoluteDestPath = path.normalize(path.join('/', dest, src));
+    }
+
+    console.log('local ', absoluteSrcPath, ' -> remote ', absoluteDestPath);
+
+
+    var localFiles = collectFiles(absoluteSrcPath, absoluteSrcPath, options);
+    var remoteFiles = [];
+
+    var query = safe.JSON.parse(safe.JSON.stringify(gQuery));
+    query.recursive = true;
+
+    superagent.get(gServer + path.join(API, absoluteDestPath)).query(query).end(function (error, result) {
+        if (error && error.status === 404) return console.log('Remote destination not found, upload all.');
+        if (error && error.status === 401) return console.log('Login failed');
+        if (error) return console.error(error);
+
+        // 222 indicates directory listing
+        if (result.statusCode !== 222) {
+            console.error('Destination is not a directory. Cannot continue.');
+            process.exit(1);
+        }
+
+        remoteFiles = result.body.entries;
+
+        var remoteFileList = remoteFiles.map(function (f) { return f.filePath; });
+        var localFileList = localFiles.map(function (f) { return path.join(absoluteDestPath, f.filePath); });
+
+        // find new local files
+        var newLocalFiles = localFileList.filter(function (p) { return remoteFileList.indexOf(p) === -1; });
+
+        // find removed local files
+        var removedLocalFiles = remoteFileList.filter(function (p) { return localFileList.indexOf(p) === -1; });
+
+        // first removing remote files
+        async.eachLimit(removedLocalFiles, 10, function (filePath, callback) {
+            console.log(`Removing ${filePath.cyan}`);
+
+            var file = remoteFiles.find(function (f) { return f.filePath === filePath; });
+            if (!file) return callback(`File not found ${filePath}`);
+
+            var query = safe.JSON.parse(safe.JSON.stringify(gQuery));
+            if (file.isDirectory) query.recursive = true;
+
+            superagent.del(gServer + API + filePath).query(query).end(function (error, result) {
+                if (error && error.status === 401) return callback('Login failed');
+                if (error && error.status === 404) return callback(null); // file already removed
+                if (error && error.status === 403) return callback('Failed. Target is a directory. Use %s to delete directories.', '--recursive'.yellow);
+                if (error) return callback('Failed %s', result ? result.body : error);
+
+                callback(null);
+            });
+        }, function (error) {
+            if (error) return console.error('Failed', error);
+
+            // now upload new files
+            async.eachLimit(newLocalFiles, 10, function (filePath, callback) {
+                console.log(`Uploading ${filePath.cyan}`);
+
+                var file = localFiles.find(function (f) { return path.join(absoluteDestPath, f.filePath) === filePath; });
+                if (!file) return callback(`File not found ${filePath}`);
+
+                putOne(file, absoluteDestPath, callback);
+            }, function (error) {
+                if (error) return console.error('Failed', error);
+
+                console.log('Done');
+            });
+        });
+    });
+}
+
+function syncDown(src, dest, options) {
+    checkConfig(options);
+
+    dest = dest || '.';
+
+    console.log('remote ', src, ' -> local ', dest);
+
+    var localFiles = collectFiles([ dest ], { all: true });
+    console.log(localFiles)
 }
