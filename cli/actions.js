@@ -152,7 +152,7 @@ function putOne(file, destination, callback) {
     if (file.isFile) {
         console.log('Uploading %s -> %s', file.filePath.cyan, destinationPath.cyan);
 
-        superagent.post(gServer + path.join(API, destinationPath)).query(gQuery).attach('file', file.absoluteFilePath).end(function (error, result) {
+        superagent.post(gServer + path.join(API, encodeURIComponent(destinationPath))).query(gQuery).attach('file', file.absoluteFilePath).end(function (error, result) {
             if (result && result.statusCode === 403) return callback(new Error('Destination ' + destinationPath + ' not allowed'));
             if (result && result.statusCode !== 201) return callback(new Error('Error uploading file: ' + result.statusCode));
             if (error) return callback(error);
@@ -165,7 +165,7 @@ function putOne(file, destination, callback) {
         var query = safe.JSON.parse(safe.JSON.stringify(gQuery));
         query.directory = true;
 
-        superagent.post(gServer + path.join(API, destinationPath)).query(query).end(function (error, result) {
+        superagent.post(gServer + path.join(API, encodeURIComponent(destinationPath))).query(query).end(function (error, result) {
             if (result && result.statusCode === 409) return callback(null); // already exists, fine
             if (result && result.statusCode === 403) return callback(new Error('Destination ' + destinationPath + ' not allowed'));
             if (result && result.statusCode !== 201) return callback(new Error('Error creating directory: ' + result.statusCode));
@@ -176,6 +176,20 @@ function putOne(file, destination, callback) {
     } else {
         callback(); // ignore
     }
+}
+
+function delOne(file, callback) {
+    var query = safe.JSON.parse(safe.JSON.stringify(gQuery));
+    if (file.isDirectory) query.recursive = true;
+
+    superagent.del(gServer + path.join(API, encodeURIComponent(file.filePath))).query(query).end(function (error, result) {
+        if (error && error.status === 401) return callback('Login failed');
+        if (error && error.status === 404) return callback(null); // file already removed
+        if (error && error.status === 403) return callback('Failed. Target is a directory. Use %s to delete directories.', '--recursive'.yellow);
+        if (error) return callback('Failed %s', result ? result.body : error);
+
+        callback(null);
+    });
 }
 
 function put(filePaths, options) {
@@ -217,7 +231,7 @@ function get(filePath, options) {
     // if no argument provided, fetch root
     filePath = filePath || '/';
 
-    request.get(gServer + API + filePath, { qs: gQuery }, function (error, result, body) {
+    request.get(gServer + path.join(API, encodeURIComponent(filePath)), { qs: gQuery }, function (error, result, body) {
         if (result && result.statusCode === 401) return console.log('Login failed');
         if (result && result.statusCode === 404) return console.log('No such file or directory %s', filePath.yellow);
         if (error) return console.error(error);
@@ -247,7 +261,7 @@ function del(filePath, options) {
     query.dryRun = options.dryRun;
 
     var relativeFilePath = path.resolve(filePath).slice(process.cwd().length + 1);
-    superagent.del(gServer + API + relativeFilePath).query(query).end(function (error, result) {
+    superagent.del(gServer + path.join(API, encodeURIComponent(relativeFilePath))).query(query).end(function (error, result) {
         if (error && error.status === 401) return console.log('Login failed'.red);
         if (error && error.status === 404) return console.log('No such file or directory');
         if (error && error.status === 403) return console.log('Failed. Target is a directory. Use %s to delete directories.', '--recursive'.yellow);
@@ -276,8 +290,7 @@ function syncUp(src, dest, options) {
         absoluteDestPath = path.normalize(path.join('/', dest, src));
     }
 
-    console.log('local ', absoluteSrcPath, ' -> remote ', absoluteDestPath);
-
+    console.log('Syncing local ', absoluteSrcPath, ' -> remote ', absoluteDestPath);
 
     var localFiles = collectFiles(absoluteSrcPath, absoluteSrcPath, options);
     var remoteFiles = [];
@@ -286,17 +299,24 @@ function syncUp(src, dest, options) {
     query.recursive = true;
 
     superagent.get(gServer + path.join(API, absoluteDestPath)).query(query).end(function (error, result) {
-        if (error && error.status === 404) return console.log('Remote destination not found, upload all.');
-        if (error && error.status === 401) return console.log('Login failed');
-        if (error) return console.error(error);
+        if (error) {
+            if (error.status === 401) return console.log('Login failed');
+            if (error.status !== 404) return console.error(error);
 
-        // 222 indicates directory listing
-        if (result.statusCode !== 222) {
-            console.error('Destination is not a directory. Cannot continue.');
-            process.exit(1);
+            // 404 means remote not found so upload all
+            remoteFiles = [];
+        } else {
+            // 222 indicates directory listing
+            if (result.statusCode !== 222) {
+                console.error('Destination is not a directory. Cannot continue.');
+                process.exit(1);
+            }
+
+            remoteFiles = result.body.entries;
+
+            // add the remote folder details itself
+            remoteFiles.push(result.body.stat);
         }
-
-        remoteFiles = result.body.entries;
 
         var remoteFileList = remoteFiles.map(function (f) { return f.filePath; });
         var localFileList = localFiles.map(function (f) { return path.join(absoluteDestPath, f.filePath); });
@@ -314,24 +334,12 @@ function syncUp(src, dest, options) {
             var file = remoteFiles.find(function (f) { return f.filePath === filePath; });
             if (!file) return callback(`File not found ${filePath}`);
 
-            var query = safe.JSON.parse(safe.JSON.stringify(gQuery));
-            if (file.isDirectory) query.recursive = true;
-
-            superagent.del(gServer + API + filePath).query(query).end(function (error, result) {
-                if (error && error.status === 401) return callback('Login failed');
-                if (error && error.status === 404) return callback(null); // file already removed
-                if (error && error.status === 403) return callback('Failed. Target is a directory. Use %s to delete directories.', '--recursive'.yellow);
-                if (error) return callback('Failed %s', result ? result.body : error);
-
-                callback(null);
-            });
+            delOne(file, callback);
         }, function (error) {
             if (error) return console.error('Failed', error);
 
             // now upload new files
             async.eachLimit(newLocalFiles, 10, function (filePath, callback) {
-                console.log(`Uploading ${filePath.cyan}`);
-
                 var file = localFiles.find(function (f) { return path.join(absoluteDestPath, f.filePath) === filePath; });
                 if (!file) return callback(`File not found ${filePath}`);
 

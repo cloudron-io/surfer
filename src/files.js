@@ -133,17 +133,30 @@ function get(req, res, next) {
     var absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath) return next(new HttpError(403, 'Path not allowed'));
 
-    fs.stat(absoluteFilePath, function (error, result) {
+    fs.stat(absoluteFilePath, function (error, stat) {
         if (error) return next(new HttpError(404, error));
 
         debug('get', absoluteFilePath);
 
-        if (!result.isDirectory() && !result.isFile()) return next(new HttpError(500, 'unsupported type'));
-        if (result.isFile()) return res.download(absoluteFilePath);
+        if (!stat.isDirectory() && !stat.isFile()) return next(new HttpError(500, 'unsupported type'));
+        if (stat.isFile()) return res.download(absoluteFilePath);
 
         collectFiles(absoluteFilePath, recursive, function (error, results) {
             if (error) return next(new HttpError(500, error));
-            res.status(222).send({ entries: results });
+
+            var tmp = {
+                isDirectory: true,
+                isFile: false,
+                atime: stat.atime,
+                mtime: stat.mtime,
+                ctime: stat.ctime,
+                birthtime: stat.birthtime,
+                size: stat.size,
+                fileName: '',
+                filePath: removeBasePath(absoluteFilePath)
+            };
+
+            res.status(222).send({ stat: tmp, entries: results });
         });
     });
 }
