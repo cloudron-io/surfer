@@ -31,19 +31,15 @@ describe('Application life cycle test', function () {
     const TEST_FILE_NAME_0 = 'index.html';
     const TEST_FILE_NAME_1 = 'test.txt';
 
-    var server, browser = new Builder().forBrowser('chrome').build();
+    var browser;
     var app;
 
     before(function () {
-        var seleniumJar= require('selenium-server-standalone-jar');
-        var SeleniumServer = require('selenium-webdriver/remote').SeleniumServer;
-        server = new SeleniumServer(seleniumJar.path, { port: 4444 });
-        server.start();
+        browser = new Builder().forBrowser('chrome').setChromeOptions(new Options().windowSize({ width: 1280, height: 1024 })).build();
     });
 
     after(function () {
         browser.quit();
-        server.stop();
     });
 
     function getAppInfo(location, done) {
