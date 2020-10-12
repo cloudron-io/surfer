@@ -226,6 +226,34 @@ function del(filePath, options) {
     });
 }
 
+function legacyPut(filePaths, options) {
+    console.log('Server is on older version, falling back to old behavior.'.yellow);
+
+    let destination = filePaths.pop();
+    if (!path.isAbsolute(destination)) {
+        console.log('target directory must be absolute'.red);
+        process.exit(1);
+    }
+    if (!destination.endsWith('/')) destination += '/';
+
+    var files = [];
+    filePaths.forEach(function (filePath) {
+        var absoluteFilePath = path.resolve(process.cwd(), filePath);
+        var baseFilePath = path.dirname(absoluteFilePath);
+
+        files = files.concat(collectFiles(absoluteFilePath, baseFilePath, options));
+    });
+
+    async.eachLimit(files, 10, (file, iteratorDone) => putOne(file, destination, iteratorDone), function (error) {
+        if (error) {
+            console.log('Failed to upload file.', error.message.red);
+            process.exit(1);
+        }
+
+        console.log('Done');
+    });
+}
+
 function put(filePaths, options) {
     checkConfig(options);
 
@@ -267,9 +295,11 @@ function put(filePaths, options) {
                 console.error('Destination is not a directory. Cannot continue.');
                 process.exit(1);
             }
+
+            // TODO this is just to keep old version supported for some time
             if (!result.body.stat) {
-                console.error('New server version required. Update your surfer instance first.'.red);
-                process.exit(1);
+                filePaths.push(absoluteDestPath);
+                return legacyPut(filePaths, options);
             }
 
             remoteFiles = result.body.entries;
