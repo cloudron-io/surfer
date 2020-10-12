@@ -123,3 +123,8 @@
 * Update screenshots
 * (security) Use crypto.random instead of uuid to generate API tokens
 * API tokens are now base64 safe (to make it suitable for masked GitLab CI variables)
+
+[5.11.0]
+* Improve file uploading through cli
+* Purge remote files during surfer put with --delete flag
+
