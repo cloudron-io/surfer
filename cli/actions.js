@@ -116,10 +116,6 @@ function login(uri, options) {
             return login(uri, options);
         }
 
-        // TODO remove at some point, this is just to clear the previous old version values
-        config.set('username', '');
-        config.set('password', '');
-
         config.set('server', server);
         config.set('accessToken', result.body.accessToken);
 
@@ -134,9 +130,6 @@ function logout() {
         if (result && result.statusCode !== 200) console.log('Failed to logout: ' + result.statusCode);
         if (error) console.log(error);
 
-        // TODO remove at some point, this is just to clear the previous old version values
-        config.set('username', '');
-        config.set('password', '');
         config.set('server', '');
         config.set('accessToken', '');
 
