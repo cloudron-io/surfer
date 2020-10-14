@@ -168,7 +168,9 @@ function post(req, res, next) {
     if (!(req.files && req.files.file) && !isDirectory) return next(new HttpError(400, 'missing file or directory'));
     if ((req.files && req.files.file) && isDirectory) return next(new HttpError(400, 'either file or directory'));
 
-    debug('post:', filePath);
+    var mtime = req.fields && req.fields.mtime ? new Date(req.fields.mtime) : null;
+
+    debug('post:', filePath, mtime);
 
     var absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath || isProtected(absoluteFilePath)) return next(new HttpError(403, 'Path not allowed'));
@@ -187,7 +189,18 @@ function post(req, res, next) {
         } else if (!result || result.isFile()) {
             return copyFile(req.files.file.path, absoluteFilePath, function (error) {
                 if (error) return next(new HttpError(500, error));
-                next(new HttpSuccess(201, {}));
+
+                if (!mtime) next(new HttpSuccess(201, {}));
+
+                // if mtime was passed, set it
+                fs.open(absoluteFilePath, function (error, result) {
+                    if (error) return next(new HttpError(500, error));
+
+                    fs.futimes(result, mtime, mtime, function (error) {
+                        if (error) return next(new HttpError(500, error));
+                        next(new HttpSuccess(201, {}));
+                    });
+                });
             });
         }
 
