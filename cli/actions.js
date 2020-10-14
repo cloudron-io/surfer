@@ -143,7 +143,7 @@ function putOne(file, destination, callback) {
     if (file.isFile) {
         console.log('Uploading %s -> %s', file.filePath.cyan, destinationPath.cyan);
 
-        superagent.post(gServer + path.join(API, encodeURIComponent(destinationPath))).query(gQuery).attach('file', file.absoluteFilePath).end(function (error, result) {
+        superagent.post(gServer + path.join(API, encodeURIComponent(destinationPath))).query(gQuery).attach('file', file.absoluteFilePath).field('mtime', file.mtime).end(function (error, result) {
             if (result && result.statusCode === 403) return callback(new Error('Destination ' + destinationPath + ' not allowed'));
             if (result && result.statusCode !== 201) return callback(new Error('Error uploading file: ' + result.statusCode));
             if (error) return callback(error);
@@ -305,22 +305,36 @@ function put(filePaths, options) {
             remoteFiles = result.body.entries;
         }
 
-        var remoteFileList = remoteFiles.map(function (f) { return f.filePath; });
-        var localFileList = localFiles.map(function (f) { return path.join(absoluteDestPath, f.filePath); });
+        // we need to find below two lists of files for syncing
+        var newLocalFiles = [];
+        var remoteFilesNotLocalAnymore = [];
 
         // find new local files
-        var newLocalFiles = localFileList.filter(function (p) { return remoteFileList.indexOf(p) === -1; });
+        newLocalFiles = localFiles.filter(function (local) {
+            return !remoteFiles.find(function (remote) {
+                if (remote.filePath !== path.join(absoluteDestPath, local.filePath)) return false;
+                if (local.isDirectory) return true;
+
+                if (remote.mtime !== local.mtime) return false;
+                if (remote.size !== local.size) return false;
+
+                return true;
+            });
+        }).map(function (f) { return path.join(absoluteDestPath, f.filePath); });
 
         // find removed local files if --delete flag passed
-        var removedLocalFiles = [];
-        if (options.delete) removedLocalFiles = remoteFileList.filter(function (p) { return localFileList.indexOf(p) === -1; });
+        if (options.delete) remoteFilesNotLocalAnymore = remoteFiles.filter(function (remote) {
+            return !localFiles.find(function (local) {
+                return remote.filePath === path.join(absoluteDestPath, local.filePath);
+            });
+        });
 
         // first purging remote files
-        async.eachLimit(removedLocalFiles, 10, function (filePath, callback) {
-            console.log(`Removing ${filePath.cyan}`);
+        async.eachLimit(remoteFilesNotLocalAnymore, 10, function (remoteFile, callback) {
+            console.log(`Removing ${remoteFile.filePath.cyan}`);
 
-            var file = remoteFiles.find(function (f) { return f.filePath === filePath; });
-            if (!file) return callback(`File not found ${filePath}`);
+            var file = remoteFiles.find(function (f) { return f.filePath === remoteFile.filePath; });
+            if (!file) return callback(`File not found ${remoteFile.filePath}`);
 
             delOne(file, callback);
         }, function (error) {
