@@ -24,6 +24,11 @@ function asyncForEach(items, handler, callback) {
 }
 
 function initWithToken(accessToken) {
+    if (!accessToken) {
+        app.ready = true;
+        return;
+    }
+
     superagent.get('/api/profile').query({ access_token: accessToken }).end(function (error, result) {
         app.ready = true;
 
@@ -98,6 +103,11 @@ function logout() {
         if (error) console.error(error);
 
         app.session.valid = false;
+
+        app.loginData.username = '';
+        app.loginData.password = '';
+
+        app.$refs.loginForm.resetFields();
 
         delete localStorage.accessToken;
     });
@@ -312,6 +322,9 @@ var app = new Vue({
 
                 initWithToken(result.body.accessToken);
             });
+        },
+        onLoginDialogOpen: function () {
+            document.getElementById('loginUsernameInput').focus();
         },
         onOptionsMenu: function (command) {
             if (command === 'folderListing') {
