@@ -128,3 +128,7 @@
 * Improve file uploading through cli
 * Purge remote files during surfer put with --delete flag
 * Improve UI login behavior and autofocus
+
+[5.11.1]
+* Fix file uploading bug
+
