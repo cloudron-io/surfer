@@ -190,7 +190,7 @@ function post(req, res, next) {
             return copyFile(req.files.file.path, absoluteFilePath, function (error) {
                 if (error) return next(new HttpError(500, error));
 
-                if (!mtime) next(new HttpSuccess(201, {}));
+                if (!mtime) return next(new HttpSuccess(201, {}));
 
                 // if mtime was passed, set it
                 fs.open(absoluteFilePath, function (error, result) {
