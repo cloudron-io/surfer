@@ -435,20 +435,24 @@ var app = new Vue({
         onNewFolder: function () {
             var that = this;
 
-            var title = 'Create New Folder';
-            this.$prompt('', title, { confirmButtonText: 'Yes', cancelButtonText: 'No', inputPlaceholder: 'new foldername' }).then(function (data) {
-                var path = encode(sanitize(that.path + '/' + data.value));
+            function prompt(value, errorMessage) {
+                var title = 'Create New Folder';
+                that.$prompt(errorMessage || '', title, { inputValue: value, customClass: errorMessage ? 'error' : '', confirmButtonText: 'Yes', cancelButtonText: 'No', inputPlaceholder: 'new foldername' }).then(function (data) {
+                    var path = encode(sanitize(that.path + '/' + data.value));
 
-                superagent.post('/api/files' + path).query({ access_token: localStorage.accessToken, directory: true }).end(function (error, result) {
-                    if (result && result.statusCode === 401) return logout();
-                    if (result && result.statusCode === 403) return that.$message.error('Folder name not allowed');
-                    if (result && result.statusCode === 409) return that.$message.error('Folder already exists');
-                    if (result && result.statusCode !== 201) return that.$message.error('Error creating folder: ' + result.statusCode);
-                    if (error) return that.$message.error(error.message);
+                    superagent.post('/api/files' + path).query({ access_token: localStorage.accessToken, directory: true }).end(function (error, result) {
+                        if (result && result.statusCode === 401) return logout();
+                        if (result && result.statusCode === 403) return prompt(data.value, 'Folder name not allowed');
+                        if (result && result.statusCode === 409) return prompt(data.value, 'Folder already exists');
+                        if (result && result.statusCode !== 201) return prompt(data.value, 'Error creating folder: ' + result.statusCode);
+                        if (error) return that.$message.error(error.message);
 
-                    refresh();
-                });
-            }).catch(function () {});
+                        refresh();
+                    });
+                }).catch(function () {});
+            }
+
+            prompt();
         },
         refreshAccessTokens: function () {
             var that = this;

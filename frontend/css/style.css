@@ -110,3 +110,7 @@ a:hover, a:focus {
 .access-token-input > input, .access-token-input i {
     cursor: copy !important;
 }
+
+.el-message-box.error > .el-message-box__content > .el-message-box__message > p {
+    color: red;
+}
