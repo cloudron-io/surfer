@@ -1,7 +1,6 @@
 'use strict';
 
-var async = require('async'),
-    fs = require('fs'),
+var fs = require('fs'),
     util = require('util'),
     path = require('path'),
     rm = require('del'),
