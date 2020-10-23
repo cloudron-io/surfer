@@ -258,13 +258,13 @@ function put(filePaths, options) {
     checkConfig(options);
 
     if (filePaths.length < 2) {
-        console.log('target directory is required.'.red);
+        console.log('Target directory argument is required'.red);
         process.exit(1);
     }
 
     let absoluteDestPath = filePaths.pop();
     if (!path.isAbsolute(absoluteDestPath)) {
-        console.log('target directory must be absolute'.red);
+        console.log('Target directory must be absolute, starting with /'.red);
         process.exit(1);
     }
     if (!absoluteDestPath.endsWith('/')) absoluteDestPath += '/';
