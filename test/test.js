@@ -168,7 +168,7 @@ describe('Application life cycle test', function () {
 
     it('backup app', function () { execSync(`cloudron backup create --app ${app.id}`, EXEC_ARGS); });
     it('restore app', function () {
-        const backups = JSON.parse(execSync('cloudron backup list --raw'));
+        const backups = JSON.parse(execSync(`cloudron backup list --raw --app ${app.id}`));
         execSync('cloudron uninstall --app ' + app.id, EXEC_ARGS);
         execSync('cloudron install --location ' + LOCATION, EXEC_ARGS);
         getAppInfo();
