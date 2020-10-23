@@ -242,7 +242,7 @@ function del(req, res, next) {
     if (isProtected(absoluteFilePath)) return next(new HttpError(403, 'Path not allowed'));
 
     // absoltueFilePath has to have the base path prepended
-    if (absoluteFilePath.length <= gBasePath.length) return next(new HttpError(404, 'Not found'));
+    if (absoluteFilePath.indexOf(gBasePath) !== 0) return next(new HttpError(404, 'Not found'));
 
     fs.stat(absoluteFilePath, function (error, result) {
         if (error) return next(new HttpError(404, error));
@@ -251,6 +251,10 @@ function del(req, res, next) {
 
         rm(absoluteFilePath, { dryRun: dryRun, force: true }).then(function (result) {
             result = result.map(removeBasePath);
+
+            // in case we deleted all files, ensure gBasePath still exists after
+            if (absoluteFilePath === gBasePath) fs.mkdirSync(gBasePath);
+
             next(new HttpSuccess(200, { entries: result }));
         }, function (error) {
             console.error(error);
