@@ -132,3 +132,6 @@
 [5.11.1]
 * Fix file uploading bug
 
+[5.11.2]
+* Allow ability to remove all files via cli
+
