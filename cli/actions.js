@@ -220,6 +220,15 @@ function del(filePath, options) {
         isDirectory: !!options.recursive
     };
 
+    if (filePath === '/') {
+        if (!options.recursive) {
+            console.log('To delete all files --recursive is required.'.yellow);
+            process.exit(1);
+        }
+
+        if (!options.yes && !readlineSync.keyInYN('Really delete all files?')) process.exit(0);
+    }
+
     delOne(file, function (error, result) {
         if (error) console.log(error.red);
         else console.log('Success. Removed %s entries.', result.length);

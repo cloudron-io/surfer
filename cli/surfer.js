@@ -44,6 +44,7 @@ program.command('get [file|dir]')
 
 program.command('del <file>')
     .option('-r --recursive', 'Recursive delete directories.', false)
+    .option('-y --yes', 'Answer questions always with yes.', false)
     .description('Delete a file or directory')
     .action(actions.del);
 
