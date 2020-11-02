@@ -10,7 +10,7 @@
     "hosting",
     "server"
   ],
-  "version": "5.11.2",
+  "version": "5.11.3",
   "healthCheckPath": "/api/healthcheck",
   "configurePath": "/_admin",
   "httpPort": 3000,

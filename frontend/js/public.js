@@ -60,6 +60,8 @@
             };
         });
 
+        console.log('load path', app.path)
+
         superagent.get('/api/files/' + encode(app.path)).query({ access_token: localStorage.accessToken }).end(function (error, result) {
             app.busy = false;
 
@@ -75,6 +77,8 @@
                 return entry;
             });
 
+            console.log(app.entries)
+
             app.pathParts = app.path.split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
                 return {
                     name: e,
@@ -85,7 +89,7 @@
     }
 
     function open(row, column, event) {
-        var fullPath = encode(sanitize(app.path + '/' + row.filePath));
+        var fullPath = encode(sanitize(app.path + '/' + row.fileName));
 
         if (row.isDirectory) return window.location.href = fullPath;
 

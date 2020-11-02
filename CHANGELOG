@@ -135,3 +135,8 @@
 [5.11.2]
 * Allow ability to remove all files via cli
 * Update all dependencies
+
+[5.11.3]
+* Fix public viewing of subfolders
+* Add music type icon
+
