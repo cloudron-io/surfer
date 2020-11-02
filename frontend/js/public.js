@@ -24,7 +24,8 @@
         text: [ '.txt', '.md' ],
         pdf: [ '.pdf' ],
         html: [ '.html', '.htm', '.php' ],
-        video: [ '.mp4', '.mpg', '.mpeg', '.ogg', '.mkv', '.avi', '.mov' ]
+        music: [ '.mp2', '.mp3', '.ogg', '.flac', '.wav', '.aac' ],
+        video: [ '.mp4', '.mpg', '.mpeg', '.mkv', '.avi', '.mov' ]
     };
 
     function getPreviewUrl(entry, basePath) {
@@ -35,6 +36,7 @@
         if (mimeTypes.text.some(function (e) { return entry.filePath.endsWith(e); })) return path +'text.png';
         if (mimeTypes.pdf.some(function (e) { return entry.filePath.endsWith(e); })) return path + 'pdf.png';
         if (mimeTypes.html.some(function (e) { return entry.filePath.endsWith(e); })) return path + 'html.png';
+        if (mimeTypes.music.some(function (e) { return entry.fileName.endsWith(e); })) return path + 'music.png';
         if (mimeTypes.video.some(function (e) { return entry.filePath.endsWith(e); })) return path + 'video.png';
 
         return path + 'unknown.png';
