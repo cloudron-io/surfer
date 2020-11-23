@@ -24,16 +24,16 @@
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
     "colors": "^1.4.0",
-    "commander": "^6.1.0",
+    "commander": "^6.2.0",
     "compression": "^1.7.4",
     "connect-lastmile": "^2.0.0",
     "connect-timeout": "^1.9.0",
     "cookie-parser": "^1.4.5",
-    "debug": "^4.2.0",
+    "debug": "^4.3.1",
     "del": "^6.0.0",
     "express": "^4.17.1",
     "express-session": "^1.17.1",
-    "ldapjs": "^2.2.0",
+    "ldapjs": "^2.2.2",
     "morgan": "^1.10.0",
     "multiparty": "^4.2.2",
     "readline-sync": "^1.4.10",
@@ -45,9 +45,9 @@
     "webdav-server": "^2.6.2"
   },
   "devDependencies": {
-    "chromedriver": "^86.0.0",
+    "chromedriver": "^87.0.0",
     "expect.js": "^0.3.1",
-    "mocha": "^8.2.0",
+    "mocha": "^8.2.1",
     "selenium-webdriver": "^3.6.0"
   }
 }
