@@ -6,6 +6,7 @@ var express = require('express'),
     morgan = require('morgan'),
     path = require('path'),
     fs = require('fs'),
+    cors = require('./src/cors.js'),
     compression = require('compression'),
     session = require('express-session'),
     bodyParser = require('body-parser'),
@@ -87,6 +88,7 @@ router.delete('/api/files/*', auth.verify, files.del);
 app.use('/api/healthcheck', function (req, res) { res.status(200).send(); });
 app.use(morgan('dev'));
 app.use(compression());
+app.use(cors({ origins: [ '*' ], allowCredentials: false }))
 app.use('/api', bodyParser.json());
 app.use('/api', bodyParser.urlencoded({ extended: false, limit: '100mb' }));
 app.use('/api', cookieParser());
