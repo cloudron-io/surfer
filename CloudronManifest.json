@@ -8,7 +8,10 @@
     "fileserver",
     "webserver",
     "hosting",
-    "server"
+    "server",
+    "ftp",
+    "sftp",
+    "webdav"
   ],
   "version": "5.11.3",
   "healthCheckPath": "/api/healthcheck",
