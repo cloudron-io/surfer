@@ -140,3 +140,5 @@
 * Fix public viewing of subfolders
 * Add music type icon
 
+[5.12.0]
+* Add CORS support
