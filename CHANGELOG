@@ -142,3 +142,6 @@
 
 [5.12.0]
 * Add CORS support
+
+[5.12.1]
+* Fix extensive WebDAV usage by caching auth
