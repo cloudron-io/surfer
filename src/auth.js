@@ -202,7 +202,11 @@ exports.delToken = function (req, res, next) {
 exports.WebdavUserManager = WebdavUserManager;
 
 // This implements the required interface only for the Basic Authentication for webdav-server
-function WebdavUserManager() {}
+function WebdavUserManager() {
+    this._authCache = {
+        // key: TimeToDie as ms
+    };
+}
 
 WebdavUserManager.prototype.getDefaultUser = function (callback) {
     // this is only a dummy user, since we always require authentication
@@ -218,14 +222,27 @@ WebdavUserManager.prototype.getDefaultUser = function (callback) {
 };
 
 WebdavUserManager.prototype.getUserByNamePassword = function (username, password, callback) {
-    verifyUser(username, password, function (error, user) {
+    var that = this;
+
+    const cacheKey = 'key-'+username+password;
+    const user = {
+        username: username,
+        isAdministrator: true,
+        isDefaultUser: false,
+        uid: username
+    };
+
+    if (this._authCache[cacheKey] && this._authCache[cacheKey] > Date.now()) {
+        return callback(null, user);
+    } else {
+        delete this._authCache[cacheKey];
+    }
+
+    verifyUser(username, password, function (error) {
         if (error) return callback(webdavErrors.UserNotFound);
 
-        callback(null, {
-            username: user.username,
-            isAdministrator: true,
-            isDefaultUser: false,
-            uid: user.username
-        });
+        that._authCache[cacheKey] = Date.now() + (60 * 1000); // cache for up to 1 min
+
+        callback(null, user);
     });
 };
