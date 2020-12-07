@@ -5,6 +5,7 @@
 /* global Vue */
 /* global $ */
 /* global filesize */
+/* global message, button, toolbar, inputtext, password, breadcrumb, datatable, column, menu, dialog, checkbox, progressspinner, progressbar */
 
 // poor man's async
 function asyncForEach(items, handler, callback) {
@@ -45,7 +46,8 @@ function initWithToken(accessToken) {
         superagent.get('/api/settings').query({ access_token: localStorage.accessToken }).end(function (error, result) {
             if (error) console.error(error);
 
-            app.folderListingEnabled = !!result.body.folderListingEnabled;
+            app.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
+            app.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
 
             loadDirectory(decode(window.location.hash.slice(1)));
 
@@ -133,10 +135,10 @@ function loadDirectory(folderPath) {
             return entry;
         });
         app.path = folderPath;
-        app.pathParts = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
+        app.breadCrumbs.items = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
             return {
-                name: e,
-                link: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
+                label: e,
+                url: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
             };
         });
 
@@ -145,19 +147,19 @@ function loadDirectory(folderPath) {
     });
 }
 
-function open(row, column, event) {
-    // ignore item open on row clicks if we are renaming this entry
-    if (row.rename) return;
+function open(entry) {
+    // ignore item open on entry clicks if we are renaming this entry
+    if (entry.rename) return;
 
-    var path = sanitize(app.path + '/' + row.fileName);
+    var path = sanitize(app.path + '/' + entry.fileName);
 
-    if (row.isDirectory) {
+    if (entry.isDirectory) {
         window.location.hash = path;
         return;
     }
 
-    app.activeEntry = row;
-    app.activeEntry.fullPath = encode(sanitize(app.path + '/' + row.fileName));
+    app.activeEntry = entry;
+    app.activeEntry.fullPath = encode(sanitize(app.path + '/' + entry.fileName));
     app.previewDrawerVisible = true
 
     // need to wait for DOM element to exist
@@ -278,41 +280,152 @@ function drop(event) {
     });
 }
 
-var app = new Vue({
-    el: '#app',
-    data: {
-        ready: false,
-        busy: false,
-        origin: window.location.origin,
-        uploadStatus: {
+var app = Vue.createApp({
+    data() {
+        return {
+            ready: false,
             busy: false,
-            count: 0,
-            done: 0,
-            percentDone: 50,
-            uploadListCount: 0
-        },
-        path: '/',
-        pathParts: [],
-        session: {
-            valid: false
-        },
-        folderListingEnabled: false,
-        loginData: {
-            username: '',
-            password: '',
-            busy: false
-        },
-        previewDrawerVisible: false,
-        activeEntry: {},
-        entries: [],
-        accessTokens: [],
-        accessTokensDialogVisible: false
+            origin: window.location.origin,
+            domain: window.location.host,
+            uploadStatus: {
+                busy: false,
+                count: 0,
+                done: 0,
+                percentDone: 50,
+                uploadListCount: 0
+            },
+            path: '/',
+            breadCrumbs: {
+                home: { icon: 'pi pi-home', url: '#/' },
+                items: []
+            },
+            session: {
+                valid: false
+            },
+            loginData: {
+                username: '',
+                password: '',
+                busy: false
+            },
+            previewDrawerVisible: false,
+            activeEntry: {},
+            entries: [],
+            accessTokens: [],
+            // only for current session
+            sort: {
+                prop: 'fileName',
+                desc: true
+            },
+            // holds settings values stored on backend
+            settings: {
+                folderListingEnabled: false,
+                sortFoldersFirst: false
+            },
+            settingsDialog: {
+                visible: false,
+                busy: false,
+                // settings copy for modification
+                folderListingEnabled: false,
+                sortFoldersFirst: false
+            },
+            accessTokenDialog: {
+                visible: false,
+            },
+            mainMenu: [{
+                label: 'Settings',
+                icon: 'pi pi-cog',
+                command: this.openSettingsDialog
+            }, {
+                label: 'Access Tokens',
+                icon: 'pi pi-key',
+                command: this.openAccessTokenDialog
+            }, {
+                separator: true
+            }, {
+                label: 'About',
+                icon: 'pi pi-info-circle'
+            }, {
+                label: 'Logout',
+                icon: 'pi pi-sign-out',
+                command: logout
+            }]
+        }
+    },
+    components: {
+        'p-button': button,
+        'p-toolbar': toolbar,
+        'p-inputtext': inputtext,
+        'p-password': password,
+        'p-breadcrumb': breadcrumb,
+        'p-datatable': datatable,
+        'p-column': column,
+        'p-menu': menu,
+        'p-dialog': dialog,
+        'p-checkbox': checkbox,
+        'p-progressspinner': progressspinner,
+        'p-progressbar': progressbar,
+        'p-message': message,
+    },
+    computed: {
+        filteredAndSortedEntries: function () {
+            var that = this;
+
+            function sorting(list) {
+                var tmp = list.sort(function (a, b) {
+                    return (a[that.sort.prop] < b[that.sort.prop]) ? -1 : 1;
+                });
+
+                if (that.sort.desc) return tmp;
+                return tmp.reverse();
+            }
+
+            if (this.settings.sortFoldersFirst) {
+                return sorting(this.entries.filter(function (e) { return e.isDirectory; })).concat(sorting(this.entries.filter(function (e) { return !e.isDirectory; })));
+            } else {
+                return sorting(this.entries);
+            }
+        }
     },
     methods: {
+        toggleMenu: function (event) {
+            this.$refs.menu.toggle(event);
+        },
+        openAccessTokenDialog: function () {
+            this.accessTokenDialog.visible = true;
+        },
+        openSettingsDialog: function () {
+            this.settingsDialog.folderListingEnabled = this.settings.folderListingEnabled;
+            this.settingsDialog.sortFoldersFirst = this.settings.sortFoldersFirst;
+            this.settingsDialog.visible = true;
+        },
+        onSaveSettingsDialog: function () {
+            var that = this;
+
+            this.settingsDialog.busy = true;
+
+            // save here
+            var data = {
+                folderListingEnabled: this.settingsDialog.folderListingEnabled,
+                sortFoldersFirst: this.settingsDialog.sortFoldersFirst
+            };
+
+            superagent.put('/api/settings').send(data).query({ access_token: localStorage.accessToken }).end(function (error) {
+                if (error) return console.error(error);
+
+                // after success, copy to app
+                that.settings.folderListingEnabled = data.folderListingEnabled;
+                that.settings.sortFoldersFirst = data.sortFoldersFirst;
+
+                that.settingsDialog.busy = false;
+                that.settingsDialog.visible = false;
+            });
+        },
         onLogin: function () {
             var that = this;
 
             that.loginData.busy = true;
+
+            console.log(that.loginData)
 
             superagent.post('/api/login').send({ username: that.loginData.username, password: that.loginData.password }).end(function (error, result) {
                 that.loginData.busy = false;
@@ -329,7 +442,7 @@ var app = new Vue({
         },
         onOptionsMenu: function (command, source) {
             if (command === 'folderListing') {
-                superagent.put('/api/settings').send({ folderListingEnabled: this.folderListingEnabled }).query({ access_token: localStorage.accessToken }).end(function (error) {
+                superagent.put('/api/settings').send({ folderListingEnabled: this.settings.folderListingEnabled }).query({ access_token: localStorage.accessToken }).end(function (error) {
                     if (error) console.error(error);
                 });
             } else if (command === 'about') {
@@ -347,8 +460,6 @@ var app = new Vue({
                 source.$parent.$parent.hide();
 
                 logout();
-            } else if (command === 'apiAccess') {
-                this.accessTokensDialogVisible = true;
             }
         },
         onDownload: function (entry) {
@@ -468,8 +579,6 @@ var app = new Vue({
         onCopyAccessToken: function (event) {
             event.target.select();
             document.execCommand('copy');
-
-            this.$message({ type: 'success', message: 'Access token copied to clipboard' });
         },
         onCreateAccessToken: function () {
             var that = this;
@@ -492,7 +601,7 @@ var app = new Vue({
             }).catch(function () {});
 
         },
-        prettyDate: function (row, column, cellValue, index) {
+        prettyDate: function (cellValue) {
             var date = new Date(cellValue),
             diff = (((new Date()).getTime() - date.getTime()) / 1000),
             day_diff = Math.floor(diff / 86400);
@@ -512,18 +621,46 @@ var app = new Vue({
                 day_diff < 365 && Math.round( day_diff / 30 ) +  ' months ago' ||
                 Math.round( day_diff / 365 ) + ' years ago';
         },
-        prettyFileSize: function (row, column, cellValue, index) {
+        prettyFileSize: function (cellValue) {
             return filesize(cellValue);
         },
         loadDirectory: loadDirectory,
         onUp: function () {
             window.location.hash = sanitize(this.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
         },
+        onEntryOpen: function (entry) {
+            // ignore item open on row clicks if we are renaming this entry
+            if (entry.rename) return;
+
+            var path = sanitize(this.path + '/' + entry.fileName);
+
+            if (entry.isDirectory) {
+                window.location.hash = path;
+                return;
+            }
+
+            this.activeEntry = entry;
+            this.activeEntry.fullPath = encode(sanitize(this.path + '/' + entry.fileName));
+            this.previewDrawerVisible = true
+
+            // need to wait for DOM element to exist
+            setTimeout(function () {
+                $('iframe').on('load', function (e) {
+                    if (!e.target.contentWindow.document.body) return;
+
+                    e.target.contentWindow.document.body.style.display = 'flex'
+                    e.target.contentWindow.document.body.style.justifyContent = 'center'
+                });
+            }, 0);
+        },
         open: open,
         drop: drop,
         dragOver: dragOver
     }
 });
+
+app.directive('tooltip', tooltip);
+app = app.mount('#app');
 
 initWithToken(localStorage.accessToken);
 

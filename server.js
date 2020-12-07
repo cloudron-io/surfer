@@ -96,6 +96,16 @@ app.use('/api', session({ secret: 'surfin surfin', resave: false, saveUninitiali
 app.use(router);
 app.use(webdav.extensions.express('/_webdav', webdavServer));
 app.use('/_admin', express.static(__dirname + '/frontend'));
+
+// these are node_module deps for the frontend
+// app.use('/_admin/3rdparty/axios', express.static(path.join(__dirname, 'node_modules/axios/dist')));
+app.use('/_admin/3rdparty/vue', express.static(path.join(__dirname, 'node_modules/vue/dist')));
+app.use('/_admin/3rdparty/primevue', express.static(path.join(__dirname, 'node_modules/primevue')));
+app.use('/_admin/3rdparty/primeicons', express.static(path.join(__dirname, 'node_modules/primeicons')));
+app.use('/_admin/3rdparty/primeflex', express.static(path.join(__dirname, 'node_modules/primeflex')));
+app.use('/_admin/3rdparty/mitt', express.static(path.join(__dirname, 'node_modules/mitt/dist')));
+// app.use('/_admin/3rdparty/moment', express.static(path.join(__dirname, 'node_modules/moment/min')));
+
 app.use('/', express.static(ROOT_FOLDER));
 app.use('/', function welcomePage(req, res, next) {
     if (config.folderListingEnabled || req.path !== '/') return next();
