@@ -103,7 +103,7 @@ app.use('/_admin/3rdparty/vue', express.static(path.join(__dirname, 'node_module
 app.use('/_admin/3rdparty/primevue', express.static(path.join(__dirname, 'node_modules/primevue')));
 app.use('/_admin/3rdparty/primeicons', express.static(path.join(__dirname, 'node_modules/primeicons')));
 app.use('/_admin/3rdparty/primeflex', express.static(path.join(__dirname, 'node_modules/primeflex')));
-app.use('/_admin/3rdparty/mitt', express.static(path.join(__dirname, 'node_modules/mitt/dist')));
+app.use('/_admin/3rdparty/superagent', express.static(path.join(__dirname, 'node_modules/superagent/dist')));
 // app.use('/_admin/3rdparty/moment', express.static(path.join(__dirname, 'node_modules/moment/min')));
 
 app.use('/', express.static(ROOT_FOLDER));
