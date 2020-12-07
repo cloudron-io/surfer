@@ -27,17 +27,23 @@ const CONFIG_FILE = path.resolve(__dirname, process.argv[3] || '.config.json');
 fs.mkdirSync(ROOT_FOLDER, { recursive: true });
 
 var config = {
-    folderListingEnabled: false
+    folderListingEnabled: false,
+    sortFoldersFirst: true
 };
 
 function getSettings(req, res, next) {
-    res.send({ folderListingEnabled: !!config.folderListingEnabled });
+    res.send({
+        folderListingEnabled: !!config.folderListingEnabled,
+        sortFoldersFirst: !!config.sortFoldersFirst
+    });
 }
 
 function setSettings(req, res, next) {
-    if (typeof req.body.folderListingEnabled === 'undefined') return next(new HttpError(400, 'missing folderListingEnabled boolean'));
+    if (typeof req.body.folderListingEnabled !== 'boolean') return next(new HttpError(400, 'missing folderListingEnabled boolean'));
+    if (typeof req.body.sortFoldersFirst !== 'boolean') return next(new HttpError(400, 'missing sortFoldersFirst boolean'));
 
     config.folderListingEnabled = !!req.body.folderListingEnabled;
+    config.sortFoldersFirst = !!req.body.sortFoldersFirst;
 
     fs.writeFile(CONFIG_FILE, JSON.stringify(config), function (error) {
         if (error) return next(new HttpError(500, 'unable to save settings'));
@@ -55,7 +61,8 @@ try {
     else console.log(`Cannot load config file ${CONFIG_FILE}`, e);
 }
 
-if (typeof config.folderListingEnabled === 'undefined') config.folderListingEnabled = true;
+if (typeof config.folderListingEnabled !== 'boolean') config.folderListingEnabled = false;
+if (typeof config.sortFoldersFirst !== 'boolean') config.sortFoldersFirst = true;
 
 // Setup the express server and routes
 var app = express();
