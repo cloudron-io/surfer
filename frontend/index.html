@@ -72,7 +72,7 @@
           <span class="p-buttonset">
             <p-button class="p-button-sm" label="Upload File" icon="pi pi-upload" @click="onUpload"></p-button>
             <p-button class="p-button-sm" label="Upload Folder" icon="pi pi-cloud-upload" @click="onUploadFolder"></p-button>
-            <p-button class="p-button-sm" label="New Folder" icon="pi pi-plus" @click="onNewFolder"></p-button>
+            <p-button class="p-button-sm" label="New Folder" icon="pi pi-plus" @click="openNewFolderDialog"></p-button>
           </span>
           <p-button icon="pi pi-ellipsis-h" class="p-ml-2 p-button-sm p-button-outlined" @click="toggleMenu"></p-button>
           <p-menu ref="menu" :model="mainMenu" :popup="true"></p-menu>
@@ -111,8 +111,9 @@
     </div>
   </div>
 
+  <!-- Settings Dialog -->
   <p-dialog v-model:visible="settingsDialog.visible" header="Settings" :modal="true" :closable="false" :style="{width: '50vw'}">
-    <div style="margin-top: 4px;">
+    <div>
       <div class="p-field-checkbox">
         <p-checkbox id="publicFolderListing" v-model="settingsDialog.folderListingEnabled" :binary="true"></p-checkbox>
         <label for="publicFolderListing" style="font-weight: bold; font-size: 16.38px;">Public Folder Listing</label>
@@ -145,10 +146,11 @@
 
     <template #footer>
       <p-button label="Close" icon="pi pi-times" class="p-button-text" @click="settingsDialog.visible = false" :disabled="settingsDialog.busy"></p-button>
-      <p-button label="Save" class="p-button-success" icon="pi pi-check" @click="onSaveSettingsDialog" :disabled="settingsDialog.busy"></p-button>
+      <p-button label="Save" icon="pi pi-check" class="p-button-text p-button-success" @click="onSaveSettingsDialog" :disabled="settingsDialog.busy"></p-button>
     </template>
   </p-dialog>
 
+  <!-- Access Token Dialog -->
   <p-dialog v-model:visible="accessTokenDialog.visible" header="Access Tokens" :modal="true" :closable="false" :style="{width: '50vw'}">
     Access tokens are useful to programmatically deploy assets for example within a CI/CD pipeline.
     See the <a href="https://cloudron.io/documentation/apps/surfer/" target="_blank">docs</a> for more information on how to use this token.
@@ -177,64 +179,24 @@
     </template>
   </p-dialog>
 
+  <!-- New Folder Dialog -->
+  <p-dialog header="New Foldername" v-model:visible="newFolderDialog.visible" :closable="false" :style="{width: '350px'}" :modal="true">
+    <form @submit="onSaveNewFolderDialog" @submit.native.prevent>
+      <div class="p-fluid">
+        <div class="p-field">
+          <p-inputtext type="text" v-model="newFolderDialog.folderName" autofocus required :class="{ 'p-invalid': newFolderDialog.error }"></p-inputtext>
+          <small class="p-invalid" v-show="newFolderDialog.error">{{ newFolderDialog.error }}</small>
+        </div>
+      </div>
+    </form>
+    <template #footer>
+      <p-button label="Cancel" icon="pi pi-times" class="p-button-text" @click="newFolderDialog.visible = false"></p-button>
+      <p-button label="Create" icon="pi pi-check" class="p-button-text p-button-success" @click="onSaveNewFolderDialog" :disabled="!newFolderDialog.folderName"></p-button>
+    </template>
+  </p-dialog>
+
 <!-- <el-container>
 
-
-  <el-dialog title="Access Tokens" :visible.sync="accessTokensDialogVisible" width="40%">
-    Access tokens are useful to programmatically deploy assets for example within a CI/CD pipeline.
-    See the <a href="https://cloudron.io/documentation/apps/surfer/" target="_blank">docs</a> for more information on how to use this token.
-    <br/>
-    <br/>
-    <el-alert title="Tokens are shared between all users." type="warning" show-icon :closable="false"></el-alert>
-    <br/>
-    <div>
-      <div v-for="accessToken in accessTokens">
-        <el-input suffix-icon="el-icon-copy-document" v-model="accessToken" class="access-token-input" @focus="onCopyAccessToken" size="small"></el-input>
-        <el-button icon="el-icon-delete" type="danger" size="small" @click="onDeleteAccessToken(accessToken)"></el-button>
-      </div>
-    </div>
-    <br/>
-    <el-button @click="onCreateAccessToken()" size="small" type="primary">Create Access Token</el-button>
-  </el-dialog>
-
-  <el-header>
-    <el-row type="flex" justify="space-between">
-      <div v-show="session.valid">
-        <el-button type="primary" size="small" icon="el-icon-arrow-left" :disabled="!pathParts.slice(-1).length" @click="onUp"></el-button>
-      </div>
-      <div style="flex-grow: 2; padding: 0 7px;" v-show="session.valid">
-        <el-breadcrumb separator-class="el-icon-arrow-right">
-          <el-breadcrumb-item><a href="#/">Home</a></el-breadcrumb-item>
-          <el-breadcrumb-item v-for="part in pathParts.slice(0, -1)"><a :href="part.link">{{ part.name }}</a></el-breadcrumb-item>
-          <el-breadcrumb-item v-show="pathParts.slice(-1).length">
-            {{ pathParts.slice(-1).length ? pathParts.slice(-1)[0].name : '' }}
-            <i class="el-icon-arrow-right" style="color: transparent;"></i>
-          </el-breadcrumb-item>
-        </el-breadcrumb>
-      </div>
-      <div align="right" v-show="session.valid">
-        <el-button-group>
-          <el-button type="primary" icon="el-icon-upload2" size="small" @click="onUpload">Upload File</el-button>
-          <el-button type="primary" icon="el-icon-upload" size="small" @click="onUploadFolder">Upload Folder</el-button>
-          <el-button type="primary" icon="el-icon-plus" size="small" @click="onNewFolder">New Folder</el-button>
-        </el-button-group>
-        <el-dropdown @command="onOptionsMenu" :hide-on-click="false" trigger="click">
-          <el-button size="small" icon="el-icon-more" id="burgerMenuButton"></el-button>
-          <el-dropdown-menu slot="dropdown">
-            <el-dropdown-item disabled>Public Folder Listing</el-dropdown-item>
-            <el-dropdown-item command="folderListing">
-              <el-switch v-model="folderListingEnabled" active-text="Enabled" inactive-text="Disabled"></el-switch>
-            </el-dropdown-item>
-            <el-dropdown-item disabled divided>WebDAV Endpoint</el-dropdown-item>
-            <el-dropdown-item><a href="/_webdav/" target="_blank">{{ origin }}/_webdav/</a></el-dropdown-item>
-            <el-dropdown-item command="apiAccess" divided><i class="el-icon-connection"></i> Access Tokens</el-dropdown-item>
-            <el-dropdown-item command="about" divided><i class="el-icon-info"></i> About</el-dropdown-item>
-            <el-dropdown-item command="logout" id="logoutButton"><i class="el-icon-circle-close"></i> Logout</el-dropdown-item>
-          </el-dropdown-menu>
-        </el-dropdown>
-      </div>
-    </el-row>
-  </el-header>
   <el-main>
 
     <div v-show="busy">

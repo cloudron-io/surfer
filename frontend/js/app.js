@@ -106,6 +106,11 @@ function logout() {
     superagent.post('/api/logout').query({ access_token: localStorage.accessToken }).end(function (error) {
         if (error) console.error(error);
 
+        // close all potential dialogs
+        app.newFolderDialog.visible = false;
+        app.settingsDialog.visible = false;
+        app.accessTokenDialog.visible = false;
+
         app.session.valid = false;
 
         app.loginData.username = '';
@@ -331,6 +336,11 @@ var app = Vue.createApp({
             accessTokenDialog: {
                 visible: false,
             },
+            newFolderDialog: {
+                visible: false,
+                error: '',
+                folderName: ''
+            },
             mainMenu: [{
                 label: 'Settings',
                 icon: 'pi pi-cog',
@@ -389,6 +399,28 @@ var app = Vue.createApp({
     methods: {
         toggleMenu: function (event) {
             this.$refs.menu.toggle(event);
+        },
+        openNewFolderDialog: function () {
+            this.newFolderDialog.error = '';
+            this.newFolderDialog.folderName = '';
+            this.newFolderDialog.visible = true;
+        },
+        onSaveNewFolderDialog: function () {
+            var that = this;
+
+            var path = encode(sanitize(this.path + '/' + this.newFolderDialog.folderName));
+
+            superagent.post('/api/files' + path).query({ access_token: localStorage.accessToken, directory: true }).end(function (error, result) {
+                if (result && result.statusCode === 401) return logout();
+                if (result && result.statusCode === 403) return that.newFolderDialog.error = 'Folder name not allowed';
+                if (result && result.statusCode === 409) return that.newFolderDialog.error = 'Folder already exists';
+                if (result && result.statusCode !== 201) return that.newFolderDialog.error = 'Error creating folder: ' + result.statusCode;
+                if (error) return console.error(error.message);
+
+                refresh();
+
+                that.newFolderDialog.visible = false;
+            });
         },
         openAccessTokenDialog: function () {
             this.accessTokenDialog.visible = true;
@@ -544,28 +576,6 @@ var app = Vue.createApp({
 
                 entry.fileName = entry.filePathNew;
             });
-        },
-        onNewFolder: function () {
-            var that = this;
-
-            function prompt(value, errorMessage) {
-                var title = 'Create New Folder';
-                that.$prompt(errorMessage || '', title, { inputValue: value, customClass: errorMessage ? 'error' : '', confirmButtonText: 'Yes', cancelButtonText: 'No', inputPlaceholder: 'new foldername' }).then(function (data) {
-                    var path = encode(sanitize(that.path + '/' + data.value));
-
-                    superagent.post('/api/files' + path).query({ access_token: localStorage.accessToken, directory: true }).end(function (error, result) {
-                        if (result && result.statusCode === 401) return logout();
-                        if (result && result.statusCode === 403) return prompt(data.value, 'Folder name not allowed');
-                        if (result && result.statusCode === 409) return prompt(data.value, 'Folder already exists');
-                        if (result && result.statusCode !== 201) return prompt(data.value, 'Error creating folder: ' + result.statusCode);
-                        if (error) return that.$message.error(error.message);
-
-                        refresh();
-                    });
-                }).catch(function () {});
-            }
-
-            prompt();
         },
         refreshAccessTokens: function () {
             var that = this;

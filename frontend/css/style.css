@@ -126,3 +126,7 @@ hr {
 .p-tooltip {
     z-index: 1000;
 }
+
+.p-dialog .p-dialog-content {
+    padding: 5px 1.5rem 0 1.5rem;
+}
