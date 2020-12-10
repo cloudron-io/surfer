@@ -91,7 +91,12 @@
         <div class="tbody" style="overflow: auto;">
           <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @click="onEntryOpen(entry)">
             <div class="td" style="max-width: 50px;"><img :src="entry.previewUrl" style="width: 32px; height: 32px; vertical-align: middle;"/></div>
-            <div class="td" style="flex-grow: 2;">{{ entry.fileName }}</div>
+            <div class="td" style="flex-grow: 2;">
+              {{ entry.fileName }}
+              <!-- <el-input size="small" v-on:keyup.native.enter="onRenameSubmit(scope.row)" v-on:keyup.native.esc="onRenameEnd(scope.row)" @blur="onRenameEnd(scope.row)" v-model="scope.row.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="scope.row.rename"></el-input> -->
+              <span v-show="!entry.rename">{{ entry.fileName }}</span>
+              <p-button class="p-button-sm p-button-rounded p-button-text rename-action" icon="pi pi-pencil" v-show="!entry.rename" @click.stop="onRename(entry)"></p-button>
+            </div>
             <div class="td" style="max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
             <div class="td" style="max-width: 150px;">{{ prettyDate(entry.mtime) }}</div>
             <div class="td" style="max-width: 100px; justify-content: right;">

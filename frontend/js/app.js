@@ -540,14 +540,14 @@ var app = Vue.createApp({
                 });
             }).catch(function () {});
         },
-        onRename: function (entry, scope) {
+        onRename: function (entry) {
             if (entry.rename) return entry.rename = false;
 
             entry.filePathNew = entry.fileName;
             entry.rename = true;
 
             Vue.nextTick(function () {
-                var elem = document.getElementById('filePathRenameInputId-' + scope.$index);
+                var elem = document.getElementById('filePathRenameInputId-' + entry.fileName);
                 elem.focus();
 
                 if (typeof elem.selectionStart != "undefined") {

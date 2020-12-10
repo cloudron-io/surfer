@@ -119,6 +119,18 @@ hr {
     justify-content: center;
 }
 
+.rename-action {
+    margin-left: 20px;
+}
+
+.tr .rename-action {
+    visibility: hidden;
+}
+
+.tr:hover .rename-action {
+    visibility: visible;
+}
+
 .p-progressbar {
     flex-grow: 1;
 }
