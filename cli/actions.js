@@ -53,7 +53,7 @@ function collectFiles(filePath, basePath, options) {
     var absoluteFilePath = path.resolve(basePath, filePath);
 
     var fileName = path.basename(absoluteFilePath);
-    if (!options.all && fileName[0] === '.' && fileName.length > 1) return;
+    if (!options.all && fileName[0] === '.' && fileName.length > 1) return [];
 
     var stat = fs.statSync(absoluteFilePath);
 
