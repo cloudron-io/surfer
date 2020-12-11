@@ -105,11 +105,7 @@ hr {
     flex-basis: 0;
     padding: 0.5em;
     line-height: 2.3rem;
-    word-break: break-word;
-    overflow: hidden;
-    text-overflow: ellipsis;
     min-width: 0px;
-    white-space: nowrap;
 }
 
 .main-container-footer {
