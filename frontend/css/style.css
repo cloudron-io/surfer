@@ -119,6 +119,10 @@ hr {
     justify-content: center;
 }
 
+.rename-input {
+    width: 100%;
+}
+
 .rename-action {
     margin-left: 20px;
 }
