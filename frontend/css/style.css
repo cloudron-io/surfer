@@ -98,6 +98,12 @@ hr {
     background-color: #f5f7fa;
 }
 
+.tr-placeholder {
+    width: 100%;
+    text-align: center;
+    margin-top: 20vh;
+}
+
 .td {
     display: flex;
     flex-flow: row nowrap;

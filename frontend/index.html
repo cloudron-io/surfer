@@ -89,6 +89,8 @@
           <div class="td" style="max-width: 100px; justify-content: right;">Actions</div>
         </div>
         <div class="tbody" style="overflow: auto;">
+          <div class="tr-placeholder" v-show="entries.length === 0">Folder is empty</div>
+          <div class="tr-placeholder" v-show="entries.length !== 0 && filteredAndSortedEntries.length === 0">Nothing found</div>
           <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @click="onEntryOpen(entry)">
             <div class="td" style="max-width: 50px;"><img :src="entry.previewUrl" style="width: 32px; height: 32px; vertical-align: middle;"/></div>
             <div class="td" style="flex-grow: 2;">
