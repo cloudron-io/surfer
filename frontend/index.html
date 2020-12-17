@@ -111,7 +111,7 @@
         </div>
       </div>
       <div class="main-container-preview" :class="{ 'visible': previewDrawer.visible }">
-        <iframe :src="previewDrawer.entry.fullPath" style="width: 100%; height: 100%; border: none; margin: 10px;"></iframe>
+        <iframe :src="previewDrawer.entry.fullPath" style="width: 100%; height: 100%; border: none;"></iframe>
         <center>
           <p-button class="p-button-sm" label="Download" icon="pi pi-download" style="margin: 10px;" @click.stop="onDownload(previewDrawer.entry)"></p-button>
           <a :href="previewDrawer.entry.fullPath" target="_blank">

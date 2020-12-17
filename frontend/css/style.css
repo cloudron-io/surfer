@@ -70,14 +70,14 @@ a:hover {
     height: 100%;
     overflow: hidden;
     width: 0;
-    transition: width 200ms, padding-left 200ms;
-    padding-left: 0;
+    transition: width 200ms;
     background-color: #f8f9fa;
     border-left: solid 1px #e6e6e6;
+    padding: 0;
 }
 
 .main-container-preview.visible {
-    margin: 0 10px;
+    padding: 10px 10px 0px 10px;
     width: 33vw;
 }
 
