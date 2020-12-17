@@ -48,19 +48,20 @@
       <h1>Login</h1>
       <div class="p-fluid">
         <div class="p-field">
-          <label for="firstname">Username</label>
-          <p-inputtext id="firstname" type="text" v-model="loginData.username" autofocus></p-inputtext>
+          <label for="usernameInput">Username</label>
+          <p-inputtext id="usernameInput" type="text" v-model="loginData.username" autofocus></p-inputtext>
         </div>
         <div class="p-field">
-          <label for="password">Password</label>
-          <p-password id="password" :feedback="false" v-model="loginData.password"></p-password>
+          <label for="passwordInput">Password</label>
+          <p-password id="passwordInput" :feedback="false" v-model="loginData.password" :class="{ 'p-invalid': loginData.error }"></p-password>
+          <small v-show="loginData.error" :class="{ 'p-invalid': loginData.error }">Wrong username or password.</small>
         </div>
       </div>
       <p-button type="submit" label="Login" @click="onLogin"></p-button>
     </form>
   </div>
 
-  <div class="main-container">
+  <div class="main-container" v-show="ready && session.valid">
     <div class="main-container-toolbar">
       <p-toolbar>
         <template #left>

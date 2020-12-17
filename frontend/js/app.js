@@ -111,10 +111,11 @@ function logout() {
         app.settingsDialog.visible = false;
         app.accessTokenDialog.visible = false;
 
-        app.session.valid = false;
-
         app.loginData.username = '';
         app.loginData.password = '';
+        app.loginData.error = false;
+
+        app.session.valid = false;
 
         delete localStorage.accessToken;
     });
@@ -308,9 +309,10 @@ var app = Vue.createApp({
                 valid: false
             },
             loginData: {
+                busy: false,
+                error: false,
                 username: '',
-                password: '',
-                busy: false
+                password: ''
             },
             previewDrawerVisible: false,
             activeEntry: {},
@@ -456,21 +458,20 @@ var app = Vue.createApp({
             var that = this;
 
             that.loginData.busy = true;
-
-            console.log(that.loginData)
+            that.loginData.error = false;
 
             superagent.post('/api/login').send({ username: that.loginData.username, password: that.loginData.password }).end(function (error, result) {
                 that.loginData.busy = false;
 
-                if (error && !result) return that.$message.error(error.message);
-                if (result.statusCode === 401) return that.$message.error('Wrong username or password');
+                if (error || result.statusCode === 401) {
+                    that.loginData.error = true;
+                    that.loginData.password = '';
+                    document.getElementById('passwordInput').focus();
+                    return;
+                }
 
                 initWithToken(result.body.accessToken);
             });
-        },
-        onLoginDialogOpen: function () {
-            this.$refs.loginForm.resetFields();
-            document.getElementById('loginUsernameInput').focus();
         },
         onOptionsMenu: function (command, source) {
             if (command === 'folderListing') {
