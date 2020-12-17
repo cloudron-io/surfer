@@ -647,6 +647,8 @@ var app = Vue.createApp({
                     e.target.contentWindow.document.body.style.margin = 0;
                     e.target.contentWindow.document.body.style.display = 'flex';
                     e.target.contentWindow.document.body.style.justifyContent = 'center';
+                    e.target.contentWindow.document.body.style.alignItems = 'center';
+                    e.target.contentWindow.document.body.style.height = '100%';
                 });
             }, 0);
         },
