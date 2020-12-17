@@ -38,7 +38,7 @@
 </head>
 <body>
 
-<div id="app" @drop="drop" @dragover="dragOver">
+<div id="app" @drop="drop" @dragover="dragOver" v-cloak>
 
   <input type="file" ref="upload" style="display: none" multiple/>
   <input type="file" ref="uploadFolder" style="display: none" multiple webkitdirectory directory/>
@@ -81,32 +81,43 @@
       </p-toolbar>
     </div>
     <div class="main-container-body">
-      <div class="table">
-        <div class="th">
-          <div class="td" style="max-width: 50px;">Type</div>
-          <div class="td" style="flex-grow: 2;">Name</div>
-          <div class="td" style="max-width: 100px;">Size</div>
-          <div class="td" style="max-width: 150px;">Last Modified</div>
-          <div class="td" style="max-width: 100px; justify-content: right;">Actions</div>
-        </div>
-        <div class="tbody" style="overflow: auto;">
-          <div class="tr-placeholder" v-show="entries.length === 0">Folder is empty</div>
-          <div class="tr-placeholder" v-show="entries.length !== 0 && filteredAndSortedEntries.length === 0">Nothing found</div>
-          <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @click="onEntryOpen(entry)">
-            <div class="td" style="max-width: 50px;"><img :src="entry.previewUrl" style="width: 32px; height: 32px; vertical-align: middle;"/></div>
-            <div class="td" style="flex-grow: 2;">
-              <p-inputtext v-on:keyup.native.enter="onRenameSubmit(entry)" v-on:keyup.native.esc="onRenameEnd(entry)" @blur="onRenameEnd(entry)" v-model="entry.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="entry.rename" class="rename-input"></p-inputtext>
-              <span v-show="!entry.rename">{{ entry.fileName }}</span>
-              <p-button class="p-button-sm p-button-rounded p-button-text rename-action" icon="pi pi-pencil" v-show="!entry.rename" @click.stop="onRename(entry)"></p-button>
-            </div>
-            <div class="td" style="max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
-            <div class="td" style="max-width: 150px;">{{ prettyDate(entry.mtime) }}</div>
-            <div class="td" style="max-width: 100px; justify-content: right;">
-              <p-button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-download" v-show="!entry.rename && entry.isFile" @click.stop="onDownload(entry)"></p-button>
-              <p-button class="p-button-sm p-button-rounded p-button-danger p-button-text" icon="pi pi-trash" v-show="!entry.rename" @click.stop="onDelete(entry)"></p-button>
+      <div class="main-container-content">
+        <div class="table">
+          <div class="th">
+            <div class="td" style="max-width: 50px;">Type</div>
+            <div class="td" style="flex-grow: 2;">Name</div>
+            <div class="td" style="max-width: 100px;">Size</div>
+            <div class="td" style="max-width: 150px;">Last Modified</div>
+            <div class="td" style="max-width: 100px; justify-content: right;">Actions</div>
+          </div>
+          <div class="tbody" style="overflow: auto;">
+            <div class="tr-placeholder" v-show="entries.length === 0">Folder is empty</div>
+            <div class="tr-placeholder" v-show="entries.length !== 0 && filteredAndSortedEntries.length === 0">Nothing found</div>
+            <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @click="onEntryOpen(entry)" :class="{ 'active': (previewDrawer.visible && entry === previewDrawer.entry) }">
+              <div class="td" style="max-width: 50px;"><img :src="entry.previewUrl" style="width: 32px; height: 32px; vertical-align: middle;"/></div>
+              <div class="td" style="flex-grow: 2;">
+                <p-inputtext v-on:keyup.native.enter="onRenameSubmit(entry)" v-on:keyup.native.esc="onRenameEnd(entry)" @blur="onRenameEnd(entry)" v-model="entry.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="entry.rename" class="rename-input"></p-inputtext>
+                <span v-show="!entry.rename">{{ entry.fileName }}</span>
+                <p-button class="p-button-sm p-button-rounded p-button-text rename-action" icon="pi pi-pencil" v-show="!entry.rename" @click.stop="onRename(entry)"></p-button>
+              </div>
+              <div class="td" style="max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
+              <div class="td" style="max-width: 150px;">{{ prettyDate(entry.mtime) }}</div>
+              <div class="td" style="max-width: 100px; justify-content: right;">
+                <p-button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-download" v-show="!entry.rename && entry.isFile" @click.stop="onDownload(entry)"></p-button>
+                <p-button class="p-button-sm p-button-rounded p-button-danger p-button-text" icon="pi pi-trash" v-show="!entry.rename" @click.stop="onDelete(entry)"></p-button>
+              </div>
             </div>
           </div>
         </div>
+      </div>
+      <div class="main-container-preview" :class="{ 'visible': previewDrawer.visible }">
+        <iframe :src="previewDrawer.entry.fullPath" style="width: 100%; height: 100%; border: none; margin: 10px;"></iframe>
+        <center>
+          <p-button class="p-button-sm" label="Download" icon="pi pi-download" style="margin: 10px;" @click.stop="onDownload(previewDrawer.entry)"></p-button>
+          <a :href="previewDrawer.entry.fullPath" target="_blank">
+            <p-button class="p-button-sm" label="Open" icon="pi pi-external-link" style="margin: 10px;"></p-button>
+          </a>
+        </center>
       </div>
     </div>
     <div class="main-container-footer" v-show="uploadStatus.busy">
@@ -248,18 +259,6 @@
         </el-table>
       </center>
     </div>
-
-    <el-drawer :title="activeEntry.fileName":with-header="false" :visible.sync="previewDrawerVisible" direction="rtl" size="50%">
-      <div style="display: flex; flex-direction: column; height: 100%;">
-        <iframe :src="activeEntry.fullPath" style="width: 100%; height: 100%; border: none; margin: 10px;"></iframe>
-        <center>
-          <el-button size="small" icon="el-icon-download" style="margin: 10px;" @click.stop="onDownload(activeEntry)">Download</el-button>
-          <a :href="activeEntry.fullPath" target="_blank">
-            <el-button size="small" icon="el-icon-link" style="margin: 10px;">Open</el-button>
-          </a>
-        </center>
-      </div>
-    </el-drawer>
 
   </el-main>
   <el-footer v-show="uploadStatus.busy">

@@ -124,6 +124,9 @@ function logout() {
 function loadDirectory(folderPath) {
     app.busy = true;
 
+    app.previewDrawer.visible = false
+    app.previewDrawer.entry = {};
+
     folderPath = folderPath ? sanitize(folderPath) : '/';
 
     superagent.get('/api/files/' + encode(folderPath)).query({ access_token: localStorage.accessToken }).end(function (error, result) {
@@ -151,32 +154,6 @@ function loadDirectory(folderPath) {
         // update in case this was triggered from code
         window.location.hash = app.path;
     });
-}
-
-function open(entry) {
-    // ignore item open on entry clicks if we are renaming this entry
-    if (entry.rename) return;
-
-    var path = sanitize(app.path + '/' + entry.fileName);
-
-    if (entry.isDirectory) {
-        window.location.hash = path;
-        return;
-    }
-
-    app.activeEntry = entry;
-    app.activeEntry.fullPath = encode(sanitize(app.path + '/' + entry.fileName));
-    app.previewDrawerVisible = true
-
-    // need to wait for DOM element to exist
-    setTimeout(function () {
-        $('iframe').on('load', function (e) {
-            if (!e.target.contentWindow.document.body) return;
-
-            e.target.contentWindow.document.body.style.display = 'flex'
-            e.target.contentWindow.document.body.style.justifyContent = 'center'
-        });
-    }, 0);
 }
 
 function uploadFiles(files) {
@@ -314,7 +291,6 @@ var app = Vue.createApp({
                 username: '',
                 password: ''
             },
-            previewDrawerVisible: false,
             activeEntry: {},
             entries: [],
             accessTokens: [],
@@ -345,6 +321,10 @@ var app = Vue.createApp({
             },
             aboutDialog: {
                 visible: false
+            },
+            previewDrawer: {
+                visible: false,
+                entry: {}
             },
             mainMenu: [{
                 label: 'Settings',
@@ -656,19 +636,20 @@ var app = Vue.createApp({
 
             this.activeEntry = entry;
             this.activeEntry.fullPath = encode(sanitize(this.path + '/' + entry.fileName));
-            this.previewDrawerVisible = true
+            this.previewDrawer.visible = true
+            this.previewDrawer.entry = entry;
 
             // need to wait for DOM element to exist
             setTimeout(function () {
                 $('iframe').on('load', function (e) {
                     if (!e.target.contentWindow.document.body) return;
 
-                    e.target.contentWindow.document.body.style.display = 'flex'
-                    e.target.contentWindow.document.body.style.justifyContent = 'center'
+                    e.target.contentWindow.document.body.style.margin = 0;
+                    e.target.contentWindow.document.body.style.display = 'flex';
+                    e.target.contentWindow.document.body.style.justifyContent = 'center';
                 });
             }, 0);
         },
-        open: open,
         drop: drop,
         dragOver: dragOver
     }

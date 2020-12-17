@@ -46,12 +46,50 @@ a:hover {
     overflow: hidden;
 }
 
+.main-container-toolbar {
+    border-bottom: solid 1px #e6e6e6;
+}
+
 .main-container-body {
     display: flex;
     overflow: hidden;
     width: 100%;
     justify-content: center;
     flex-grow: 1;
+}
+
+.main-container-content {
+    display: flex;
+    overflow: hidden;
+    flex-grow: 1;
+}
+
+.main-container-preview {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    width: 0;
+    transition: width 200ms, padding-left 200ms;
+    padding-left: 0;
+    background-color: #f8f9fa;
+    border-left: solid 1px #e6e6e6;
+}
+
+.main-container-preview.visible {
+    margin: 0 10px;
+    width: 33vw;
+}
+
+.preview-header {
+    display: flex;
+}
+
+.preview-header-title {
+    font-size: 16px;
+    text-align: center;
+    flex-grow: 1;
+    margin: auto;
 }
 
 .p-breadcrumb {
@@ -72,7 +110,7 @@ hr {
     display: flex;
     flex-flow: column nowrap;
     flex: 1 1 auto;
-    max-width: 1280px;
+    margin: 0 10px;
 }
 
 .th {
@@ -96,6 +134,10 @@ hr {
 
 .tr:hover {
     background-color: #f5f7fa;
+}
+
+.tr.active {
+    background-color: #dbedfb;
 }
 
 .tr-placeholder {
