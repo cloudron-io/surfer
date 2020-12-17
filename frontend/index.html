@@ -202,6 +202,18 @@
     </template>
   </p-dialog>
 
+  <!-- About Dialog -->
+  <p-dialog header="About Cloudron Surfer" v-model:visible="aboutDialog.visible" :closable="false" :style="{width: '450px'}" :modal="true">
+    <div>
+      Surfer is a static file server written by <a href="https://cloudron.io" target="_blank">Cloudron</a>.
+      The source code is licensed under MIT and available <a href="https://git.cloudron.io/cloudron/surfer" target="_blank">here</a>.
+      <br/><br/>
+    </div>
+    <template #footer>
+      <p-button label="Close" icon="pi pi-times" class="p-button-text" @click="aboutDialog.visible = false"></p-button>
+    </template>
+  </p-dialog>
+
 <!-- <el-container>
 
   <el-main>

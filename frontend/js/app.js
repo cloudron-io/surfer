@@ -343,6 +343,9 @@ var app = Vue.createApp({
                 error: '',
                 folderName: ''
             },
+            aboutDialog: {
+                visible: false
+            },
             mainMenu: [{
                 label: 'Settings',
                 icon: 'pi pi-cog',
@@ -355,7 +358,8 @@ var app = Vue.createApp({
                 separator: true
             }, {
                 label: 'About',
-                icon: 'pi pi-info-circle'
+                icon: 'pi pi-info-circle',
+                command: () => this.aboutDialog.visible = true
             }, {
                 label: 'Logout',
                 icon: 'pi pi-sign-out',
