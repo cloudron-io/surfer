@@ -207,6 +207,7 @@ export default {
                 password: ''
             },
             entries: [],
+            activeEntry: {},
             accessTokens: [],
             // holds settings values stored on backend
             settings: {
@@ -231,7 +232,6 @@ export default {
             aboutDialog: {
                 visible: false
             },
-            activeEntry: {},
             mainMenu: [{
                 label: 'Settings',
                 icon: 'pi pi-cog',
@@ -348,7 +348,7 @@ export default {
             });
         },
         refresh () {
-          this.loadDirectory(this.path);
+            this.loadDirectory(this.path);
         },
         uploadFiles (files) {
             var that = this;
@@ -534,27 +534,11 @@ export default {
             window.location.href = encode('/api/files/' + sanitize(this.path + '/' + entry.fileName)) + '?access_token=' + localStorage.accessToken;
         },
         onUpload: function () {
-            // var that = this;
-
-            // $(this.$refs.upload).on('change', function () {
-            //     // detach event handler
-            //     $(that.$refs.upload).off('change');
-            //     that.uploadFiles(that.$refs.upload.files || []);
-            // });
-
             // reset the form first to make the change handler retrigger even on the same file selected
             this.$refs.upload.value = '';
             this.$refs.upload.click();
         },
         onUploadFolder: function () {
-            // var that = this;
-
-            // $(this.$refs.uploadFolder).on('change', function () {
-            //     // detach event handler
-            //     $(that.$refs.uploadFolder).off('change');
-            //     that.uploadFiles(that.$refs.uploadFolder.files || []);
-            // });
-
             // reset the form first to make the change handler retrigger even on the same file selected
             this.$refs.uploadFolder.value = '';
             this.$refs.uploadFolder.click();
@@ -682,6 +666,15 @@ export default {
         window.addEventListener('hashchange', function () {
             that.loadDirectory(decode(window.location.hash.slice(1)));
         }, false);
+
+        // upload input event handler
+        this.$refs.upload.addEventListener('change', function () {
+            that.uploadFiles(that.$refs.upload.files || []);
+        });
+
+        this.$refs.uploadFolder.addEventListener('change', function () {
+            that.uploadFiles(that.$refs.uploadFolder.files || []);
+        });
     }
 };
 
