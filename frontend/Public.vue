@@ -8,7 +8,7 @@
         </template>
 
         <template #right>
-          <a href="/_admin"><Button class="p-button-sm" label="Login" icon="pi pi-upload"/></a>
+          <a href="/_admin"><Button class="p-button-sm" label="Login" icon="pi pi-sign-in"/></a>
         </template>
       </Toolbar>
     </div>
