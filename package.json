@@ -1,24 +1,20 @@
 {
   "name": "cloudron-surfer",
   "version": "5.12.2",
+  "private": true,
   "description": "Simple file server",
-  "main": "server.js",
+  "author": {
+    "name": "Johannes Zellner",
+    "email": "johannes@nebulon.de"
+  },
   "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "watch": "vue-cli-service build --watch",
+    "lint": "vue-cli-service lint",
     "test": "./node_modules/mocha/bin/_mocha -R spec ./test/test.js"
   },
-  "keywords": [
-    "file",
-    "server"
-  ],
-  "bin": {
-    "surfer": "./cli/surfer.js"
-  },
-  "author": "Johannes Zellner <johannes@nebulon.de>",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://git.cloudron.io/cloudron/surfer.git"
-  },
+  "main": "server.js",
   "dependencies": {
     "async": "^3.2.0",
     "bcryptjs": "^2.4.3",
@@ -29,11 +25,14 @@
     "connect-lastmile": "^2.0.0",
     "connect-timeout": "^1.9.0",
     "cookie-parser": "^1.4.5",
+    "core-js": "^3.6.5",
     "debug": "^4.3.1",
     "del": "^6.0.0",
     "express": "^4.17.1",
     "express-session": "^1.17.1",
+    "filesize": "^6.1.0",
     "ldapjs": "^2.2.3",
+    "mitt": "^2.1.0",
     "morgan": "^1.10.0",
     "multiparty": "^4.2.2",
     "primeflex": "^2.0.0",
@@ -49,9 +48,49 @@
     "webdav-server": "^2.6.2"
   },
   "devDependencies": {
+    "@vue/cli-plugin-babel": "~4.5.0",
+    "@vue/cli-plugin-eslint": "~4.5.0",
+    "@vue/cli-service": "~4.5.0",
+    "@vue/compiler-sfc": "^3.0.0",
+    "babel-eslint": "^10.1.0",
     "chromedriver": "^87.0.4",
+    "eslint": "^6.7.2",
+    "eslint-plugin-vue": "^7.0.0-0",
     "expect.js": "^0.3.1",
     "mocha": "^8.2.1",
     "selenium-webdriver": "^3.6.0"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/vue3-essential",
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "parser": "babel-eslint"
+    },
+    "rules": {}
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "_id": "cloudron-surfer@5.12.2",
+  "bin": {
+    "surfer": "./cli/surfer.js"
+  },
+  "keywords": [
+    "file",
+    "server"
+  ],
+  "license": "MIT",
+  "readme": "ERROR: No README data found!",
+  "repository": {
+    "type": "git",
+    "url": "https://git.cloudron.io/cloudron/surfer.git"
   }
 }

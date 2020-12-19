@@ -81,7 +81,7 @@ var multipart = multipart({ maxFieldsSize: 2 * 1024, limit: '512mb', timeout: 3 
 
 router.post  ('/api/login', auth.login);
 router.post  ('/api/logout', auth.verify, auth.logout);
-router.get   ('/api/settings', auth.verify, getSettings);
+router.get   ('/api/settings', auth.verifyIfNeeded, getSettings);
 router.put   ('/api/settings', auth.verify, setSettings);
 router.get   ('/api/tokens', auth.verify, auth.getTokens);
 router.post  ('/api/tokens', auth.verify, auth.createToken);
@@ -102,28 +102,18 @@ app.use('/api', cookieParser());
 app.use('/api', session({ secret: 'surfin surfin', resave: false, saveUninitialized: false }));
 app.use(router);
 app.use(webdav.extensions.express('/_webdav', webdavServer));
-app.use('/_admin', express.static(__dirname + '/frontend'));
-
-// these are node_module deps for the frontend
-// app.use('/_admin/3rdparty/axios', express.static(path.join(__dirname, 'node_modules/axios/dist')));
-app.use('/_admin/3rdparty/vue', express.static(path.join(__dirname, 'node_modules/vue/dist')));
-app.use('/_admin/3rdparty/primevue', express.static(path.join(__dirname, 'node_modules/primevue')));
-app.use('/_admin/3rdparty/primeicons', express.static(path.join(__dirname, 'node_modules/primeicons')));
-app.use('/_admin/3rdparty/primeflex', express.static(path.join(__dirname, 'node_modules/primeflex')));
-app.use('/_admin/3rdparty/superagent', express.static(path.join(__dirname, 'node_modules/superagent/dist')));
-// app.use('/_admin/3rdparty/moment', express.static(path.join(__dirname, 'node_modules/moment/min')));
-
+app.use('/_admin', express.static(__dirname + '/dist'));
 app.use('/', express.static(ROOT_FOLDER));
 app.use('/', function welcomePage(req, res, next) {
     if (config.folderListingEnabled || req.path !== '/') return next();
-    res.status(200).sendFile(path.join(__dirname, '/frontend/welcome.html'));
+    res.status(200).sendFile(path.join(__dirname, '/dist/welcome.html'));
 });
 app.use('/', function (req, res) {
-    if (!config.folderListingEnabled) return res.status(404).sendFile(__dirname + '/frontend/404.html');
+    if (!config.folderListingEnabled) return res.status(404).sendFile(__dirname + '/dist/404.html');
 
-    if (!fs.existsSync(path.join(ROOT_FOLDER, decodeURIComponent(req.path)))) return res.status(404).sendFile(__dirname + '/frontend/404.html');
+    if (!fs.existsSync(path.join(ROOT_FOLDER, decodeURIComponent(req.path)))) return res.status(404).sendFile(__dirname + '/dist/404.html');
 
-    res.status(200).sendFile(__dirname + '/frontend/public.html');
+    res.status(200).sendFile(__dirname + '/dist/public.html');
 });
 app.use(lastMile());
 

@@ -124,7 +124,7 @@ function collectFiles(folderPath, recursive, callback) {
             });
         });
     });
-};
+}
 
 function get(req, res, next) {
     var recursive = boolLike(req.query.recursive);

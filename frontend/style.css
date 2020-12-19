@@ -1,43 +1,41 @@
 
-[v-cloak] {
-    display: none;
-}
 html, body {
-    --text-color: #495057;
-    --text-color-secondary: #6c757d;
-    --primary-color: #2196F3;
-    --primary-color-text: #ffffff;
-    --hover-background-color: #e9ecef;
-    --font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
+  --text-color: #495057;
+  --text-color-secondary: #6c757d;
+  --primary-color: #2196F3;
+  --primary-color-text: #ffffff;
+  --hover-background-color: #e9ecef;
+  --font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
 
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    font-family: var(--font-family);
-    font-weight: 400;
-    color: var(--text-color);
-    overflow: hidden;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-family);
+  font-weight: 400;
+  color: var(--text-color);
+  overflow: hidden;
 }
 
 a {
-    color: var(--primary-color);
-    text-decoration: none;
+  color: var(--primary-color);
+  text-decoration: none;
 }
 
 a:hover {
-    color: var(--text-color-secondary);
+  color: var(--text-color-secondary);
 }
 
 #app {
-    height: 100%;
-    overflow: hidden;
+  height: 100%;
+  overflow: hidden;
 }
 
 .login-container {
     max-width: 480px;
     margin: auto;
 }
+
 
 .main-container {
     display: flex;
@@ -92,68 +90,9 @@ a:hover {
     margin: auto;
 }
 
-.p-breadcrumb {
-    padding: 0.5rem;
-    border: none;
-}
-
-.p-toolbar {
-    border: none;
-}
-
 hr {
     border: none;
     border-top: 1px solid #d0d0d0;
-}
-
-.table {
-    display: flex;
-    flex-flow: column nowrap;
-    flex: 1 1 auto;
-    margin: 0 10px;
-}
-
-.th {
-    font-weight: 700;
-    width: 100%;
-    display: flex;
-    flex-flow: row nowrap;
-}
-
-.th > .td {
-    white-space: normal;
-}
-
-.tr {
-    width: 100%;
-    display: flex;
-    flex-flow: row nowrap;
-    cursor: pointer;
-    border-radius: 3px;
-}
-
-.tr:hover {
-    background-color: #f5f7fa;
-}
-
-.tr.active {
-    background-color: #dbedfb;
-}
-
-.tr-placeholder {
-    width: 100%;
-    text-align: center;
-    margin-top: 20vh;
-}
-
-.td {
-    display: flex;
-    flex-flow: row nowrap;
-    flex-grow: 1;
-    flex-basis: 0;
-    padding: 0.5em;
-    line-height: 2.3rem;
-    min-width: 0px;
 }
 
 .main-container-footer {
@@ -177,6 +116,15 @@ hr {
 
 .tr:hover .rename-action {
     visibility: visible;
+}
+
+.p-breadcrumb {
+    padding: 0.5rem;
+    border: none;
+}
+
+.p-toolbar {
+    border: none;
 }
 
 .p-progressbar {
