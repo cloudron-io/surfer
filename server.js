@@ -87,7 +87,7 @@ router.get   ('/api/tokens', auth.verify, auth.getTokens);
 router.post  ('/api/tokens', auth.verify, auth.createToken);
 router.delete('/api/tokens/:token', auth.verify, auth.delToken);
 router.get   ('/api/profile', auth.verify, auth.getProfile);
-router.get   ('/api/files/*', auth.verifyIfNeeded, files.get);
+router.get   ('/api/files/*', files.get);
 router.post  ('/api/files/*', auth.verify, multipart, files.post);
 router.put   ('/api/files/*', auth.verify, files.put);
 router.delete('/api/files/*', auth.verify, files.del);
