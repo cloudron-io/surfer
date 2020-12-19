@@ -62,34 +62,6 @@ a:hover {
     flex-grow: 1;
 }
 
-.main-container-preview {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-    width: 0;
-    transition: width 200ms;
-    background-color: #f8f9fa;
-    border-left: solid 1px #e6e6e6;
-    padding: 0;
-}
-
-.main-container-preview.visible {
-    padding: 10px 10px 0px 10px;
-    width: 33vw;
-}
-
-.preview-header {
-    display: flex;
-}
-
-.preview-header-title {
-    font-size: 16px;
-    text-align: center;
-    flex-grow: 1;
-    margin: auto;
-}
-
 hr {
     border: none;
     border-top: 1px solid #d0d0d0;

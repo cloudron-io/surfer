@@ -14,6 +14,7 @@ import './style.css';
 
 import Public from './Public.vue';
 import EntryList from './components/EntryList.vue';
+import Preview from './components/Preview.vue';
 
 const app = createApp(Public);
 
@@ -25,5 +26,6 @@ app.component('Toolbar', Toolbar);
 
 // custom components
 app.component('EntryList', EntryList);
+app.component('Preview', Preview);
 
 app.mount('#app');

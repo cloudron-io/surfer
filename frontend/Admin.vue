@@ -43,15 +43,7 @@
       <div class="main-container-content">
         <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @entry-activated="onEntryOpen" editable/>
       </div>
-      <div class="main-container-preview" :class="{ 'visible': previewDrawer.visible }">
-        <iframe id="previewIframe" :src="previewDrawer.entry.fullPath" style="width: 100%; height: 100%; border: none;"></iframe>
-        <center>
-          <Button class="p-button-sm" label="Download" icon="pi pi-download" style="margin: 10px;" @click.stop="onDownload(previewDrawer.entry)"/>
-          <a :href="previewDrawer.entry.fullPath" target="_blank">
-            <Button class="p-button-sm" label="Open" icon="pi pi-external-link" style="margin: 10px;"/>
-          </a>
-        </center>
-      </div>
+      <Preview :entry="activeEntry" @download="onDownload"/>
     </div>
     <div class="main-container-footer" v-show="uploadStatus.busy">
       <div v-show="uploadStatus.uploadListCount">
@@ -239,10 +231,7 @@ export default {
             aboutDialog: {
                 visible: false
             },
-            previewDrawer: {
-                visible: false,
-                entry: {}
-            },
+            activeEntry: {},
             mainMenu: [{
                 label: 'Settings',
                 icon: 'pi pi-cog',
@@ -308,8 +297,7 @@ export default {
 
             that.busy = true;
 
-            that.previewDrawer.visible = false
-            that.previewDrawer.entry = {};
+            that.activeEntry = {};
 
             folderPath = folderPath ? sanitize(folderPath) : '/';
 
@@ -683,21 +671,7 @@ export default {
                 return;
             }
 
-            this.previewDrawer.visible = true
-            this.previewDrawer.entry = entry;
-
-            // need to wait for DOM element to exist
-            setTimeout(function () {
-                document.getElementById('previewIframe').addEventListener('load', function (e) {
-                    if (!e.target.contentWindow.document.body) return;
-
-                    e.target.contentWindow.document.body.style.margin = 0;
-                    e.target.contentWindow.document.body.style.display = 'flex';
-                    e.target.contentWindow.document.body.style.justifyContent = 'center';
-                    e.target.contentWindow.document.body.style.alignItems = 'center';
-                    e.target.contentWindow.document.body.style.height = '100%';
-                }, { once: true });
-            }, 0);
+            this.activeEntry = entry;
         }
     },
     mounted() {
