@@ -31,6 +31,7 @@ Surfer can also be run standlone on any server:
 git clone https://git.cloudron.io/cloudron/surfer.git
 cd surfer
 npm install
+npm run build
 ./server.js <public folder>
 ```
 Use the `admin` tool to manage local users.
@@ -64,3 +65,17 @@ cd surfer
 npm install
 USERNAME=<cloudron username> PASSWORD=<cloudron password> mocha --bail test/test.js
 ```
+
+## Development
+
+```
+git clone https://git.cloudron.io/cloudron/surfer.git
+cd surfer
+npm install
+```
+
+During UI development, the assets have to be built after changes. This can be done automatically with
+```
+npm run watch
+```
+While having the `./server.js` instance running.
