@@ -41,7 +41,7 @@
     </div>
     <div class="main-container-body">
       <div class="main-container-content">
-        <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @entry-activated="onEntryOpen"/>
+        <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @entry-activated="onEntryOpen" editable/>
       </div>
       <div class="main-container-preview" :class="{ 'visible': previewDrawer.visible }">
         <iframe id="previewIframe" :src="previewDrawer.entry.fullPath" style="width: 100%; height: 100%; border: none;"></iframe>

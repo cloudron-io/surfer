@@ -15,13 +15,13 @@
         <div class="td" style="flex-grow: 2;">
           <InputText v-on:keyup.enter="onRenameSubmit(entry)" v-on:keyup.esc="onRenameEnd(entry)" @blur="onRenameEnd(entry)" v-model="entry.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="entry.rename" class="rename-input"/>
           <span v-show="!entry.rename">{{ entry.fileName }}</span>
-          <Button class="p-button-sm p-button-rounded p-button-text rename-action" icon="pi pi-pencil" v-show="!entry.rename" @click.stop="onRename(entry)"/>
+          <Button class="p-button-sm p-button-rounded p-button-text rename-action" icon="pi pi-pencil" v-show="editable && !entry.rename" @click.stop="onRename(entry)"/>
         </div>
         <div class="td" style="max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
         <div class="td" style="max-width: 150px;">{{ prettyDate(entry.mtime) }}</div>
         <div class="td" style="max-width: 100px; justify-content: right;">
           <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-download" v-show="!entry.rename && entry.isFile" @click.stop="onDownload(entry)"/>
-          <Button class="p-button-sm p-button-rounded p-button-danger p-button-text" icon="pi pi-trash" v-show="!entry.rename" @click.stop="onDelete(entry)"/>
+          <Button class="p-button-sm p-button-rounded p-button-danger p-button-text" icon="pi pi-trash" v-show="editable && !entry.rename" @click.stop="onDelete(entry)"/>
         </div>
       </div>
     </div>
@@ -45,8 +45,15 @@ export default {
         }
     },
     props: {
+        editable: {
+            type: Boolean,
+            default: false
+        },
         entries: Array,
-        sortFoldersFirst: Boolean
+        sortFoldersFirst: {
+            type: Boolean,
+            default: true
+        }
     },
     computed: {
         filteredAndSortedEntries: function () {
