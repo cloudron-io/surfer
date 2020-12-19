@@ -13,7 +13,7 @@
       <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @click="onEntryOpen(entry)" :class="{ 'active': (entry === active) }">
         <div class="td" style="max-width: 50px;"><img :src="entry.previewUrl" style="width: 32px; height: 32px; vertical-align: middle;"/></div>
         <div class="td" style="flex-grow: 2;">
-          <InputText v-on:keyup.enter="onRenameSubmit(entry)" v-on:keyup.esc="onRenameEnd(entry)" @blur="onRenameEnd(entry)" v-model="entry.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="entry.rename" class="rename-input"/>
+          <InputText @keyup.enter="onRenameSubmit(entry)" @keyup.esc="onRenameEnd(entry)" @blur="onRenameEnd(entry)" v-model="entry.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="entry.rename" class="rename-input"/>
           <span v-show="!entry.rename">{{ entry.fileName }}</span>
           <Button class="p-button-sm p-button-rounded p-button-text rename-action" icon="pi pi-pencil" v-show="editable && !entry.rename" @click.stop="onRename(entry)"/>
         </div>
@@ -30,11 +30,12 @@
 
 <script>
 
-import { prettyDate, prettyFileSize } from '../utils.js';
+import { nextTick } from 'vue';
+import { prettyDate, prettyFileSize, download } from '../utils.js';
 
 export default {
     name: 'EntryList',
-    emits: [ 'entry-activated' ],
+    emits: [ 'entry-activated', 'entry-renamed' ],
     data() {
         return {
             active: {},
@@ -79,7 +80,37 @@ export default {
         prettyDate: prettyDate,
         prettyFileSize: prettyFileSize,
         onEntryOpen: function (entry) {
+            if (entry.rename) return;
             this.$emit('entry-activated', entry);
+        },
+        onDownload: function (entry) {
+            download(entry);
+        },
+        onRename: function (entry) {
+            if (entry.rename) return entry.rename = false;
+
+            entry.filePathNew = entry.fileName;
+            entry.rename = true;
+
+            nextTick(function () {
+                var elem = document.getElementById('filePathRenameInputId-' + entry.fileName);
+                elem.focus();
+
+                if (typeof elem.selectionStart != "undefined") {
+                    elem.selectionStart = 0;
+                    elem.selectionEnd = entry.fileName.lastIndexOf('.');
+                }
+            });
+        },
+        onRenameEnd: function (entry) {
+            entry.rename = false;
+        },
+        onRenameSubmit: function (entry) {
+            entry.rename = false;
+
+            if (entry.filePathNew === entry.fileName) return;
+
+            this.$emit('entry-renamed', entry, entry.filePathNew);
         }
     }
 }

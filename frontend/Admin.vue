@@ -41,9 +41,9 @@
     </div>
     <div class="main-container-body">
       <div class="main-container-content">
-        <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @entry-activated="onEntryOpen" editable/>
+        <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @entry-activated="onEntryOpen" @entry-renamed="onRename" editable/>
       </div>
-      <Preview :entry="activeEntry" @download="onDownload"/>
+      <Preview :entry="activeEntry"/>
     </div>
     <div class="main-container-footer" v-show="uploadStatus.busy">
       <div v-show="uploadStatus.uploadListCount">
@@ -529,10 +529,6 @@ export default {
                 that.initWithToken(result.body.accessToken);
             });
         },
-        onDownload: function (entry) {
-            if (entry.isDirectory) return;
-            window.location.href = encode('/api/files/' + sanitize(this.path + '/' + entry.fileName)) + '?access_token=' + localStorage.accessToken;
-        },
         onUpload: function () {
             // reset the form first to make the change handler retrigger even on the same file selected
             this.$refs.upload.value = '';
@@ -559,41 +555,21 @@ export default {
                 });
             }).catch(function () {});
         },
-        onRename: function (entry) {
-            if (entry.rename) return entry.rename = false;
-
-            entry.filePathNew = entry.fileName;
-            entry.rename = true;
-
-            // Vue.nextTick(function () {
-            //     var elem = document.getElementById('filePathRenameInputId-' + entry.fileName);
-            //     elem.focus();
-
-            //     if (typeof elem.selectionStart != "undefined") {
-            //         elem.selectionStart = 0;
-            //         elem.selectionEnd = entry.fileName.lastIndexOf('.');
-            //     }
-            // });
-        },
-        onRenameEnd: function (entry) {
-            entry.rename = false;
-        },
-        onRenameSubmit: function (entry) {
+        onRename: function (entry, newFileName) {
             var that = this;
 
-            entry.rename = false;
-
-            if (entry.filePathNew === entry.fileName) return;
-
             var path = encode(sanitize(this.path + '/' + entry.fileName));
-            var newFilePath = sanitize(this.path + '/' + entry.filePathNew);
+            var newFilePath = sanitize(this.path + '/' + newFileName);
 
             superagent.put(`${that.origin}/api/files${path}`).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end(function (error, result) {
                 if (result && result.statusCode === 401) return that.logout();
                 if (result && result.statusCode !== 200) return that.$message.error('Error renaming file: ' + result.statusCode);
                 if (error) return that.$message.error(error.message);
 
-                entry.fileName = entry.filePathNew;
+                // update in-place to avoid reload
+                entry.fileName = newFileName;
+                // FIXME setting this will correctly update the preview, which on some types might trigger a download on rename!
+                entry.filePath = newFilePath;
             });
         },
         refreshAccessTokens: function () {

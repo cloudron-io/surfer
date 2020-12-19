@@ -12,6 +12,8 @@
 
 <script>
 
+import { download } from '../utils.js';
+
 export default {
     name: 'Preview',
     emits: [ 'download' ],
@@ -21,7 +23,7 @@ export default {
     },
     methods: {
         onDownload: function (entry) {
-            this.$emit('download', entry);
+            download(entry);
         }
     },
     mounted() {

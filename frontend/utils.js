@@ -39,6 +39,11 @@ function decode(path) {
     return path.split('/').map(decodeURIComponent).join('/');
 }
 
+function download(entry) {
+    if (entry.isDirectory) return;
+    window.location.href = encode('/api/files/' + entry.filePath);
+}
+
 const mimeTypes = {
     images: [ '.png', '.jpg', '.jpeg', '.tiff', '.gif' ],
     text: [ '.txt', '.md' ],
@@ -74,6 +79,7 @@ export {
     sanitize,
     encode,
     decode,
+    download,
     getPreviewUrl,
     getExtension
 };
