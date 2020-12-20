@@ -31,12 +31,6 @@ a:hover {
   overflow: hidden;
 }
 
-.login-container {
-    max-width: 480px;
-    margin: auto;
-}
-
-
 .main-container {
     display: flex;
     flex-direction: column;
@@ -62,32 +56,11 @@ a:hover {
     flex-grow: 1;
 }
 
-hr {
-    border: none;
-    border-top: 1px solid #d0d0d0;
-}
-
 .main-container-footer {
     display: flex;
     padding: 10px;
     background-color: #f8f9fa;
     justify-content: center;
-}
-
-.rename-input {
-    width: 100%;
-}
-
-.rename-action {
-    margin-left: 20px;
-}
-
-.tr .rename-action {
-    visibility: hidden;
-}
-
-.tr:hover .rename-action {
-    visibility: visible;
 }
 
 .p-breadcrumb {

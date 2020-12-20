@@ -651,4 +651,16 @@ export default {
 
 </script>
 
-<style></style>
+<style>
+
+.login-container {
+    max-width: 480px;
+    margin: auto;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #d0d0d0;
+}
+
+</style>

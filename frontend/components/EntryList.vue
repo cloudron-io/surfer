@@ -174,6 +174,22 @@ export default {
     color: white;
 }
 
+.rename-input {
+    width: 100%;
+}
+
+.rename-action {
+    margin-left: 20px;
+}
+
+.tr .rename-action {
+    visibility: hidden;
+}
+
+.tr:hover .rename-action {
+    visibility: visible;
+}
+
 .th {
     font-weight: 700;
     width: 100%;
