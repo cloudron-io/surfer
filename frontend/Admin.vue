@@ -44,7 +44,7 @@
     </div>
     <div class="main-container-body">
       <div class="main-container-content">
-        <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @entry-activated="onEntryOpen" @entry-renamed="onRename" editable/>
+        <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @entry-activated="onEntryOpen" @entry-renamed="onRename" @entry-delete="onDelete" editable/>
       </div>
       <Preview :entry="activeEntry"/>
     </div>
@@ -544,18 +544,15 @@ export default {
         onDelete: function (entry) {
             var that = this;
 
-            var title = 'Really delete ' + (entry.isDirectory ? 'folder ' : '') + entry.fileName;
-            this.$confirm('', title, { confirmButtonText: 'Yes', cancelButtonText: 'No' }).then(function () {
-                var path = encode(sanitize(that.path + '/' + entry.fileName));
+              var path = encode(sanitize(that.path + '/' + entry.fileName));
 
-                superagent.del(`${that.origin}/api/files${path}`).query({ access_token: localStorage.accessToken, recursive: true }).end(function (error, result) {
-                    if (result && result.statusCode === 401) return that.logout();
-                    if (result && result.statusCode !== 200) return that.$message.error('Error deleting file: ' + result.statusCode);
-                    if (error) return that.$message.error(error.message);
+              superagent.del(`${that.origin}/api/files${path}`).query({ access_token: localStorage.accessToken, recursive: true }).end(function (error, result) {
+                  if (result && result.statusCode === 401) return that.logout();
+                  if (result && result.statusCode !== 200) return that.$message.error('Error deleting file: ' + result.statusCode);
+                  if (error) return that.$message.error(error.message);
 
-                    that.refresh();
-                });
-            }).catch(function () {});
+                  that.refresh();
+              });
         },
         onRename: function (entry, newFileName) {
             var that = this;

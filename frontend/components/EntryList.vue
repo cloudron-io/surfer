@@ -35,7 +35,7 @@ import { prettyDate, prettyFileSize, download } from '../utils.js';
 
 export default {
     name: 'EntryList',
-    emits: [ 'entry-activated', 'entry-renamed' ],
+    emits: [ 'entry-activated', 'entry-renamed', 'entry-delete' ],
     data() {
         return {
             active: {},
@@ -111,6 +111,20 @@ export default {
             if (entry.filePathNew === entry.fileName) return;
 
             this.$emit('entry-renamed', entry, entry.filePathNew);
+        },
+        onDelete: function (entry) {
+            var that = this;
+
+            this.$confirm.require({
+                target: event.target,
+                message: 'Really delete?',
+                icon: 'pi pi-exclamation-triangle',
+                accept: () => {
+                    that.$emit('entry-delete', entry);
+                },
+                reject: () => {}
+            });
+
         }
     }
 }
