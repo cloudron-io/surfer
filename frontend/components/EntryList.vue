@@ -1,11 +1,11 @@
 <template>
   <div class="table">
     <div class="th">
-      <div class="td" style="max-width: 50px;">Type</div>
-      <div class="td" style="flex-grow: 2;">Name</div>
-      <div class="td" style="max-width: 100px;">Size</div>
-      <div class="td" style="max-width: 150px;">Last Modified</div>
-      <div class="td" style="max-width: 100px; justify-content: right;">Actions</div>
+      <div class="td" style="max-width: 50px;"></div>
+      <div class="td hand" style="flex-grow: 2;" @click="onSort('fileName')">Name <i class="pi" :class="{'pi-sort-alpha-down': sort.desc, 'pi-sort-alpha-up-alt': !sort.desc }" v-show="sort.prop === 'fileName'"></i></div>
+      <div class="td hand" style="max-width: 100px;" @click="onSort('size')">Size <i class="pi" :class="{'pi-sort-numeric-down': sort.desc, 'pi-sort-numeric-up-alt': !sort.desc }" v-show="sort.prop === 'size'"></i></div>
+      <div class="td hand" style="max-width: 150px;" @click="onSort('mtime')">Last Modified <i class="pi" :class="{'pi-sort-numeric-down': sort.desc, 'pi-sort-numeric-up-alt': !sort.desc }" v-show="sort.prop === 'mtime'"></i></div>
+      <div class="td" style="max-width: 100px; justify-content: right;"></div>
     </div>
     <div class="tbody" style="overflow: auto;">
       <div class="tr-placeholder" v-show="entries.length === 0">Folder is empty</div>
@@ -79,6 +79,10 @@ export default {
     methods: {
         prettyDate: prettyDate,
         prettyFileSize: prettyFileSize,
+        onSort: function (prop) {
+            if (this.sort.prop === prop) this.sort.desc = !this.sort.desc;
+            else this.sort.prop = prop;
+        },
         onEntryOpen: function (entry) {
             if (entry.rename) return;
             this.$emit('entry-activated', entry);
@@ -182,6 +186,15 @@ export default {
     padding: 0.5em;
     line-height: 2.3rem;
     min-width: 0px;
+}
+
+.th > .td {
+    display: block;
+    user-select: none;
+}
+
+.hand {
+    cursor: pointer;
 }
 
 </style>
