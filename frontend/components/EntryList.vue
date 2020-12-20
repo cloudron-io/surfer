@@ -1,5 +1,5 @@
 <template>
-  <div class="table">
+  <div class="table" @drop.stop.prevent="drop(null)" @dragover.stop.prevent="dragOver(null)" @dragexit="dragExit" :class="{ 'drag-active': dragActive === 'table' }">
     <div class="th">
       <div class="td" style="max-width: 50px;"></div>
       <div class="td hand" style="flex-grow: 2;" @click="onSort('fileName')">Name <i class="pi" :class="{'pi-sort-alpha-down': sort.desc, 'pi-sort-alpha-up-alt': !sort.desc }" v-show="sort.prop === 'fileName'"></i></div>
@@ -10,7 +10,7 @@
     <div class="tbody" style="overflow: auto;">
       <div class="tr-placeholder" v-show="entries.length === 0">Folder is empty</div>
       <div class="tr-placeholder" v-show="entries.length !== 0 && filteredAndSortedEntries.length === 0">Nothing found</div>
-      <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @click="onEntryOpen(entry)" :class="{ 'active': (entry === active) }">
+      <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @click="onEntryOpen(entry)" @drop.stop.prevent="drop(entry)" @dragover.stop.prevent="dragOver(entry)" :class="{ 'active': entry === active,  'drag-active': entry === dragActive }">
         <div class="td" style="max-width: 50px;"><img :src="entry.previewUrl" style="width: 32px; height: 32px; vertical-align: middle;"/></div>
         <div class="td" style="flex-grow: 2;">
           <InputText @keyup.enter="onRenameSubmit(entry)" @keyup.esc="onRenameEnd(entry)" @blur="onRenameEnd(entry)" v-model="entry.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="entry.rename" class="rename-input"/>
@@ -35,14 +35,15 @@ import { prettyDate, prettyFileSize, download } from '../utils.js';
 
 export default {
     name: 'EntryList',
-    emits: [ 'entry-activated', 'entry-renamed', 'entry-delete' ],
+    emits: [ 'entry-activated', 'entry-renamed', 'entry-delete', 'dropped' ],
     data() {
         return {
             active: {},
             sort: {
                 prop: 'fileName',
                 desc: true
-            }
+            },
+            dragActive: ''
         }
     },
     props: {
@@ -130,6 +131,27 @@ export default {
                 },
                 reject: () => {}
             });
+        },
+        dragExit: function () {
+            this.dragActive = '';
+        },
+        dragOver: function (entry) {
+            if (!this.editable) return;
+
+            event.dataTransfer.dropEffect = 'copy';
+
+            if (!entry || entry.isFile) this.dragActive = 'table';
+            else this.dragActive = entry;
+        },
+        drop: function (entry) {
+            if (!this.editable) return;
+
+            this.dragActive = '';
+
+            if (!event.dataTransfer.items[0]) return;
+
+            if (entry && entry.isDirectory) this.$emit('dropped', event, entry);
+            else this.$emit('dropped', event, null);
         }
     }
 }
@@ -142,7 +164,14 @@ export default {
     display: flex;
     flex-flow: column nowrap;
     flex: 1 1 auto;
-    margin: 0 10px;
+    margin: 10px;
+    transition: background-color 200ms, color 200ms;
+    border-radius: 3px;
+}
+
+.drag-active {
+    background-color: #2196f3;
+    color: white;
 }
 
 .th {

@@ -44,7 +44,7 @@
     </div>
     <div class="main-container-body">
       <div class="main-container-content">
-        <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @entry-activated="onEntryOpen" @entry-renamed="onRename" @entry-delete="onDelete" editable/>
+        <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @dropped="onDrop" @entry-activated="onEntryOpen" @entry-renamed="onRename" @entry-delete="onDelete" editable/>
       </div>
       <Preview :entry="activeEntry"/>
     </div>
@@ -255,10 +255,8 @@ export default {
             }]
         }
     },
-    components: {
-    },
     methods: {
-        initWithToken (accessToken) {
+        initWithToken: function (accessToken) {
             var that = this;
 
             if (!accessToken) {
@@ -294,7 +292,7 @@ export default {
         toggleMenu: function (event) {
             this.$refs.menu.toggle(event);
         },
-        loadDirectory (folderPath) {
+        loadDirectory: function (folderPath) {
             var that = this;
 
             that.busy = true;
@@ -329,7 +327,7 @@ export default {
                 window.location.hash = that.path;
             });
         },
-        logout () {
+        logout: function () {
             var that = this;
 
             superagent.post(`${that.origin}/api/logout`).query({ access_token: localStorage.accessToken }).end(function (error) {
@@ -349,13 +347,15 @@ export default {
                 delete localStorage.accessToken;
             });
         },
-        refresh () {
+        refresh: function () {
             this.loadDirectory(this.path);
         },
-        uploadFiles (files) {
+        uploadFiles: function (files, targetPath) {
             var that = this;
 
             if (!files || !files.length) return;
+
+            targetPath = targetPath || this.path;
 
             that.uploadStatus.busy = true;
             that.uploadStatus.count = files.length;
@@ -368,7 +368,7 @@ export default {
             }
 
             asyncForEach(files, function (file, callback) {
-                var path = encode(sanitize(that.path + '/' + (file.webkitRelativePath || file.name)));
+                var path = encode(sanitize(targetPath + '/' + (file.webkitRelativePath || file.name)));
 
                 var formData = new FormData();
                 formData.append('file', file);
@@ -404,26 +404,19 @@ export default {
                 that.refresh();
             });
         },
-        dragOver (event) {
-            event.stopPropagation();
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'copy';
-        },
-        drop(event) {
+        onDrop: function (event, entry) {
             var that = this;
-
-            event.stopPropagation();
-            event.preventDefault();
 
             if (!event.dataTransfer.items[0]) return;
 
             // figure if a folder was dropped on a modern browser, in this case the first would have to be a directory
             var folderItem;
+            var targetPath = entry ? entry.filePath : null;
             try {
                 folderItem = event.dataTransfer.items[0].webkitGetAsEntry();
-                if (folderItem.isFile) return that.uploadFiles(event.dataTransfer.files);
+                if (folderItem.isFile) return that.uploadFiles(event.dataTransfer.files, targetPath);
             } catch (e) {
-                return that.uploadFiles(event.dataTransfer.files);
+                return that.uploadFiles(event.dataTransfer.files, targetPath);
             }
 
             // if we got here we have a folder drop and a modern browser
@@ -457,7 +450,7 @@ export default {
 
                 if (error) return console.error(error);
 
-                that.uploadFiles(fileList);
+                that.uploadFiles(fileList, targetPath);
             });
         },
         openNewFolderDialog: function () {
