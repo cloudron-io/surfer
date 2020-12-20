@@ -3,7 +3,7 @@
   <input type="file" ref="uploadFolder" style="display: none" multiple webkitdirectory directory/>
 
   <!-- This is re-used and thus global -->
-  <ConfirmPopup></ConfirmPopup>
+  <ConfirmDialog></ConfirmDialog>
 
   <div class="login-container" v-show="ready && !session.valid">
     <form @submit="onLogin" @submit.prevent>
@@ -599,8 +599,10 @@ export default {
 
           this.$confirm.require({
                 target: event.target,
-                message: 'Really delete this access token?',
+                header: 'Delete Confirmation',
+                message: 'Really delete this access token? Any actions currently using this token will fail.',
                 icon: 'pi pi-exclamation-triangle',
+                acceptClass: 'p-button-danger',
                 accept: () => {
                     superagent.delete(`${that.origin}/api/tokens/${token}`).query({ access_token: localStorage.accessToken }).end(function (error, result) {
                         if (error && !result) return that.$message.error(error.message);
@@ -635,8 +637,8 @@ export default {
 
         // global key handler to unset activeEntry
         window.addEventListener('keyup', function () {
-            // only do this if no modal is active
-            if (event.key === 'Escape' && !event.target.classList.contains('p-overflow-hidden')) that.activeEntry = {};
+            // only do this if no modal is active - body classlist would be empty
+            if (event.key === 'Escape' && event.target.classList.length === 0) that.activeEntry = {};
         });
 
         window.addEventListener('hashchange', function () {

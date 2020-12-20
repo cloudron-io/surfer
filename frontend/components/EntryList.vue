@@ -117,14 +117,15 @@ export default {
 
             this.$confirm.require({
                 target: event.target,
-                message: 'Really delete?',
+                header: 'Delete Confirmation',
+                message: 'Really delete ' + (entry.isDirectory ? 'folder ' : '') + entry.fileName,
                 icon: 'pi pi-exclamation-triangle',
+                acceptClass: 'p-button-danger',
                 accept: () => {
                     that.$emit('entry-delete', entry);
                 },
                 reject: () => {}
             });
-
         }
     }
 }
