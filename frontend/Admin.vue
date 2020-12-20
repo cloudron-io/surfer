@@ -158,26 +158,10 @@
 <script>
 
 import superagent from 'superagent';
+import { eachLimit, each } from 'async';
 import { sanitize, encode, decode, getPreviewUrl, getExtension } from './utils.js';
 
 const ORIGIN = window.location.origin;
-
-// poor man's async
-function asyncForEach(items, handler, callback) {
-    var cur = 0;
-
-    if (items.length === 0) return callback();
-
-    (function iterator() {
-        handler(items[cur], function (error) {
-            if (error) return callback(error);
-            if (cur >= items.length-1) return callback();
-            ++cur;
-
-            iterator();
-        });
-    })();
-}
 
 export default {
     name: 'Admin',
@@ -367,7 +351,7 @@ export default {
                 that.uploadStatus.size += files[i].size;
             }
 
-            asyncForEach(files, function (file, callback) {
+            eachLimit(files, 10, function (file, callback) {
                 var path = encode(sanitize(targetPath + '/' + (file.webkitRelativePath || file.name)));
 
                 var formData = new FormData();
@@ -437,7 +421,7 @@ export default {
                     // Get folder contents
                     var dirReader = item.createReader();
                     dirReader.readEntries(function (entries) {
-                        asyncForEach(entries, function (entry, callback) {
+                        each(entries, function (entry, callback) {
                             traverseFileTree(entry, path + item.name + '/', callback);
                         }, callback);
                     });
