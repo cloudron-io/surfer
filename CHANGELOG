@@ -149,3 +149,6 @@
 [5.12.2]
 * Fix crash in cli tool
 
+[5.13.0]
+* Rewritten UI in primevue
+* Add support for listing folders first
