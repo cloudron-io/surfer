@@ -58,7 +58,7 @@ export default {
 
 .container.visible {
     padding: 10px 10px 0px 10px;
-    width: 33vw;
+    width: 40%;
 }
 
 </style>
