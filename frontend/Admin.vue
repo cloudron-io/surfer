@@ -633,6 +633,12 @@ export default {
 
         that.initWithToken(localStorage.accessToken);
 
+        // global key handler to unset activeEntry
+        window.addEventListener('keyup', function () {
+            // only do this if no modal is active
+            if (event.key === 'Escape' && !event.target.classList.contains('p-overflow-hidden')) that.activeEntry = {};
+        });
+
         window.addEventListener('hashchange', function () {
             that.loadDirectory(decode(window.location.hash.slice(1)));
         }, false);
