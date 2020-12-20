@@ -11,6 +11,9 @@ import ProgressBar from 'primevue/progressbar';
 import Message from 'primevue/message';
 import Toolbar from 'primevue/toolbar';
 import Checkbox from 'primevue/checkbox';
+import Tooltip from 'primevue/tooltip';
+import ConfirmationService from 'primevue/confirmationservice';
+import ConfirmPopup from 'primevue/confirmpopup';
 
 import 'primevue/resources/themes/saga-blue/theme.css';
 import 'primevue/resources/primevue.min.css';
@@ -26,6 +29,7 @@ import Preview from './components/Preview.vue';
 const app = createApp(Admin);
 
 app.use(PrimeVue);
+app.use(ConfirmationService);
 
 app.component('Dialog', Dialog);
 app.component('Button', Button);
@@ -37,6 +41,9 @@ app.component('ProgressBar', ProgressBar);
 app.component('Message', Message);
 app.component('Checkbox', Checkbox);
 app.component('Toolbar', Toolbar);
+app.component('ConfirmPopup', ConfirmPopup);
+
+app.directive('tooltip', Tooltip);
 
 // custom components
 app.component('EntryList', EntryList);

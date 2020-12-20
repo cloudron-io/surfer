@@ -103,7 +103,8 @@ hr {
     flex-grow: 1;
 }
 
-.p-tooltip {
+/* show them correctly in dialogs */
+.p-tooltip, .p-confirm-popup {
     z-index: 1000;
 }
 

@@ -2,6 +2,9 @@
   <input type="file" ref="upload" style="display: none" multiple/>
   <input type="file" ref="uploadFolder" style="display: none" multiple webkitdirectory directory/>
 
+  <!-- This is re-used and thus global -->
+  <ConfirmPopup></ConfirmPopup>
+
   <div class="login-container" v-show="ready && !session.valid">
     <form @submit="onLogin" @submit.prevent>
       <h1>Login</h1>
@@ -102,16 +105,15 @@
     <Message severity="warn" :closable="false">Tokens are shared between all users.</Message>
     <br/>
     <div class="p-fluid">
-      <div v-for="accessToken in accessTokens" :key="accessToken" class="p-grid">
+      <div v-for="accessToken in accessTokens" :key="accessToken.value" class="p-grid">
         <div class="p-col">
           <span class="p-input-icon-right">
             <i class="pi pi-copy"></i>
-            <InputText type="text" class="p-inputtext-sm" model="{{ accessToken }}" @click="onCopyAccessToken" readonly style="cursor: copy !important;" v-tooltip.top.focus="'Token copied to clipboard'"/>
+            <InputText type="text" class="p-inputtext-sm" v-model="accessToken.value" @click="onCopyAccessToken" readonly style="cursor: copy !important;"  v-tooltip.left.focus="'copied to clipboard'"/>
           </span>
         </div>
         <div class="p-col-fixed">
-          <!-- <p-confirmpopup></p-confirmpopup> -->
-          <Button class="p-col-12 p-button-sm p-button-danger" icon="pi pi-trash" @click="onDeleteAccessToken(accessToken, $event)"/>
+          <Button class="p-col-12 p-button-sm p-button-danger" icon="pi pi-trash" @click="onDeleteAccessToken(accessToken.value)"/>
         </div>
       </div>
     </div>
@@ -578,10 +580,11 @@ export default {
             superagent.get(`${that.origin}/api/tokens`).query({ access_token: localStorage.accessToken }).end(function (error, result) {
                 if (error && !result) return that.$message.error(error.message);
 
-                that.accessTokens = result.body.accessTokens;
+                // have to create an array of objects for referencing in v-for -> input
+                that.accessTokens = result.body.accessTokens.map(function (t) { return { value: t }; });
             });
         },
-        onCopyAccessToken: function (event) {
+        onCopyAccessToken: function () {
             event.target.select();
             document.execCommand('copy');
         },
@@ -594,28 +597,22 @@ export default {
                 that.refreshAccessTokens();
             });
         },
-        onDeleteAccessToken: function (/*token*/) {
-            // var that = this;
+        onDeleteAccessToken: function (token) {
+          var that = this;
 
-            // this.$confirm.require({
-            //     message: 'Really delete this access token?',
-            //     icon: 'pi pi-exclamation-triangle',
-            //     accept: () => {
-            //         //callback to execute when user confirms the action
-            //     },
-            //     reject: () => {
-            //         //callback to execute when user rejects the action
-            //     }
-            // });
+          this.$confirm.require({
+                target: event.target,
+                message: 'Really delete this access token?',
+                icon: 'pi pi-exclamation-triangle',
+                accept: () => {
+                    superagent.delete(`${that.origin}/api/tokens/${token}`).query({ access_token: localStorage.accessToken }).end(function (error, result) {
+                        if (error && !result) return that.$message.error(error.message);
 
-            // this.$confirm('All actions from apps using this token will fail!', 'Really delete this access token?', { confirmButtonText: 'Yes Delete', cancelButtonText: 'No' }).then(function () {
-            //     superagent.delete(`${that.origin}/api/tokens/${token}`).query({ access_token: localStorage.accessToken }).end(function (error, result) {
-            //         if (error && !result) return that.$message.error(error.message);
-
-            //         that.refreshAccessTokens();
-            //     });
-            // }).catch(function () {});
-
+                        that.refreshAccessTokens();
+                    });
+                },
+                reject: () => {}
+            });
         },
         onUp: function () {
             window.location.hash = sanitize(this.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
