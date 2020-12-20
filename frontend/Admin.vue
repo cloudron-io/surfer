@@ -161,15 +161,13 @@ import superagent from 'superagent';
 import { eachLimit, each } from 'async';
 import { sanitize, encode, decode, getPreviewUrl, getExtension } from './utils.js';
 
-const ORIGIN = window.location.origin;
-
 export default {
     name: 'Admin',
     data() {
         return {
             ready: false,
             busy: false,
-            origin: ORIGIN,
+            origin: window.location.origin,
             domain: window.location.host,
             uploadStatus: {
                 busy: false,
@@ -248,7 +246,7 @@ export default {
                 return;
             }
 
-            superagent.get(`${that.origin}/api/profile`).query({ access_token: accessToken }).end(function (error, result) {
+            superagent.get('/api/profile').query({ access_token: accessToken }).end(function (error, result) {
                 that.ready = true;
 
                 if (error && !error.response) return console.error(error);
@@ -261,7 +259,7 @@ export default {
                 that.session.username = result.body.username;
                 that.session.valid = true;
 
-                superagent.get(`${that.origin}/api/settings`).query({ access_token: localStorage.accessToken }).end(function (error, result) {
+                superagent.get('/api/settings').query({ access_token: localStorage.accessToken }).end(function (error, result) {
                     if (error) console.error(error);
 
                     that.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
@@ -285,7 +283,7 @@ export default {
 
             folderPath = folderPath ? sanitize(folderPath) : '/';
 
-            superagent.get(`${that.origin}/api/files/` + encode(folderPath)).query({ access_token: localStorage.accessToken }).end(function (error, result) {
+            superagent.get('/api/files/' + encode(folderPath)).query({ access_token: localStorage.accessToken }).end(function (error, result) {
                 that.busy = false;
 
                 if (result && result.statusCode === 401) return that.logout();
@@ -314,7 +312,7 @@ export default {
         logout: function () {
             var that = this;
 
-            superagent.post(`${that.origin}/api/logout`).query({ access_token: localStorage.accessToken }).end(function (error) {
+            superagent.post('/api/logout').query({ access_token: localStorage.accessToken }).end(function (error) {
                 if (error) console.error(error);
 
                 // close all potential dialogs
@@ -359,7 +357,7 @@ export default {
 
                 var finishedUploadSize = that.uploadStatus.done;
 
-                superagent.post(`${that.origin}/api/files${path}`)
+                superagent.post(`/api/files${path}`)
                   .query({ access_token: localStorage.accessToken })
                   .send(formData)
                   .on('progress', function (event) {
@@ -447,7 +445,7 @@ export default {
 
             var path = encode(sanitize(this.path + '/' + this.newFolderDialog.folderName));
 
-            superagent.post(`${that.origin}/api/files${path}`).query({ access_token: localStorage.accessToken, directory: true }).end(function (error, result) {
+            superagent.post(`/api/files${path}`).query({ access_token: localStorage.accessToken, directory: true }).end(function (error, result) {
                 if (result && result.statusCode === 401) return that.logout();
                 if (result && result.statusCode === 403) return that.newFolderDialog.error = 'Folder name not allowed';
                 if (result && result.statusCode === 409) return that.newFolderDialog.error = 'Folder already exists';
@@ -478,7 +476,7 @@ export default {
                 sortFoldersFirst: this.settingsDialog.sortFoldersFirst
             };
 
-            superagent.put(`${that.origin}/api/settings`).send(data).query({ access_token: localStorage.accessToken }).end(function (error) {
+            superagent.put('/api/settings').send(data).query({ access_token: localStorage.accessToken }).end(function (error) {
                 if (error) return console.error(error);
 
                 // after success, copy to app
@@ -495,7 +493,7 @@ export default {
             that.loginData.busy = true;
             that.loginData.error = false;
 
-            superagent.post(`${that.origin}/api/login`).send({ username: that.loginData.username, password: that.loginData.password }).end(function (error, result) {
+            superagent.post('/api/login').send({ username: that.loginData.username, password: that.loginData.password }).end(function (error, result) {
                 that.loginData.busy = false;
 
                 if (error || result.statusCode === 401) {
@@ -523,7 +521,7 @@ export default {
 
               var path = encode(sanitize(that.path + '/' + entry.fileName));
 
-              superagent.del(`${that.origin}/api/files${path}`).query({ access_token: localStorage.accessToken, recursive: true }).end(function (error, result) {
+              superagent.del(`/api/files${path}`).query({ access_token: localStorage.accessToken, recursive: true }).end(function (error, result) {
                   if (result && result.statusCode === 401) return that.logout();
                   if (result && result.statusCode !== 200) return that.$message.error('Error deleting file: ' + result.statusCode);
                   if (error) return that.$message.error(error.message);
@@ -537,7 +535,7 @@ export default {
             var path = encode(sanitize(this.path + '/' + entry.fileName));
             var newFilePath = sanitize(this.path + '/' + newFileName);
 
-            superagent.put(`${that.origin}/api/files${path}`).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end(function (error, result) {
+            superagent.put(`/api/files${path}`).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end(function (error, result) {
                 if (result && result.statusCode === 401) return that.logout();
                 if (result && result.statusCode !== 200) return that.$message.error('Error renaming file: ' + result.statusCode);
                 if (error) return that.$message.error(error.message);
@@ -551,7 +549,7 @@ export default {
         refreshAccessTokens: function () {
             var that = this;
 
-            superagent.get(`${that.origin}/api/tokens`).query({ access_token: localStorage.accessToken }).end(function (error, result) {
+            superagent.get('/api/tokens').query({ access_token: localStorage.accessToken }).end(function (error, result) {
                 if (error && !result) return that.$message.error(error.message);
 
                 // have to create an array of objects for referencing in v-for -> input
@@ -565,7 +563,7 @@ export default {
         onCreateAccessToken: function () {
             var that = this;
 
-            superagent.post(`${that.origin}/api/tokens`).query({ access_token: localStorage.accessToken }).end(function (error, result) {
+            superagent.post('/api/tokens').query({ access_token: localStorage.accessToken }).end(function (error, result) {
                 if (error && !result) return that.$message.error(error.message);
 
                 that.refreshAccessTokens();
@@ -581,7 +579,7 @@ export default {
                 icon: 'pi pi-exclamation-triangle',
                 acceptClass: 'p-button-danger',
                 accept: () => {
-                    superagent.delete(`${that.origin}/api/tokens/${token}`).query({ access_token: localStorage.accessToken }).end(function (error, result) {
+                    superagent.delete(`/api/tokens/${token}`).query({ access_token: localStorage.accessToken }).end(function (error, result) {
                         if (error && !result) return that.$message.error(error.message);
 
                         that.refreshAccessTokens();
