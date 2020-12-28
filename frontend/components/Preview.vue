@@ -2,17 +2,18 @@
     <div class="container" :class="{ 'visible': entry.filePath }">
         <iframe id="previewIframe" ref="iframe" :src="entry.filePath" style="width: 100%; height: 100%; border: none;"></iframe>
         <center>
-          <Button class="p-button-sm" label="Download" icon="pi pi-download" style="margin: 10px;" @click.stop="onDownload(entry)"/>
+          <Button class="p-button-sm p-button-outlined" label="Download" icon="pi pi-download" style="margin: 10px;" @click.stop="onDownload(entry)"/>
           <a :href="entry.filePath" target="_blank">
-            <Button class="p-button-sm" label="Open" icon="pi pi-external-link" style="margin: 10px;"/>
+            <Button class="p-button-sm p-button-outlined" label="Open" icon="pi pi-external-link" style="margin: 10px;"/>
           </a>
+          <Button class="p-button-sm p-button-outlined" label="Copy Link" icon="pi pi-copy" style="margin: 10px;" @click.stop="onCopyLink(entry)"/>
         </center>
     </div>
 </template>
 
 <script>
 
-import { download } from '../utils.js';
+import { download, copyToClipboard } from '../utils.js';
 
 export default {
     name: 'Preview',
@@ -24,6 +25,9 @@ export default {
     methods: {
         onDownload: function (entry) {
             download(entry);
+        },
+        onCopyLink: function (entry) {
+            copyToClipboard(location.origin + entry.filePath);
         }
     },
     mounted() {
@@ -38,7 +42,7 @@ export default {
             e.target.contentWindow.document.body.style.height = '100%';
         });
     }
-}
+};
 
 </script>
 

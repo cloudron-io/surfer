@@ -73,6 +73,15 @@ function getExtension(entry) {
     return '';
 }
 
+function copyToClipboard(value) {
+    var elem = document.createElement('input');
+    elem.value = value;
+    document.body.append(elem);
+    elem.select();
+    document.execCommand('copy');
+    elem.remove();
+}
+
 export {
     prettyDate,
     prettyFileSize,
@@ -81,6 +90,6 @@ export {
     decode,
     download,
     getPreviewUrl,
-    getExtension
+    getExtension,
+    copyToClipboard
 };
-
