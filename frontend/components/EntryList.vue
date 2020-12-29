@@ -21,6 +21,9 @@
         <div class="td" style="max-width: 150px;">{{ prettyDate(entry.mtime) }}</div>
         <div class="td" style="max-width: 100px; justify-content: right;">
           <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-download" v-show="!entry.rename && entry.isFile" @click.stop="onDownload(entry)"/>
+          <a :href="entry.filePath" target="_blank" @click.stop>
+            <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-external-link" v-show="!entry.rename"/>
+          </a>
           <Button class="p-button-sm p-button-rounded p-button-danger p-button-text" icon="pi pi-trash" v-show="editable && !entry.rename" @click.stop="onDelete(entry)"/>
         </div>
       </div>
