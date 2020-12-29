@@ -1,5 +1,8 @@
 <template>
-  <div class="table" @drop.stop.prevent="drop(null)" @dragover.stop.prevent="dragOver(null)" @dragexit="dragExit" :class="{ 'drag-active': dragActive === 'table' }">
+  <div class="loading" v-show="$parent.busy">
+    <i class="pi pi-spin pi-spinner" style="fontSize: 2rem"></i>
+  </div>
+  <div class="table" v-show="!$parent.busy" @drop.stop.prevent="drop(null)" @dragover.stop.prevent="dragOver(null)" @dragexit="dragExit" :class="{ 'drag-active': dragActive === 'table' }">
     <div class="th p-d-none p-d-md-flex">
       <div class="td" style="max-width: 50px;"></div>
       <div class="td hand" style="flex-grow: 2;" @click="onSort('fileName')">Name <i class="pi" :class="{'pi-sort-alpha-down': sort.desc, 'pi-sort-alpha-up-alt': !sort.desc }" v-show="sort.prop === 'fileName'"></i></div>
@@ -163,6 +166,13 @@ export default {
 </script>
 
 <style scoped>
+
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
 
 .table {
     display: flex;
