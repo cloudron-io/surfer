@@ -10,7 +10,7 @@
       <div class="td hand" style="max-width: 150px;" @click="onSort('mtime')">Last Modified <i class="pi" :class="{'pi-sort-numeric-down': sort.desc, 'pi-sort-numeric-up-alt': !sort.desc }" v-show="sort.prop === 'mtime'"></i></div>
       <div class="td" style="max-width: 100px; justify-content: right;"></div>
     </div>
-    <div class="tbody" style="overflow: auto;">
+    <div class="tbody">
       <div class="tr-placeholder" v-show="entries.length === 0">Folder is empty</div>
       <div class="tr-placeholder" v-show="entries.length !== 0 && filteredAndSortedEntries.length === 0">Nothing found</div>
       <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @click="onEntryOpen(entry)" @drop.stop.prevent="drop(entry)" @dragover.stop.prevent="dragOver(entry)" :class="{ 'active': entry === active,  'drag-active': entry === dragActive }">
@@ -181,6 +181,11 @@ export default {
     margin: 10px;
     transition: background-color 200ms, color 200ms;
     border-radius: 3px;
+}
+
+.tbody {
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .drag-active {
