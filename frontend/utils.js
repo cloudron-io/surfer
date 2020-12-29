@@ -1,8 +1,8 @@
 
 import filesize from 'filesize';
 
-function prettyDate(cellValue) {
-    var date = new Date(cellValue),
+function prettyDate(value) {
+    var date = new Date(value),
     diff = (((new Date()).getTime() - date.getTime()) / 1000),
     day_diff = Math.floor(diff / 86400);
 
@@ -22,8 +22,13 @@ function prettyDate(cellValue) {
         Math.round( day_diff / 365 ) + ' years ago';
 }
 
-function prettyFileSize(cellValue) {
-    return filesize(cellValue);
+function prettyLongDate(value) {
+    var date = new Date(value);
+    return date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+}
+
+function prettyFileSize(value) {
+    return filesize(value);
 }
 
 function sanitize(path) {
@@ -84,6 +89,7 @@ function copyToClipboard(value) {
 
 export {
     prettyDate,
+    prettyLongDate,
     prettyFileSize,
     sanitize,
     encode,

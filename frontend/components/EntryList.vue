@@ -18,7 +18,7 @@
           <Button class="p-button-sm p-button-rounded p-button-text rename-action" icon="pi pi-pencil" v-show="editable && !entry.rename" @click.stop="onRename(entry)"/>
         </div>
         <div class="td" style="max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
-        <div class="td" style="max-width: 150px;">{{ prettyDate(entry.mtime) }}</div>
+        <div class="td" style="max-width: 150px;"><span v-tooltip.top="prettyLongDate(entry.mtime)">{{ prettyDate(entry.mtime) }}</span></div>
         <div class="td" style="max-width: 100px; justify-content: right;">
           <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-download" v-show="!entry.rename && entry.isFile" @click.stop="onDownload(entry)"/>
           <a :href="entry.filePath" target="_blank" @click.stop>
@@ -34,7 +34,7 @@
 <script>
 
 import { nextTick } from 'vue';
-import { prettyDate, prettyFileSize, download } from '../utils.js';
+import { prettyDate, prettyLongDate, prettyFileSize, download } from '../utils.js';
 
 export default {
     name: 'EntryList',
@@ -81,8 +81,9 @@ export default {
         }
     },
     methods: {
-        prettyDate: prettyDate,
-        prettyFileSize: prettyFileSize,
+        prettyDate,
+        prettyFileSize,
+        prettyLongDate,
         onSort: function (prop) {
             if (this.sort.prop === prop) this.sort.desc = !this.sort.desc;
             else this.sort.prop = prop;
