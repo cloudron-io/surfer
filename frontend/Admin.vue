@@ -166,7 +166,7 @@ export default {
     data() {
         return {
             ready: false,
-            busy: false,
+            busy: true,
             origin: window.location.origin,
             domain: window.location.host,
             uploadStatus: {

@@ -33,7 +33,7 @@ export default {
     data() {
         return {
             ready: false,
-            busy: false,
+            busy: true,
             origin: ORIGIN,
             domain: window.location.host,
             path: '/',
