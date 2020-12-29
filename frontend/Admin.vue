@@ -641,6 +641,7 @@ export default {
 .login-container {
     max-width: 480px;
     margin: auto;
+    padding: 20px;
 }
 
 hr {
