@@ -59,10 +59,10 @@ describe('Application life cycle test', function () {
         browser.manage().deleteAllCookies();
         browser.get('https://' + app.fqdn + '/_admin');
 
-        waitForElement(By.id('loginUsernameInput')).then(function () {
-            browser.findElement(By.id('loginUsernameInput')).sendKeys(process.env.USERNAME);
-            browser.findElement(By.id('loginPasswordInput')).sendKeys(process.env.PASSWORD);
-            browser.findElement(By.id('loginSubmitButton')).click();
+        waitForElement(By.id('usernameInput')).then(function () {
+            browser.findElement(By.id('usernameInput')).sendKeys(process.env.USERNAME);
+            browser.findElement(By.id('passwordInput')).sendKeys(process.env.PASSWORD);
+            browser.findElement(By.id('loginButton')).click();
 
             waitForElement(By.id('burgerMenuButton')).then(function () {
                 done();
@@ -77,12 +77,12 @@ describe('Application life cycle test', function () {
             browser.findElement(By.id('burgerMenuButton')).click();
 
             // wait for open animation
-            browser.sleep(5000);
+            browser.sleep(1000);
 
-            waitForElement(By.id('logoutButton')).then(function () {
-                browser.findElement(By.id('logoutButton')).click();
+            waitForElement(By.xpath('//span[text() = "Logout"]')).then(function () {
+                browser.findElement(By.xpath('//span[text() = "Logout"]')).click();
 
-                waitForElement(By.id('loginUsernameInput')).then(function () {
+                waitForElement(By.id('usernameInput')).then(function () {
                     done();
                 });
             });

@@ -19,7 +19,7 @@
           <small v-show="loginData.error" :class="{ 'p-invalid': loginData.error }">Wrong username or password.</small>
         </div>
       </div>
-      <Button type="submit" label="Login" @click="onLogin"/>
+      <Button type="submit" label="Login" id="loginButton" @click="onLogin"/>
     </form>
   </div>
 
@@ -37,7 +37,7 @@
             <Button class="p-button-sm" label="Upload Folder" icon="pi pi-cloud-upload" @click="onUploadFolder"/>
             <Button class="p-button-sm" label="New Folder" icon="pi pi-plus" @click="openNewFolderDialog"/>
           </span>
-          <Button icon="pi pi-ellipsis-h" class="p-ml-2 p-button-sm p-button-outlined" @click="toggleMenu"/>
+          <Button icon="pi pi-ellipsis-h" class="p-ml-2 p-button-sm p-button-outlined" id="burgerMenuButton" @click="toggleMenu"/>
           <Menu ref="menu" :model="mainMenu" :popup="true"/>
         </template>
       </Toolbar>
@@ -235,7 +235,7 @@ export default {
                 icon: 'pi pi-sign-out',
                 command: this.logout
             }]
-        }
+        };
     },
     methods: {
         initWithToken: function (accessToken) {
