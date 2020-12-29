@@ -1,3 +1,6 @@
+[v-cloak] {
+  display: none;
+}
 
 html, body {
   --text-color: #495057;
