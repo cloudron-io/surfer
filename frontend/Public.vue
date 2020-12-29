@@ -38,7 +38,7 @@ export default {
             domain: window.location.host,
             path: '/',
             breadCrumbs: {
-                home: { icon: 'pi pi-home', url: '#/' },
+                home: { icon: 'pi pi-home', url: '/' },
                 items: []
             },
             entries: [],
@@ -48,7 +48,7 @@ export default {
                 sortFoldersFirst: false
             },
             activeEntry: {}
-        }
+        };
     },
     methods: {
         loadDirectory (folderPath) {
@@ -77,23 +77,17 @@ export default {
                 that.breadCrumbs.items = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
                     return {
                         label: e,
-                        url: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
+                        url: sanitize('/' + a.slice(0, i).join('/') + '/' + e)
                     };
                 });
-
-                // update in case this was triggered from code
-                window.location.hash = that.path;
             });
-        },
-        refresh () {
-          this.loadDirectory(this.path);
         },
         onDownload: function (entry) {
             if (entry.isDirectory) return;
             window.location.href = encode('/api/files/' + sanitize(this.path + '/' + entry.fileName)) + '?access_token=' + localStorage.accessToken;
         },
         onUp: function () {
-            window.location.hash = sanitize(this.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
+            window.location.href = sanitize(this.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
         },
         onEntryOpen: function (entry) {
             // ignore item open on row clicks if we are renaming this entry
@@ -102,7 +96,7 @@ export default {
             var path = sanitize(this.path + '/' + entry.fileName);
 
             if (entry.isDirectory) {
-                window.location.hash = path;
+                window.location.pathname = path;
                 return;
             }
 
@@ -118,14 +112,10 @@ export default {
             that.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
             that.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
 
-            that.loadDirectory(decode(window.location.hash.slice(1)));
+            that.loadDirectory(decode(window.location.pathname));
 
             that.ready = true;
         });
-
-        window.addEventListener('hashchange', function () {
-            that.loadDirectory(decode(window.location.hash.slice(1)));
-        }, false);
     }
 };
 
