@@ -46,7 +46,7 @@
       <div class="main-container-content">
         <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @dropped="onDrop" @entry-activated="onEntryOpen" @entry-renamed="onRename" @entry-delete="onDelete" editable/>
       </div>
-      <Preview :entry="activeEntry"/>
+      <Preview :entry="activeEntry" @close="onPreviewClose"/>
     </div>
     <div class="main-container-footer" v-show="uploadStatus.busy">
       <div v-show="uploadStatus.uploadListCount">
@@ -603,6 +603,9 @@ export default {
             }
 
             this.activeEntry = entry;
+        },
+        onPreviewClose: function () {
+            this.activeEntry = {};
         }
     },
     mounted() {

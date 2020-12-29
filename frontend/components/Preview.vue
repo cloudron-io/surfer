@@ -1,12 +1,15 @@
 <template>
     <div class="container" :class="{ 'visible': entry.filePath }">
+        <div class="mobile-header">
+          <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-times" @click="onClose"/>
+        </div>
         <iframe id="previewIframe" ref="iframe" :src="entry.filePath" style="width: 100%; height: 100%; border: none;"></iframe>
         <center>
-          <Button class="p-button-sm p-button-outlined" label="Download" icon="pi pi-download" style="margin: 10px;" @click.stop="onDownload(entry)"/>
+          <Button class="p-button-sm p-button-outlined" label="Download" icon="pi pi-download" style="margin: 10px;" @click="onDownload(entry)"/>
           <a :href="entry.filePath" target="_blank">
             <Button class="p-button-sm p-button-outlined" label="Open" icon="pi pi-external-link" style="margin: 10px;"/>
           </a>
-          <Button class="p-button-sm p-button-outlined" label="Copy Link" icon="pi pi-copy" style="margin: 10px;" @click.stop="onCopyLink(entry)"/>
+          <Button class="p-button-sm p-button-outlined" label="Copy Link" icon="pi pi-copy" style="margin: 10px;" @click="onCopyLink(entry)"/>
         </center>
     </div>
 </template>
@@ -17,7 +20,7 @@ import { download, copyToClipboard } from '../utils.js';
 
 export default {
     name: 'Preview',
-    emits: [ 'download' ],
+    emits: [ 'close' ],
     data() {},
     props: {
         entry: Object
@@ -28,6 +31,9 @@ export default {
         },
         onCopyLink: function (entry) {
             copyToClipboard(location.origin + entry.filePath);
+        },
+        onClose: function () {
+            this.$emit('close');
         }
     },
     mounted() {
@@ -63,6 +69,27 @@ export default {
 .container.visible {
     padding: 10px 10px 0px 10px;
     width: 40%;
+}
+
+.mobile-header {
+    display: none;
+}
+
+.mobile-header button {
+    float: right;
+}
+
+@media only screen and (max-width: 767px)  {
+    .container.visible {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+    }
+
+    .mobile-header {
+        display: block;
+    }
 }
 
 </style>

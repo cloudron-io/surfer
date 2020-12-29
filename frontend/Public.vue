@@ -16,7 +16,7 @@
       <div class="main-container-content">
         <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @entry-activated="onEntryOpen"/>
       </div>
-      <Preview :entry="activeEntry" @download="onDownload"/>
+      <Preview :entry="activeEntry" @close="onPreviewClose"/>
     </div>
   </div>
 </template>
@@ -101,6 +101,9 @@ export default {
             }
 
             this.activeEntry = entry;
+        },
+        onPreviewClose: function () {
+            this.activeEntry = {};
         }
     },
     mounted() {
