@@ -7,7 +7,7 @@
 
   <div class="login-container" v-show="ready && !session.valid">
     <form @submit="onLogin" @submit.prevent>
-      <h1>Login</h1>
+      <h1>Login to {{ settings.title }}</h1>
       <div class="p-fluid">
         <div class="p-field">
           <label for="usernameInput">Username</label>
@@ -282,19 +282,9 @@ export default {
                 that.session.username = result.body.username;
                 that.session.valid = true;
 
-                superagent.get('/api/settings').query({ access_token: localStorage.accessToken }).end(function (error, result) {
-                    if (error) console.error(error);
+                that.loadDirectory(decode(window.location.hash.slice(1)));
 
-                    that.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
-                    that.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
-                    that.settings.title = result.body.title || 'Surfer';
-
-                    window.document.title = that.settings.title;
-
-                    that.loadDirectory(decode(window.location.hash.slice(1)));
-
-                    that.refreshAccessTokens();
-                });
+                that.refreshAccessTokens();
             });
         },
         toggleMenu: function (event) {
@@ -641,7 +631,17 @@ export default {
     mounted() {
         var that = this;
 
-        that.initWithToken(localStorage.accessToken);
+        superagent.get('/api/settings').end(function (error, result) {
+            if (error) console.error(error);
+
+            that.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
+            that.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
+            that.settings.title = result.body.title || 'Surfer';
+
+            window.document.title = that.settings.title;
+
+            that.initWithToken(localStorage.accessToken);
+        });
 
         // global key handler to unset activeEntry
         window.addEventListener('keyup', function () {
