@@ -32,7 +32,7 @@
         </template>
 
         <template #right>
-          <span class="p-buttonset">
+          <span class="p-buttonset p-d-none p-d-md-flex">
             <Button class="p-button-sm" label="Upload File" icon="pi pi-upload" @click="onUpload"/>
             <Button class="p-button-sm" label="Upload Folder" icon="pi pi-cloud-upload" @click="onUploadFolder"/>
             <Button class="p-button-sm" label="New Folder" icon="pi pi-plus" @click="openNewFolderDialog"/>
@@ -217,6 +217,21 @@ export default {
                 visible: false
             },
             mainMenu: [{
+                label: 'Upload File',
+                icon: 'pi pi-upload',
+                command: this.onUpload,
+                class: 'p-d-md-none'
+            }, {
+                label: 'Upload Folder',
+                icon: 'pi pi-cloud-upload',
+                command: this.onUploadFolder,
+                class: 'p-d-md-none'
+            }, {
+                label: 'New Folder',
+                icon: 'pi pi-plus',
+                command: this.openNewFolderDialog,
+                class: 'p-d-md-none'
+            }, {
                 label: 'Settings',
                 icon: 'pi pi-cog',
                 command: this.openSettingsDialog
