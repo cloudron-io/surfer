@@ -5,6 +5,7 @@
 
   <!-- This is re-used and thus global -->
   <ConfirmDialog></ConfirmDialog>
+  <Toast position="top-center" />
 
   <div class="login-container" v-show="ready && !session.valid">
     <form @submit="onLogin" @submit.prevent>
@@ -128,7 +129,7 @@
         <div class="p-col">
           <span class="p-input-icon-right">
             <i class="pi pi-copy"></i>
-            <InputText type="text" class="p-inputtext-sm" v-model="accessToken.value" @click="onCopyAccessToken" readonly style="cursor: copy !important;"  v-tooltip.left.focus="'copied to clipboard'"/>
+            <InputText type="text" class="p-inputtext-sm" v-model="accessToken.value" @click="onCopyAccessToken" readonly style="cursor: copy !important;" />
           </span>
         </div>
         <div class="p-col-fixed">
@@ -624,6 +625,8 @@ export default {
         onCopyAccessToken: function () {
             event.target.select();
             document.execCommand('copy');
+
+            this.$toast.add({ severity:'success', summary: 'Token copied to Clipboard', life: 1500 });
         },
         onCreateAccessToken: function () {
             var that = this;
@@ -731,6 +734,10 @@ hr {
 
 label {
     font-weight: bold;
+}
+
+.p-toast {
+    z-index: 2000 !important;
 }
 
 </style>

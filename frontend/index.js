@@ -14,6 +14,8 @@ import Checkbox from 'primevue/checkbox';
 import Tooltip from 'primevue/tooltip';
 import ConfirmationService from 'primevue/confirmationservice';
 import ConfirmDialog from 'primevue/confirmdialog';
+import ToastService from 'primevue/toastservice';
+import Toast from 'primevue/toast';
 
 import 'primevue/resources/themes/saga-blue/theme.css';
 import 'primevue/resources/primevue.min.css';
@@ -30,6 +32,7 @@ const app = createApp(Admin);
 
 app.use(PrimeVue);
 app.use(ConfirmationService);
+app.use(ToastService);
 
 app.component('Dialog', Dialog);
 app.component('Button', Button);
@@ -42,6 +45,7 @@ app.component('Message', Message);
 app.component('Checkbox', Checkbox);
 app.component('Toolbar', Toolbar);
 app.component('ConfirmDialog', ConfirmDialog);
+app.component('Toast', Toast);
 
 app.directive('tooltip', Tooltip);
 

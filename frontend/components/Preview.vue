@@ -31,6 +31,8 @@ export default {
         },
         onCopyLink: function (entry) {
             copyToClipboard(location.origin + entry.filePath);
+
+            this.$toast.add({ severity:'success', summary: 'Link copied to Clipboard', life: 1500 });
         },
         onClose: function () {
             this.$emit('close');
