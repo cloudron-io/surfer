@@ -103,10 +103,10 @@
       <h3>WebDAV access</h3>
       <p>WebDAV provides a framework for users to create, change and move documents on a server.</p>
       <ul>
-        <li>Windows: <a href="/_webdav/" target="_blank">{{ origin }}/_webdav/</a></li>
-        <li>MacOS: <a href="/_webdav/" target="_blank">{{ origin }}/_webdav/</a></li>
-        <li>Gnome: <a :href="'davs://' + domain  + '/_webdav/'" target="_blank">davs://{{ domain }}/_webdav/</a></li>
-        <li>KDE: <a href="/_webdav/" target="_blank">{{ origin }}/_webdav/</a></li>
+        <li><b>Windows:</b> Explorer > This PC > Map Network Drive > <code style="cursor: copy;" @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
+        <li><b>MacOS:</b> Finder > Go > Connect to Server... > <code style="cursor: copy;" @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
+        <li><b>Gnome:</b> Files > Other Locations > Connect to Server > <code style="cursor: copy;" @click="onCopyToClipboard('davs://' + domain  + '/_webdav/')">davs://{{ domain }}/_webdav/</code></li>
+        <li><b>KDE:</b> Dolphin > Ctrl+L > <code style="cursor: copy;" @click="onCopyToClipboard('webdav://' + domain  + '/_webdav/')">webdav://{{ domain }}/_webdav/</code></li>
       </ul>
     </div>
 
@@ -179,7 +179,7 @@
 
 import superagent from 'superagent';
 import { eachLimit, each } from 'async';
-import { sanitize, encode, decode, getPreviewUrl, getExtension } from './utils.js';
+import { sanitize, encode, decode, getPreviewUrl, getExtension, copyToClipboard } from './utils.js';
 
 export default {
     name: 'Admin',
@@ -621,6 +621,11 @@ export default {
                 // have to create an array of objects for referencing in v-for -> input
                 that.accessTokens = result.body.accessTokens.map(function (t) { return { value: t }; });
             });
+        },
+        onCopyToClipboard: function (value) {
+            copyToClipboard(value);
+
+            this.$toast.add({ severity:'success', summary: 'Copied to Clipboard', life: 1500 });
         },
         onCopyAccessToken: function () {
             event.target.select();
