@@ -1,6 +1,7 @@
 <template>
   <input type="file" ref="upload" style="display: none" multiple/>
   <input type="file" ref="uploadFolder" style="display: none" multiple webkitdirectory directory/>
+  <input type="file" ref="uploadFavicon" style="display: none"/>
 
   <!-- This is re-used and thus global -->
   <ConfirmDialog></ConfirmDialog>
@@ -71,15 +72,27 @@
 
     <div>
       <h3>Display</h3>
-      <div class="p-fluid">
-        <div class="p-field">
-          <label for="titleInput">Site Title</label>
-          <InputText id="titleInput" type="text" v-model="settingsDialog.title"/>
-        </div>
-      </div>
+      <p>These settings only apply if public folder listing is enabled and no custom index file is present.</p>
       <div class="p-field-checkbox">
         <Checkbox id="sortShowFoldersFirst" v-model="settingsDialog.sortFoldersFirst" :binary="true"/>
         <label for="sortShowFoldersFirst">Always show folders first</label>
+      </div>
+      <div class="p-fluid p-formgrid p-grid">
+        <div class="p-field p-col-12">
+          <label for="titleInput">Title</label>
+          <InputText id="titleInput" type="text" placeholder="Surfer" v-model="settingsDialog.title"/>
+        </div>
+        <div class="p-field p-col-12">
+          <label for="faviconInput">Favicon</label>
+          <br/>
+          <img ref="faviconImage" src="/api/favicon" width="64" height="64"/>
+        </div>
+        <div class="p-field p-col-3">
+          <Button id="faviconInput" class="p-button p-button-sm" label="Upload Favicon" icon="pi pi-upload" @click="onUploadFavicon"/>
+        </div>
+        <div class="p-field p-col-3">
+          <Button class="p-button p-button-sm p-button-outlined" label="Reset Favicon" icon="pi pi-replay" @click="onResetFavicon"/>
+        </div>
       </div>
     </div>
 
@@ -97,7 +110,7 @@
     </div>
 
     <template #footer>
-      <Button label="Close" icon="pi pi-times" class="p-button-text" @click="settingsDialog.visible = false" :disabled="settingsDialog.busy"/>
+      <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="settingsDialog.visible = false" :disabled="settingsDialog.busy"/>
       <Button label="Save" icon="pi pi-check" class="p-button-text p-button-success" @click="onSaveSettingsDialog" :disabled="settingsDialog.busy"/>
     </template>
   </Dialog>
@@ -211,7 +224,8 @@ export default {
                 // settings copy for modification
                 folderListingEnabled: false,
                 sortFoldersFirst: false,
-                title: ''
+                title: '',
+                faviconFile: null
             },
             accessTokenDialog: {
                 visible: false,
@@ -480,31 +494,52 @@ export default {
             this.settingsDialog.folderListingEnabled = this.settings.folderListingEnabled;
             this.settingsDialog.sortFoldersFirst = this.settings.sortFoldersFirst;
             this.settingsDialog.visible = true;
+            this.settingsDialog.title = this.settings.title;
+            this.settingsDialog.faviconFile = null;
         },
         onSaveSettingsDialog: function () {
             var that = this;
 
             this.settingsDialog.busy = true;
 
-            // save here
             var data = {
                 folderListingEnabled: this.settingsDialog.folderListingEnabled,
                 sortFoldersFirst: this.settingsDialog.sortFoldersFirst,
                 title: this.settingsDialog.title
             };
 
-            superagent.put('/api/settings').send(data).query({ access_token: localStorage.accessToken }).end(function (error) {
+            var query = {
+                access_token: localStorage.accessToken
+            };
+
+            function done(error) {
                 if (error) return console.error(error);
 
-                // after success, copy to app
                 that.settings.folderListingEnabled = data.folderListingEnabled;
                 that.settings.sortFoldersFirst = data.sortFoldersFirst;
                 that.settings.title = data.title;
 
+                // refresh immedately
+                document.querySelector('link[rel="icon"]').href = '/api/favicon?' + Date.now();
                 window.document.title = that.settings.title;
 
                 that.settingsDialog.busy = false;
                 that.settingsDialog.visible = false;
+            }
+
+            superagent.put('/api/settings').send(data).query(query).end(function (error) {
+                if (error) return console.error(error);
+
+                if (!that.settingsDialog.faviconFile) return done();
+
+                if (that.settingsDialog.faviconFile === 'reset') {
+                    superagent.delete('/api/favicon').query(query).end(done);
+                } else {
+                    var formData = new FormData();
+                    formData.append('file', that.settingsDialog.faviconFile);
+
+                    superagent.put('/api/favicon').send(formData).query(query).end(done);
+                }
             });
         },
         onLogin: function () {
@@ -525,6 +560,16 @@ export default {
 
                 that.initWithToken(result.body.accessToken);
             });
+        },
+        onUploadFavicon: function () {
+            // reset the form first to make the change handler retrigger even on the same file selected
+            this.$refs.uploadFavicon.value = '';
+            this.$refs.uploadFavicon.click();
+        },
+        onResetFavicon: function () {
+            // magic 'reset' token to indicate removal and reset to default
+            this.settingsDialog.faviconFile = 'reset';
+            this.$refs.faviconImage.src = '/_admin/logo.png';
         },
         onUpload: function () {
             // reset the form first to make the change handler retrigger even on the same file selected
@@ -661,6 +706,11 @@ export default {
         this.$refs.uploadFolder.addEventListener('change', function () {
             that.uploadFiles(that.$refs.uploadFolder.files || []);
         });
+
+        this.$refs.uploadFavicon.addEventListener('change', function () {
+            that.settingsDialog.faviconFile = that.$refs.uploadFavicon.files[0] || null;
+            if (that.settingsDialog.faviconFile) that.$refs.faviconImage.src = URL.createObjectURL(that.settingsDialog.faviconFile);
+        });
     }
 };
 
@@ -677,6 +727,10 @@ export default {
 hr {
     border: none;
     border-top: 1px solid #d0d0d0;
+}
+
+label {
+    font-weight: bold;
 }
 
 </style>

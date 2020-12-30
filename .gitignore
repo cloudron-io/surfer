@@ -26,3 +26,4 @@ pnpm-debug.log*
 .config.json
 .tokens.json
 .users.json
+favicon.png

@@ -7,6 +7,7 @@ var express = require('express'),
     path = require('path'),
     fs = require('fs'),
     cors = require('./src/cors.js'),
+    copyFile = require('./src/copyFile.js'),
     compression = require('compression'),
     session = require('express-session'),
     bodyParser = require('body-parser'),
@@ -22,6 +23,8 @@ var express = require('express'),
 
 const ROOT_FOLDER = path.resolve(__dirname, process.argv[2] || 'files');
 const CONFIG_FILE = path.resolve(__dirname, process.argv[3] || '.config.json');
+const FAVICON_FILE = path.resolve(__dirname, process.argv[4] || 'favicon.png');
+const FAVICON_FALLBACK_FILE = path.resolve(__dirname, 'dist', 'logo.png');
 
 // Ensure the root folder exists
 fs.mkdirSync(ROOT_FOLDER, { recursive: true });
@@ -32,7 +35,7 @@ var config = {
     title: ''
 };
 
-function getSettings(req, res, next) {
+function getSettings(req, res) {
     res.send({
         folderListingEnabled: !!config.folderListingEnabled,
         sortFoldersFirst: !!config.sortFoldersFirst,
@@ -51,6 +54,35 @@ function setSettings(req, res, next) {
 
     fs.writeFile(CONFIG_FILE, JSON.stringify(config), function (error) {
         if (error) return next(new HttpError(500, 'unable to save settings'));
+
+        next(new HttpSuccess(201, {}));
+    });
+}
+
+function getFavicon(req, res) {
+    if (fs.existsSync(FAVICON_FILE)) res.sendFile(FAVICON_FILE);
+    else res.sendFile(FAVICON_FALLBACK_FILE);
+}
+
+function setFavicon(req, res, next) {
+    if (!req.files || !req.files.file) return next(new HttpError(400, 'missing file'));
+
+    copyFile(req.files.file.path, FAVICON_FILE, function (error) {
+        if (error) {
+            console.error('Failed to save favicon.', error);
+            return next(new HttpError(500, 'Failed to save favicon'));
+        }
+
+        next(new HttpSuccess(201, {}));
+    });
+}
+
+function resetFavicon(req, res, next) {
+    fs.unlink(FAVICON_FILE, function (error) {
+        if (error) {
+            console.error('Failed to reset favicon.', error);
+            return next(new HttpError(500, 'Failed to reset favicon'));
+        }
 
         next(new HttpSuccess(201, {}));
     });
@@ -87,6 +119,9 @@ var multipart = multipart({ maxFieldsSize: 2 * 1024, limit: '512mb', timeout: 3 
 router.post  ('/api/login', auth.login);
 router.post  ('/api/logout', auth.verify, auth.logout);
 router.get   ('/api/settings', auth.verifyIfNeeded, getSettings);
+router.get   ('/api/favicon', getFavicon);
+router.put   ('/api/favicon', auth.verify, multipart, setFavicon);
+router.delete('/api/favicon', auth.verify, resetFavicon);
 router.put   ('/api/settings', auth.verify, setSettings);
 router.get   ('/api/tokens', auth.verify, auth.getTokens);
 router.post  ('/api/tokens', auth.verify, auth.createToken);
