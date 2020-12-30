@@ -152,3 +152,8 @@
 [5.13.0]
 * Rewritten UI in primevue
 * Add support for listing folders first
+
+[5.13.1]
+* Rewritten UI in primevue
+* Add support for listing folders first
+* Ability to specify site title and favicon
