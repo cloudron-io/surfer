@@ -71,6 +71,12 @@
 
     <div>
       <h3>Display</h3>
+      <div class="p-fluid">
+        <div class="p-field">
+          <label for="titleInput">Site Title</label>
+          <InputText id="titleInput" type="text" v-model="settingsDialog.title"/>
+        </div>
+      </div>
       <div class="p-field-checkbox">
         <Checkbox id="sortShowFoldersFirst" v-model="settingsDialog.sortFoldersFirst" :binary="true"/>
         <label for="sortShowFoldersFirst">Always show folders first</label>
@@ -196,14 +202,16 @@ export default {
             // holds settings values stored on backend
             settings: {
                 folderListingEnabled: false,
-                sortFoldersFirst: false
+                sortFoldersFirst: false,
+                title: ''
             },
             settingsDialog: {
                 visible: false,
                 busy: false,
                 // settings copy for modification
                 folderListingEnabled: false,
-                sortFoldersFirst: false
+                sortFoldersFirst: false,
+                title: ''
             },
             accessTokenDialog: {
                 visible: false,
@@ -279,6 +287,9 @@ export default {
 
                     that.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
                     that.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
+                    that.settings.title = result.body.title || 'Surfer';
+
+                    window.document.title = that.settings.title;
 
                     that.loadDirectory(decode(window.location.hash.slice(1)));
 
@@ -488,7 +499,8 @@ export default {
             // save here
             var data = {
                 folderListingEnabled: this.settingsDialog.folderListingEnabled,
-                sortFoldersFirst: this.settingsDialog.sortFoldersFirst
+                sortFoldersFirst: this.settingsDialog.sortFoldersFirst,
+                title: this.settingsDialog.title
             };
 
             superagent.put('/api/settings').send(data).query({ access_token: localStorage.accessToken }).end(function (error) {
@@ -497,6 +509,9 @@ export default {
                 // after success, copy to app
                 that.settings.folderListingEnabled = data.folderListingEnabled;
                 that.settings.sortFoldersFirst = data.sortFoldersFirst;
+                that.settings.title = data.title;
+
+                window.document.title = that.settings.title;
 
                 that.settingsDialog.busy = false;
                 that.settingsDialog.visible = false;

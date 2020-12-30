@@ -45,7 +45,8 @@ export default {
             // holds settings values stored on backend
             settings: {
                 folderListingEnabled: false,
-                sortFoldersFirst: false
+                sortFoldersFirst: false,
+                title: false
             },
             activeEntry: {}
         };
@@ -114,6 +115,9 @@ export default {
 
             that.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
             that.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
+            that.settings.title =  result.body.title;
+
+            window.document.title = that.settings.title;
 
             that.loadDirectory(decode(window.location.pathname));
 

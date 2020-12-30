@@ -28,22 +28,26 @@ fs.mkdirSync(ROOT_FOLDER, { recursive: true });
 
 var config = {
     folderListingEnabled: false,
-    sortFoldersFirst: true
+    sortFoldersFirst: true,
+    title: ''
 };
 
 function getSettings(req, res, next) {
     res.send({
         folderListingEnabled: !!config.folderListingEnabled,
-        sortFoldersFirst: !!config.sortFoldersFirst
+        sortFoldersFirst: !!config.sortFoldersFirst,
+        title: config.title || 'Surfer'
     });
 }
 
 function setSettings(req, res, next) {
     if (typeof req.body.folderListingEnabled !== 'boolean') return next(new HttpError(400, 'missing folderListingEnabled boolean'));
     if (typeof req.body.sortFoldersFirst !== 'boolean') return next(new HttpError(400, 'missing sortFoldersFirst boolean'));
+    if (typeof req.body.title !== 'string') return next(new HttpError(400, 'missing title string'));
 
     config.folderListingEnabled = !!req.body.folderListingEnabled;
     config.sortFoldersFirst = !!req.body.sortFoldersFirst;
+    config.title = req.body.title;
 
     fs.writeFile(CONFIG_FILE, JSON.stringify(config), function (error) {
         if (error) return next(new HttpError(500, 'unable to save settings'));
@@ -63,6 +67,7 @@ try {
 
 if (typeof config.folderListingEnabled !== 'boolean') config.folderListingEnabled = false;
 if (typeof config.sortFoldersFirst !== 'boolean') config.sortFoldersFirst = true;
+if (typeof config.title !== 'string') config.title = 'Surfer';
 
 // Setup the express server and routes
 var app = express();
