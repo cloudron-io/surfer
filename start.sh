@@ -12,4 +12,4 @@ echo "=> Ensure permissions"
 chown -R cloudron:cloudron /app/data
 
 echo "=> Start the server"
-exec /usr/local/bin/gosu cloudron:cloudron node /app/code/server.js /app/data/public /app/data/.surfer.json
+exec /usr/local/bin/gosu cloudron:cloudron node /app/code/server.js /app/data/public /app/data/.surfer.json /app/data/favicon.png
