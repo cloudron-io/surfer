@@ -12,6 +12,7 @@ import Message from 'primevue/message';
 import Toolbar from 'primevue/toolbar';
 import Checkbox from 'primevue/checkbox';
 import Tooltip from 'primevue/tooltip';
+import RadioButton from 'primevue/radiobutton';
 import ConfirmationService from 'primevue/confirmationservice';
 import ConfirmDialog from 'primevue/confirmdialog';
 import ToastService from 'primevue/toastservice';
@@ -36,6 +37,7 @@ app.use(ToastService);
 
 app.component('Dialog', Dialog);
 app.component('Button', Button);
+app.component('RadioButton', RadioButton);
 app.component('InputText', InputText);
 app.component('Password', Password);
 app.component('Breadcrumb', Breadcrumb);

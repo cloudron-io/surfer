@@ -39,7 +39,8 @@ function getSettings(req, res) {
     res.send({
         folderListingEnabled: !!config.folderListingEnabled,
         sortFoldersFirst: !!config.sortFoldersFirst,
-        title: config.title || 'Surfer'
+        title: config.title || 'Surfer',
+        accessRestriction: config.accessRestriction || ''
     });
 }
 
@@ -47,10 +48,12 @@ function setSettings(req, res, next) {
     if (typeof req.body.folderListingEnabled !== 'boolean') return next(new HttpError(400, 'missing folderListingEnabled boolean'));
     if (typeof req.body.sortFoldersFirst !== 'boolean') return next(new HttpError(400, 'missing sortFoldersFirst boolean'));
     if (typeof req.body.title !== 'string') return next(new HttpError(400, 'missing title string'));
+    if (typeof req.body.accessRestriction !== 'string') return next(new HttpError(400, 'missing accessRestriction string'));
 
     config.folderListingEnabled = !!req.body.folderListingEnabled;
     config.sortFoldersFirst = !!req.body.sortFoldersFirst;
     config.title = req.body.title;
+    config.accessRestriction = req.body.accessRestriction;
 
     fs.writeFile(CONFIG_FILE, JSON.stringify(config), function (error) {
         if (error) return next(new HttpError(500, 'unable to save settings'));
@@ -100,6 +103,7 @@ try {
 if (typeof config.folderListingEnabled !== 'boolean') config.folderListingEnabled = false;
 if (typeof config.sortFoldersFirst !== 'boolean') config.sortFoldersFirst = true;
 if (typeof config.title !== 'string') config.title = 'Surfer';
+if (typeof config.accessRestriction !== 'string') config.accessRestriction = '';
 
 // Setup the express server and routes
 var app = express();
@@ -135,7 +139,7 @@ router.delete('/api/files/*', auth.verify, files.del);
 app.use('/api/healthcheck', function (req, res) { res.status(200).send(); });
 app.use(morgan('dev'));
 app.use(compression());
-app.use(cors({ origins: [ '*' ], allowCredentials: false }))
+app.use(cors({ origins: [ '*' ], allowCredentials: false }));
 app.use('/api', bodyParser.json());
 app.use('/api', bodyParser.urlencoded({ extended: false, limit: '100mb' }));
 app.use('/api', cookieParser());

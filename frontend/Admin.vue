@@ -100,6 +100,25 @@
     <hr/>
 
     <div>
+      <h3>Access</h3>
+      <p>This controls how the public folder listing or any served up site can be accessed.</p>
+      <div class="p-field-radiobutton">
+        <RadioButton id="accessPublic" value="" v-model="settingsDialog.accessRestriction" />
+        <label for="accessPublic">Public (everyone)</label>
+      </div>
+      <div class="p-field-radiobutton">
+        <RadioButton id="accessPassword" value="password" v-model="settingsDialog.accessRestriction" />
+        <label for="accessPassword">Password restricted</label>
+      </div>
+      <div class="p-field-radiobutton">
+        <RadioButton id="accessUser" value="user" v-model="settingsDialog.accessRestriction" />
+        <label for="accessUser">User restricted</label>
+      </div>
+    </div>
+
+    <hr/>
+
+    <div>
       <h3>WebDAV access</h3>
       <p>WebDAV provides a framework for users to create, change and move documents on a server.</p>
       <ul>
@@ -217,7 +236,8 @@ export default {
             settings: {
                 folderListingEnabled: false,
                 sortFoldersFirst: false,
-                title: ''
+                title: '',
+                accessRestriction: ''
             },
             settingsDialog: {
                 visible: false,
@@ -226,7 +246,8 @@ export default {
                 folderListingEnabled: false,
                 sortFoldersFirst: false,
                 title: '',
-                faviconFile: null
+                faviconFile: null,
+                accessRestriction: ''
             },
             accessTokenDialog: {
                 visible: false,
@@ -497,6 +518,7 @@ export default {
             this.settingsDialog.visible = true;
             this.settingsDialog.title = this.settings.title;
             this.settingsDialog.faviconFile = null;
+            this.settingsDialog.accessRestriction = this.settings.accessRestriction;
         },
         onSaveSettingsDialog: function () {
             var that = this;
@@ -506,7 +528,8 @@ export default {
             var data = {
                 folderListingEnabled: this.settingsDialog.folderListingEnabled,
                 sortFoldersFirst: this.settingsDialog.sortFoldersFirst,
-                title: this.settingsDialog.title
+                title: this.settingsDialog.title,
+                accessRestriction: this.settingsDialog.accessRestriction
             };
 
             var query = {
@@ -519,6 +542,7 @@ export default {
                 that.settings.folderListingEnabled = data.folderListingEnabled;
                 that.settings.sortFoldersFirst = data.sortFoldersFirst;
                 that.settings.title = data.title;
+                that.settings.accessRestriction = data.accessRestriction;
 
                 // refresh immedately
                 document.querySelector('link[rel="icon"]').href = '/api/favicon?' + Date.now();
@@ -690,6 +714,7 @@ export default {
             that.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
             that.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
             that.settings.title = result.body.title || 'Surfer';
+            that.settings.accessRestriction = result.body.accessRestriction || '';
 
             window.document.title = that.settings.title;
 
