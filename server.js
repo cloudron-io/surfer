@@ -10,7 +10,6 @@ var express = require('express'),
     copyFile = require('./src/copyFile.js'),
     compression = require('compression'),
     bodyParser = require('body-parser'),
-    cookieParser = require('cookie-parser'),
     lastMile = require('connect-lastmile'),
     HttpError = require('connect-lastmile').HttpError,
     HttpSuccess = require('connect-lastmile').HttpSuccess,
@@ -141,7 +140,6 @@ app.use(compression());
 app.use(cors({ origins: [ '*' ], allowCredentials: false }));
 app.use('/api', bodyParser.json());
 app.use('/api', bodyParser.urlencoded({ extended: false, limit: '100mb' }));
-app.use('/api', cookieParser());
 app.use(router);
 app.use(webdav.extensions.express('/_webdav', webdavServer));
 app.use('/_admin', express.static(__dirname + '/dist'));
