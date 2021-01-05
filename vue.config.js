@@ -17,6 +17,12 @@ module.exports = {
       template: 'frontend/public.html',
       filename: 'public.html',
       chunks: ['chunk-vendors', 'chunk-common', 'public']
+    },
+    protected: {
+      entry: 'frontend/protected.js',
+      template: 'frontend/protected.html',
+      filename: 'protected.html',
+      chunks: ['chunk-vendors', 'chunk-common', 'protected']
     }
   }
-}
+};

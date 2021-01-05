@@ -109,6 +109,7 @@
       <div class="p-field-radiobutton">
         <RadioButton id="accessPassword" value="password" v-model="settingsDialog.accessRestriction" />
         <label for="accessPassword">Password restricted</label>
+        <InputText type="text" placeholder="Password" v-show="settingsDialog.accessRestriction === 'password'" v-model="settingsDialog.accessPassword"/>
       </div>
       <div class="p-field-radiobutton">
         <RadioButton id="accessUser" value="user" v-model="settingsDialog.accessRestriction" />
@@ -247,7 +248,8 @@ export default {
                 sortFoldersFirst: false,
                 title: '',
                 faviconFile: null,
-                accessRestriction: ''
+                accessRestriction: '',
+                accessPassword: ''
             },
             accessTokenDialog: {
                 visible: false,
@@ -519,6 +521,7 @@ export default {
             this.settingsDialog.title = this.settings.title;
             this.settingsDialog.faviconFile = null;
             this.settingsDialog.accessRestriction = this.settings.accessRestriction;
+            this.settingsDialog.accessPassword = '';
         },
         onSaveSettingsDialog: function () {
             var that = this;
@@ -531,6 +534,8 @@ export default {
                 title: this.settingsDialog.title,
                 accessRestriction: this.settingsDialog.accessRestriction
             };
+
+            if (this.settingsDialog.accessPassword) data.accessPassword = this.settingsDialog.accessPassword;
 
             var query = {
                 access_token: localStorage.accessToken

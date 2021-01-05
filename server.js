@@ -5,6 +5,7 @@
 var express = require('express'),
     morgan = require('morgan'),
     path = require('path'),
+    session = require('express-session'),
     fs = require('fs'),
     cors = require('./src/cors.js'),
     copyFile = require('./src/copyFile.js'),
@@ -30,7 +31,9 @@ fs.mkdirSync(ROOT_FOLDER, { recursive: true });
 var config = {
     folderListingEnabled: false,
     sortFoldersFirst: true,
-    title: ''
+    title: '',
+    accessRestriction: '',
+    accessPassword: ''
 };
 
 function getSettings(req, res) {
@@ -47,11 +50,15 @@ function setSettings(req, res, next) {
     if (typeof req.body.sortFoldersFirst !== 'boolean') return next(new HttpError(400, 'missing sortFoldersFirst boolean'));
     if (typeof req.body.title !== 'string') return next(new HttpError(400, 'missing title string'));
     if (typeof req.body.accessRestriction !== 'string') return next(new HttpError(400, 'missing accessRestriction string'));
+    if ('accessPassword' in req.body && typeof req.body.accessPassword !== 'string') return next(new HttpError(400, 'accessPassword must be a string'));
 
     config.folderListingEnabled = !!req.body.folderListingEnabled;
     config.sortFoldersFirst = !!req.body.sortFoldersFirst;
     config.title = req.body.title;
     config.accessRestriction = req.body.accessRestriction;
+
+    // only set if submitted
+    if ('accessPassword' in req.body) config.accessPassword = req.body.accessPassword;
 
     fs.writeFile(CONFIG_FILE, JSON.stringify(config), function (error) {
         if (error) return next(new HttpError(500, 'unable to save settings'));
@@ -89,6 +96,29 @@ function resetFavicon(req, res, next) {
     });
 }
 
+function handleProtection(req, res, next) {
+    if (!config.accessRestriction) return next();
+    if (req.session.isValid) return next();
+
+    res.status(200).sendFile(path.join(__dirname, '/dist/protected.html'));
+}
+
+function protectedLogin(req, res, next) {
+    function success() {
+        req.session.isValid = true;
+        next(new HttpSuccess(200, {}));
+    }
+
+    if (config.accessRestriction === 'password') {
+        if (config.accessPassword !== req.body.password) return next(new HttpError(403, 'forbidden'));
+        else success();
+    } else if (config.accessRestriction === 'user') {
+        next(new HttpError(403, 'forbidden'));
+    } else {
+        next(new HttpError(409, 'site is not protected'));
+    }
+}
+
 // Load the config file
 try {
     console.log(`Using config file at: ${CONFIG_FILE}`);
@@ -102,6 +132,7 @@ if (typeof config.folderListingEnabled !== 'boolean') config.folderListingEnable
 if (typeof config.sortFoldersFirst !== 'boolean') config.sortFoldersFirst = true;
 if (typeof config.title !== 'string') config.title = 'Surfer';
 if (typeof config.accessRestriction !== 'string') config.accessRestriction = '';
+if (typeof config.accessPassword !== 'string') config.accessPassword = '';
 
 // Setup the express server and routes
 var app = express();
@@ -118,6 +149,7 @@ webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(ROOT_FOLDER), func
 
 var multipart = multipart({ maxFieldsSize: 2 * 1024, limit: '512mb', timeout: 3 * 60 * 1000 });
 
+router.post  ('/api/protectedLogin', protectedLogin);
 router.post  ('/api/login', auth.login);
 router.post  ('/api/logout', auth.verify, auth.logout);
 router.get   ('/api/settings', auth.verifyIfNeeded, getSettings);
@@ -140,9 +172,11 @@ app.use(compression());
 app.use(cors({ origins: [ '*' ], allowCredentials: false }));
 app.use('/api', bodyParser.json());
 app.use('/api', bodyParser.urlencoded({ extended: false, limit: '100mb' }));
+app.use(session({ secret: 'surfin surfin', resave: false, saveUninitialized: true, cookie: {} }));
 app.use(router);
 app.use(webdav.extensions.express('/_webdav', webdavServer));
 app.use('/_admin', express.static(__dirname + '/dist'));
+app.use('/', handleProtection);
 app.use('/', express.static(ROOT_FOLDER));
 app.use('/', function welcomePage(req, res, next) {
     if (config.folderListingEnabled || req.path !== '/') return next();
