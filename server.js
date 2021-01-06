@@ -192,7 +192,7 @@ var webdavServer = new webdav.WebDAVServer({
 });
 
 webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(ROOT_FOLDER), function (success) {
-    if (success) console.log(`Mounting webdav resource from: ${ROOT_FOLDER}`);
+    if (!success) console.error('Failed to setup webdav server!');
 });
 
 var multipart = multipart({ maxFieldsSize: 2 * 1024, limit: '512mb', timeout: 3 * 60 * 1000 });
