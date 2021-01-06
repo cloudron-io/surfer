@@ -3,7 +3,7 @@
     <form @submit="onLogin" @submit.prevent>
       <h1>Login to {{ settings.title }}</h1>
       <div class="p-fluid">
-        <div class="p-field" v-show="accessRestriction === 'user'">
+        <div class="p-field" v-show="settings.accessRestriction === 'user'">
           <label for="usernameInput">Username</label>
           <InputText id="usernameInput" type="text" v-model="username"/>
         </div>
@@ -73,6 +73,11 @@ export default {
             window.document.title = that.settings.title;
 
             that.ready = true;
+
+            that.$nextTick(function() {
+                if (that.settings.accessRestriction === 'user') document.getElementById('usernameInput').focus();
+                else document.getElementById('passwordInput').focus();
+            });
         });
     }
 };
