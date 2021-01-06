@@ -84,11 +84,14 @@ function setSettings(req, res, next) {
     config.folderListingEnabled = !!req.body.folderListingEnabled;
     config.sortFoldersFirst = !!req.body.sortFoldersFirst;
     config.title = req.body.title;
+
+    // if changed invalidate sessions
+    if (config.accessRestriction !== req.body.accessRestriction) sessionStore.clear(function () {});
+
     config.accessRestriction = req.body.accessRestriction;
 
     updatePasswordIfNeeded(function (error) {
         if (error) return next(new HttpError(500, 'failed to set password'));
-
 
         fs.writeFile(CONFIG_FILE, JSON.stringify(config), function (error) {
             if (error) return next(new HttpError(500, 'unable to save settings'));
@@ -155,7 +158,10 @@ function protectedLogin(req, res, next) {
             success();
         });
     } else if (config.accessRestriction === 'user') {
-        next(new HttpError(403, 'forbidden'));
+        auth.verifyUser(req.body.username, req.body.password, function (error) {
+            if (error) return next(new HttpError(401, 'Invalid credentials'));
+            success();
+        });
     } else {
         next(new HttpError(409, 'site is not protected'));
     }

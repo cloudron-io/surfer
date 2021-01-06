@@ -126,6 +126,8 @@ exports.init = function (config) {
     gConfig = config;
 };
 
+exports.verifyUser = verifyUser;
+
 exports.login = function (req, res, next) {
     verifyUser(req.body.username, req.body.password, function (error, user) {
         if (error) return next(new HttpError(401, 'Invalid credentials'));
