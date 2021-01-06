@@ -1,6 +1,6 @@
 {
   "name": "cloudron-surfer",
-  "version": "5.13.1",
+  "version": "5.13.2",
   "private": true,
   "description": "Simple file server",
   "author": {
@@ -24,7 +24,7 @@
     "compression": "^1.7.4",
     "connect-lastmile": "^2.0.0",
     "connect-timeout": "^1.9.0",
-    "core-js": "^3.6.5",
+    "core-js": "^3.8.2",
     "debug": "^4.3.1",
     "del": "^6.0.0",
     "express": "^4.17.1",
@@ -47,14 +47,14 @@
     "webdav-server": "^2.6.2"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "~4.5.0",
-    "@vue/cli-plugin-eslint": "~4.5.0",
-    "@vue/cli-service": "~4.5.0",
-    "@vue/compiler-sfc": "^3.0.0",
+    "@vue/cli-plugin-babel": "~4.5.10",
+    "@vue/cli-plugin-eslint": "~4.5.10",
+    "@vue/cli-service": "~4.5.10",
+    "@vue/compiler-sfc": "^3.0.5",
     "babel-eslint": "^10.1.0",
-    "chromedriver": "^87.0.4",
-    "eslint": "^6.7.2",
-    "eslint-plugin-vue": "^7.0.0-0",
+    "chromedriver": "^87.0.5",
+    "eslint": "^7.17.0",
+    "eslint-plugin-vue": "^7.4.1",
     "expect.js": "^0.3.1",
     "mocha": "^8.2.1",
     "selenium-webdriver": "^3.6.0"

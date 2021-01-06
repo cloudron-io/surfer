@@ -157,3 +157,7 @@
 * Rewritten UI in primevue
 * Add support for listing folders first
 * Ability to specify site title and favicon
+
+[5.13.2]
+* Add ability to password or user protect the site
+
