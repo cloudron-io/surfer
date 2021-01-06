@@ -7,6 +7,7 @@ var express = require('express'),
     path = require('path'),
     session = require('express-session'),
     fs = require('fs'),
+    crypto = require('crypto'),
     cors = require('./src/cors.js'),
     copyFile = require('./src/copyFile.js'),
     compression = require('compression'),
@@ -23,7 +24,14 @@ const ROOT_FOLDER = path.resolve(__dirname, process.argv[2] || 'files');
 const CONFIG_FILE = path.resolve(__dirname, process.argv[3] || '.config.json');
 const FAVICON_FILE = path.resolve(__dirname, process.argv[4] || 'favicon.png');
 const FAVICON_FALLBACK_FILE = path.resolve(__dirname, 'dist', 'logo.png');
+
 const PASSWORD_PLACEHOLDER = '__PLACEHOLDER__';
+
+const CRYPTO_SALT_SIZE = 64; // 512-bit salt
+const CRYPTO_ITERATIONS = 10000; // iterations
+const CRYPTO_KEY_LENGTH = 512; // bits
+const CRYPTO_DIGEST = 'sha1'; // used to be the default in node 4.1.1 cannot change since it will affect existing db records
+
 
 var sessionStore = new session.MemoryStore();
 
@@ -55,26 +63,40 @@ function setSettings(req, res, next) {
     if (typeof req.body.accessRestriction !== 'string') return next(new HttpError(400, 'missing accessRestriction string'));
     if ('accessPassword' in req.body && typeof req.body.accessPassword !== 'string') return next(new HttpError(400, 'accessPassword must be a string'));
 
+    function updatePasswordIfNeeded(callback) {
+        if (!('accessPassword' in req.body) || req.body.accessPassword === PASSWORD_PLACEHOLDER) return callback();
+
+        crypto.randomBytes(CRYPTO_SALT_SIZE, function (error, salt) {
+            if (error) return callback(error);
+
+            crypto.pbkdf2(req.body.accessPassword, salt, CRYPTO_ITERATIONS, CRYPTO_KEY_LENGTH, CRYPTO_DIGEST, function (error, derivedKey) {
+                if (error) return callback(error);
+
+                config.accessPassword = Buffer.from(derivedKey, 'binary').toString('hex');
+                config.accessPasswordSalt = salt.toString('hex');
+
+                // now invalidate all sessions
+                sessionStore.clear(callback);
+            });
+        });
+    }
+
     config.folderListingEnabled = !!req.body.folderListingEnabled;
     config.sortFoldersFirst = !!req.body.sortFoldersFirst;
     config.title = req.body.title;
     config.accessRestriction = req.body.accessRestriction;
 
-    // only set if submitted
-    if ('accessPassword' in req.body && req.body.accessPassword !== PASSWORD_PLACEHOLDER) {
-        config.accessPassword = req.body.accessPassword;
+    updatePasswordIfNeeded(function (error) {
+        if (error) return next(new HttpError(500, 'failed to set password'));
 
-        // now invalidate all sessions
-        sessionStore.clear(function (error) {
-            if (error) console.error('Failed to clear sessions.', error);
+
+        fs.writeFile(CONFIG_FILE, JSON.stringify(config), function (error) {
+            if (error) return next(new HttpError(500, 'unable to save settings'));
+
+            next(new HttpSuccess(201, {}));
         });
-    }
-
-    fs.writeFile(CONFIG_FILE, JSON.stringify(config), function (error) {
-        if (error) return next(new HttpError(500, 'unable to save settings'));
-
-        next(new HttpSuccess(201, {}));
     });
+
 }
 
 function getFavicon(req, res) {
@@ -120,8 +142,18 @@ function protectedLogin(req, res, next) {
     }
 
     if (config.accessRestriction === 'password') {
-        if (config.accessPassword !== req.body.password) return next(new HttpError(403, 'forbidden'));
-        else success();
+        let saltBinary = Buffer.from(config.accessPasswordSalt, 'hex');
+        crypto.pbkdf2(req.body.password, saltBinary, CRYPTO_ITERATIONS, CRYPTO_KEY_LENGTH, CRYPTO_DIGEST, function (error, derivedKey) {
+            if (error) {
+                console.log('Failed to derive key.', error);
+                return next(new HttpError(500, 'internal error'));
+            }
+
+            let derivedKeyHex = Buffer.from(derivedKey, 'binary').toString('hex');
+            if (derivedKeyHex !== config.accessPassword) return next(new HttpError(403, 'forbidden'));
+
+            success();
+        });
     } else if (config.accessRestriction === 'user') {
         next(new HttpError(403, 'forbidden'));
     } else {
