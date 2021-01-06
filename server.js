@@ -19,11 +19,13 @@ var express = require('express'),
     webdav = require('webdav-server').v2,
     files = require('./src/files.js')(path.resolve(__dirname, process.argv[2] || 'files'));
 
-
 const ROOT_FOLDER = path.resolve(__dirname, process.argv[2] || 'files');
 const CONFIG_FILE = path.resolve(__dirname, process.argv[3] || '.config.json');
 const FAVICON_FILE = path.resolve(__dirname, process.argv[4] || 'favicon.png');
 const FAVICON_FALLBACK_FILE = path.resolve(__dirname, 'dist', 'logo.png');
+const PASSWORD_PLACEHOLDER = '__PLACEHOLDER__';
+
+var sessionStore = new session.MemoryStore();
 
 // Ensure the root folder exists
 fs.mkdirSync(ROOT_FOLDER, { recursive: true });
@@ -41,7 +43,8 @@ function getSettings(req, res) {
         folderListingEnabled: !!config.folderListingEnabled,
         sortFoldersFirst: !!config.sortFoldersFirst,
         title: config.title || 'Surfer',
-        accessRestriction: config.accessRestriction || ''
+        accessRestriction: config.accessRestriction || '',
+        accessPassword: config.accessPassword ? PASSWORD_PLACEHOLDER : '' // don't send the password, helps the UI to figure if a password was set at all
     });
 }
 
@@ -58,7 +61,14 @@ function setSettings(req, res, next) {
     config.accessRestriction = req.body.accessRestriction;
 
     // only set if submitted
-    if ('accessPassword' in req.body) config.accessPassword = req.body.accessPassword;
+    if ('accessPassword' in req.body && req.body.accessPassword !== PASSWORD_PLACEHOLDER) {
+        config.accessPassword = req.body.accessPassword;
+
+        // now invalidate all sessions
+        sessionStore.clear(function (error) {
+            if (error) console.error('Failed to clear sessions.', error);
+        });
+    }
 
     fs.writeFile(CONFIG_FILE, JSON.stringify(config), function (error) {
         if (error) return next(new HttpError(500, 'unable to save settings'));
@@ -172,7 +182,7 @@ app.use(compression());
 app.use(cors({ origins: [ '*' ], allowCredentials: false }));
 app.use('/api', bodyParser.json());
 app.use('/api', bodyParser.urlencoded({ extended: false, limit: '100mb' }));
-app.use(session({ secret: 'surfin surfin', resave: false, saveUninitialized: true, cookie: {} }));
+app.use(session({ store: sessionStore, secret: 'surfin surfin', resave: false, saveUninitialized: true, cookie: {} }));
 app.use(router);
 app.use(webdav.extensions.express('/_webdav', webdavServer));
 app.use('/_admin', express.static(__dirname + '/dist'));

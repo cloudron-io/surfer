@@ -109,7 +109,10 @@
       <div class="p-field-radiobutton">
         <RadioButton id="accessPassword" value="password" v-model="settingsDialog.accessRestriction" />
         <label for="accessPassword">Password restricted</label>
-        <InputText type="text" placeholder="Password" v-show="settingsDialog.accessRestriction === 'password'" v-model="settingsDialog.accessPassword"/>
+      </div>
+      <div class="p-field p-col-12" v-show="settingsDialog.accessRestriction === 'password'">
+        <Password :feedback="false" v-model="settingsDialog.accessPassword" :required="settingsDialog.accessRestriction === 'password'"/><br/>
+        <small>Changing the password will require every user to re-login.</small>
       </div>
       <div class="p-field-radiobutton">
         <RadioButton id="accessUser" value="user" v-model="settingsDialog.accessRestriction" />
@@ -132,7 +135,7 @@
 
     <template #footer>
       <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="settingsDialog.visible = false" :disabled="settingsDialog.busy"/>
-      <Button label="Save" icon="pi pi-check" class="p-button-text p-button-success" @click="onSaveSettingsDialog" :disabled="settingsDialog.busy"/>
+      <Button label="Save" icon="pi pi-check" class="p-button-text p-button-success" @click="onSaveSettingsDialog" :disabled="settingsDialog.busy || (settingsDialog.accessRestriction === 'password' && !settingsDialog.accessPassword)"/>
     </template>
   </Dialog>
 
@@ -521,7 +524,7 @@ export default {
             this.settingsDialog.title = this.settings.title;
             this.settingsDialog.faviconFile = null;
             this.settingsDialog.accessRestriction = this.settings.accessRestriction;
-            this.settingsDialog.accessPassword = '';
+            this.settingsDialog.accessPassword = this.settings.accessPassword;
         },
         onSaveSettingsDialog: function () {
             var that = this;
@@ -720,6 +723,7 @@ export default {
             that.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
             that.settings.title = result.body.title || 'Surfer';
             that.settings.accessRestriction = result.body.accessRestriction || '';
+            that.settings.accessPassword = result.body.accessPassword || '';
 
             window.document.title = that.settings.title;
 
