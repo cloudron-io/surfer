@@ -1,10 +1,12 @@
-This app packages Surfer <upstream>5.13.1</upstream>
+This app packages Surfer <upstream>5.13.2</upstream>
 
 ### Overview
 
 Surfer is a Simple static file server. It comes with a webinterface and commandline tooling to manage files.
 
 Any `index.html` file in a directory will be served up automatically.
+
+Additionaly, the public site can be password or user protected.
 
 ### Webinterface
 
