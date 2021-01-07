@@ -162,3 +162,6 @@
 * Add ability to password or user protect the site
 * Update node modules
 
+[5.13.3]
+* Fix previews when site is protected
+
