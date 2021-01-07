@@ -86,7 +86,7 @@
         <div class="p-field p-col-12">
           <label for="faviconInput">Favicon</label>
           <br/>
-          <img ref="faviconImage" src="/api/favicon" width="64" height="64"/>
+          <img ref="faviconImage" :src="'/api/favicon?' + Date.now()" width="64" height="64"/>
         </div>
         <div class="p-field p-col-3">
           <Button id="faviconInput" class="p-button p-button-sm" label="Upload Favicon" icon="pi pi-upload" @click="onUploadFavicon"/>
