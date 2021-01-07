@@ -139,6 +139,7 @@ exports.login = function (req, res, next) {
 
             // validate those session immediately
             req.session.isValid = true;
+            req.session.isAdmin = true;
 
             next(new HttpSuccess(201, { accessToken: accessToken, user: user }));
         });
@@ -150,6 +151,10 @@ exports.verify = function (req, res, next) {
 
     tokenStore.get(accessToken, function (error, user) {
         if (error) return next(new HttpError(401, 'Invalid Access Token'));
+
+        // also mark this session valid and admin
+        req.session.isValid = true;
+        req.session.isAdmin = true;
 
         req.user = user;
 

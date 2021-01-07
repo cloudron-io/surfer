@@ -3,6 +3,7 @@
 'use strict';
 
 var express = require('express'),
+    async = require('async'),
     morgan = require('morgan'),
     path = require('path'),
     session = require('express-session'),
@@ -62,6 +63,23 @@ function setSettings(req, res, next) {
     if (typeof req.body.accessRestriction !== 'string') return next(new HttpError(400, 'missing accessRestriction string'));
     if ('accessPassword' in req.body && typeof req.body.accessPassword !== 'string') return next(new HttpError(400, 'accessPassword must be a string'));
 
+    function clearNonAdminSessions(callback) {
+        callback = callback || function () {};
+
+        sessionStore.all(function (error, sessions) {
+            if (error) return console.error('Failed to get sessions.', error);
+
+            async.each(Object.keys(sessions), function (sid, callback) {
+                if (sessions[sid].isAdmin) return callback();
+
+                sessionStore.destroy(sid, function (error) {
+                    if (error) console.error(`Failed to delete session %sid.`, error);
+                    callback();
+                });
+            }, callback);
+        });
+    }
+
     function updatePasswordIfNeeded(callback) {
         if (!('accessPassword' in req.body) || req.body.accessPassword === PASSWORD_PLACEHOLDER) return callback();
 
@@ -74,8 +92,7 @@ function setSettings(req, res, next) {
                 config.accessPassword = Buffer.from(derivedKey, 'binary').toString('hex');
                 config.accessPasswordSalt = salt.toString('hex');
 
-                // now invalidate all sessions
-                sessionStore.clear(callback);
+                clearNonAdminSessions(callback);
             });
         });
     }
@@ -85,7 +102,7 @@ function setSettings(req, res, next) {
     config.title = req.body.title;
 
     // if changed invalidate sessions
-    if (config.accessRestriction !== req.body.accessRestriction) sessionStore.clear(function () {});
+    if (config.accessRestriction !== req.body.accessRestriction) clearNonAdminSessions();
 
     config.accessRestriction = req.body.accessRestriction;
 
