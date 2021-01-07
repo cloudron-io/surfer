@@ -32,7 +32,6 @@ const CRYPTO_ITERATIONS = 10000; // iterations
 const CRYPTO_KEY_LENGTH = 512; // bits
 const CRYPTO_DIGEST = 'sha1'; // used to be the default in node 4.1.1 cannot change since it will affect existing db records
 
-
 var sessionStore = new session.MemoryStore();
 
 // Ensure the root folder exists

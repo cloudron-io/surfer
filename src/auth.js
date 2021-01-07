@@ -137,6 +137,9 @@ exports.login = function (req, res, next) {
         tokenStore.set(accessToken, user, function (error) {
             if (error) return next(new HttpError(500, error));
 
+            // validate those session immediately
+            req.session.isValid = true;
+
             next(new HttpSuccess(201, { accessToken: accessToken, user: user }));
         });
     });
