@@ -165,3 +165,6 @@
 [5.13.3]
 * Fix previews when site is protected
 
+[5.13.4]
+* Fix case where access restriction is on and public folder listing off
+
