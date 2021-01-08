@@ -163,11 +163,6 @@ exports.verify = function (req, res, next) {
 
 };
 
-exports.verifyIfNeeded = function (req, res, next) {
-    if (!gConfig.folderListingEnabled) return exports.verify(req, res, next);
-    next();
-};
-
 exports.logout = function (req, res, next) {
     var accessToken = req.query.access_token || req.body.accessToken;
 

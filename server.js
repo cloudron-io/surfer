@@ -216,7 +216,7 @@ var multipart = multipart({ maxFieldsSize: 2 * 1024, limit: '512mb', timeout: 3 
 router.post  ('/api/protectedLogin', protectedLogin);
 router.post  ('/api/login', auth.login);
 router.post  ('/api/logout', auth.verify, auth.logout);
-router.get   ('/api/settings', auth.verifyIfNeeded, getSettings);
+router.get   ('/api/settings', getSettings);
 router.get   ('/api/favicon', getFavicon);
 router.put   ('/api/favicon', auth.verify, multipart, setFavicon);
 router.delete('/api/favicon', auth.verify, resetFavicon);
