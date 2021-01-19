@@ -16,7 +16,7 @@
 
 <script>
 
-import { download, copyToClipboard } from '../utils.js';
+import { download, encode, copyToClipboard } from '../utils.js';
 
 export default {
     name: 'Preview',
@@ -30,7 +30,7 @@ export default {
             download(entry);
         },
         onCopyLink: function (entry) {
-            copyToClipboard(location.origin + entry.filePath);
+            copyToClipboard(location.origin + encode(entry.filePath));
 
             this.$toast.add({ severity:'success', summary: 'Link copied to Clipboard', life: 1500 });
         },
