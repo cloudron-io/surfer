@@ -168,3 +168,9 @@
 [5.13.4]
 * Fix case where access restriction is on and public folder listing off
 
+[5.13.5]
+* Add file name to preview
+* Allow to close preview
+* Fix dialog closing when clicking on backdrop
+* Update dependencies
+
