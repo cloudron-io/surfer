@@ -1,6 +1,6 @@
 <template>
     <div class="container" :class="{ 'visible': entry.filePath }">
-        <div class="p-d-flex p-jc-between">
+        <div class="p-d-flex p-jc-between" style="padding-bottom: 10px;">
           <div class="header-filename">
             {{ entry.fileName }}
           </div>
