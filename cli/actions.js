@@ -23,26 +23,26 @@ var API = '/api/files/';
 var gServer = '';
 var gQuery = {};
 
-function checkConfig(options) {
-    if (!options.parent.server && !config.server()) {
+function checkConfig(options, parent) {
+    if (!parent.server && !config.server()) {
         console.log('Run %s first, or provide %s', 'surfer login'.bold, '--server <url>'.bold);
         process.exit(1);
     }
 
-    if (options.parent.server) {
-        var tmp = url.parse(options.parent.server);
-        if (!tmp.slashes) tmp = url.parse('https://' + options.parent.server);
+    if (parent.server) {
+        var tmp = url.parse(parent.server);
+        if (!tmp.slashes) tmp = url.parse('https://' + parent.server);
         gServer = tmp.protocol + '//' + tmp.host;
     } else {
         gServer = config.server();
     }
 
-    if (!options.parent.token && !config.accessToken()) {
+    if (!parent.token && !config.accessToken()) {
         console.log('Run %s first or provide %s', 'surfer login'.bold, '--token <access token>'.bold);
         process.exit(1);
     }
 
-    gQuery = { access_token: options.parent.token || config.accessToken() };
+    gQuery = { access_token: parent.token || config.accessToken() };
 
     console.error('Using server %s', gServer.cyan);
 }
@@ -184,7 +184,7 @@ function delOne(file, callback) {
 }
 
 function get(filePath, options) {
-    checkConfig(options);
+    checkConfig(options, this.parent);
 
     // if no argument provided, fetch root
     filePath = filePath || '/';
@@ -212,7 +212,7 @@ function get(filePath, options) {
 }
 
 function del(filePath, options) {
-    checkConfig(options);
+    checkConfig(options, this.parent);
 
     // construct a virtual file for further use
     var file = {
@@ -264,7 +264,7 @@ function legacyPut(filePaths, options) {
 }
 
 function put(filePaths, options) {
-    checkConfig(options);
+    checkConfig(options, this.parent);
 
     if (filePaths.length < 2) {
         console.log('Target directory argument is required'.red);
