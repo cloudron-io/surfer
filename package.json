@@ -1,7 +1,6 @@
 {
   "name": "cloudron-surfer",
   "version": "5.13.5",
-  "private": true,
   "description": "Simple file server",
   "author": {
     "name": "Johannes Zellner",
