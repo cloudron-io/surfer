@@ -60,7 +60,7 @@
   </div>
 
   <!-- Settings Dialog -->
-  <Dialog v-model:visible="settingsDialog.visible" header="Settings" :modal="true" :closable="false" :style="{width: '50vw'}">
+  <Dialog v-model:visible="settingsDialog.visible" header="Settings" :dismissableMask="true" :modal="true" :closable="true" :style="{width: '50vw'}">
     <div>
       <div class="p-field-checkbox">
         <Checkbox id="publicFolderListing" v-model="settingsDialog.folderListingEnabled" :binary="true"/>
@@ -140,7 +140,7 @@
   </Dialog>
 
   <!-- Access Token Dialog -->
-  <Dialog v-model:visible="accessTokenDialog.visible" header="Access Tokens" :modal="true" :closable="false" :style="{width: '50vw'}">
+  <Dialog v-model:visible="accessTokenDialog.visible" header="Access Tokens" :dismissableMask="true" :modal="true" :closable="true" :style="{width: '50vw'}">
     Access tokens are useful to programmatically deploy assets for example within a CI/CD pipeline.
     See the <a href="https://cloudron.io/documentation/apps/surfer/" target="_blank">docs</a> for more information on how to use this token.
     <br/>
@@ -169,7 +169,7 @@
   </Dialog>
 
   <!-- New Folder Dialog -->
-  <Dialog header="New Foldername" v-model:visible="newFolderDialog.visible" :closable="false" :style="{width: '350px'}" :modal="true">
+  <Dialog header="New Foldername" v-model:visible="newFolderDialog.visible" :dismissableMask="true" :closable="true" :style="{width: '350px'}" :modal="true">
     <form @submit="onSaveNewFolderDialog" @submit.prevent>
       <div class="p-fluid">
         <div class="p-field">
@@ -185,7 +185,7 @@
   </Dialog>
 
   <!-- About Dialog -->
-  <Dialog header="About Cloudron Surfer" v-model:visible="aboutDialog.visible" :closable="false" :style="{width: '450px'}" :modal="true">
+  <Dialog header="About Cloudron Surfer" v-model:visible="aboutDialog.visible" :dismissableMask="true" :closable="true" :style="{width: '450px'}" :modal="true">
     <div>
       Surfer is a static file server written by <a href="https://cloudron.io" target="_blank">Cloudron</a>.
       The source code is licensed under MIT and available <a href="https://git.cloudron.io/cloudron/surfer" target="_blank">here</a>.
