@@ -1,7 +1,12 @@
 <template>
     <div class="container" :class="{ 'visible': entry.filePath }">
-        <div class="mobile-header">
-          <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-times" @click="onClose"/>
+        <div class="p-d-flex p-jc-between">
+          <div class="header-filename">
+            {{ entry.fileName }}
+          </div>
+          <div>
+            <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-times" @click="onClose"/>
+          </div>
         </div>
         <iframe id="previewIframe" ref="iframe" :src="entry.filePath" style="width: 100%; height: 100%; border: none;"></iframe>
         <center>
@@ -73,12 +78,10 @@ export default {
     width: 40%;
 }
 
-.mobile-header {
-    display: none;
-}
-
-.mobile-header button {
-    float: right;
+.header-filename {
+    margin: auto;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 @media only screen and (max-width: 767px)  {
@@ -87,10 +90,6 @@ export default {
         width: 100%;
         height: 100%;
         top: 0;
-    }
-
-    .mobile-header {
-        display: block;
     }
 }
 
