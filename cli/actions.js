@@ -44,7 +44,7 @@ function checkConfig(options, parent) {
 
     gQuery = { access_token: parent.token || config.accessToken() };
 
-    console.error('Using server %s', gServer.cyan);
+    console.log('Using server %s', gServer.cyan);
 }
 
 function collectFiles(filePath, basePath, options) {
