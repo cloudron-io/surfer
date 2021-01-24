@@ -33,6 +33,7 @@ describe('Application life cycle test', function () {
 
     var browser;
     var app;
+    var gApiToken;
 
     before(function () {
         browser = new Builder().forBrowser('chrome').setChromeOptions(new Options().windowSize({ width: 1280, height: 1024 })).build();
@@ -126,9 +127,34 @@ describe('Application life cycle test', function () {
         execSync(`${CLI} login ${app.fqdn} --username ${process.env.USERNAME} --password ${process.env.PASSWORD}`, { stdio: 'inherit' });
     }
 
+    function createApiToken(done) {
+        superagent.post('https://' + app.fqdn + '/api/login').send({ username: process.env.USERNAME, password: process.env.PASSWORD }).end(function (error, result) {
+            expect(error).to.not.be.ok();
+            expect(result.status).to.equal(201);
+            expect(result.body).to.be.an('object');
+            expect(result.body.accessToken).to.be.a('string');
+
+            superagent.post('https://' + app.fqdn + '/api/tokens').send({ accessToken: result.body.accessToken }).end(function (error, result) {
+                expect(error).to.not.be.ok();
+                expect(result.status).to.equal(201);
+                expect(result.body).to.be.an('object');
+                expect(result.body.accessToken).to.be.a('string');
+
+                gApiToken = result.body.accessToken;
+
+                done();
+            });
+        });
+    }
+
     function uploadFile(name) {
         // File upload can't be tested with selenium, since the file input is not visible and thus can't be interacted with :-(
         execSync(`${CLI} put ${path.join(__dirname, name)} /`,  { stdio: 'inherit' } );
+    }
+
+    function uploadFileWithToken(name) {
+        // File upload can't be tested with selenium, since the file input is not visible and thus can't be interacted with :-(
+        execSync(`${CLI} --token ${gApiToken} put ${path.join(__dirname, name)} /`,  { stdio: 'inherit' } );
     }
 
     function checkFolderExists() {
@@ -156,7 +182,8 @@ describe('Application life cycle test', function () {
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
     it('file is served up', checkFileIsPresent);
     it('file is served up', checkIndexFileIsServedUp);
-    it('can upload second file', uploadFile.bind(null, TEST_FILE_NAME_1));
+    it('can create api token', createApiToken);
+    it('can upload second file with token', uploadFileWithToken.bind(null, TEST_FILE_NAME_1));
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_1));
     it('can delete second file with cli', function () {
         execSync(`${CLI} del ${TEST_FILE_NAME_1}`,  { stdio: 'inherit' });
