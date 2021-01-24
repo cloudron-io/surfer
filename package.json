@@ -1,6 +1,6 @@
 {
   "name": "cloudron-surfer",
-  "version": "5.13.5",
+  "version": "5.13.5-1",
   "description": "Simple file server",
   "author": {
     "name": "Johannes Zellner",
@@ -11,7 +11,7 @@
     "build": "vue-cli-service build",
     "watch": "vue-cli-service build --watch",
     "lint": "vue-cli-service lint",
-    "test": "./node_modules/mocha/bin/_mocha -R spec ./test/test.js"
+    "test": "./node_modules/mocha/bin/_mocha --bail -R spec ./test/test.js"
   },
   "main": "server.js",
   "dependencies": {
