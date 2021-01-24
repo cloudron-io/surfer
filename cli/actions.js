@@ -23,26 +23,29 @@ var API = '/api/files/';
 var gServer = '';
 var gQuery = {};
 
-function checkConfig(options, parent) {
-    if (!parent.server && !config.server()) {
+function checkConfig(options, program) {
+    // FIXME this uses private API of commander. I was not able to figure out how to otherwise access program wide args
+    let parentOptions = program.parent._optionValues;
+
+    if (!parentOptions.server && !config.server()) {
         console.log('Run %s first, or provide %s', 'surfer login'.bold, '--server <url>'.bold);
         process.exit(1);
     }
 
-    if (parent.server) {
-        var tmp = url.parse(parent.server);
-        if (!tmp.slashes) tmp = url.parse('https://' + parent.server);
+    if (parentOptions.server) {
+        var tmp = url.parse(parentOptions.server);
+        if (!tmp.slashes) tmp = url.parse('https://' + parentOptions.server);
         gServer = tmp.protocol + '//' + tmp.host;
     } else {
         gServer = config.server();
     }
 
-    if (!parent.token && !config.accessToken()) {
+    if (!parentOptions.token && !config.accessToken()) {
         console.log('Run %s first or provide %s', 'surfer login'.bold, '--token <access token>'.bold);
         process.exit(1);
     }
 
-    gQuery = { access_token: parent.token || config.accessToken() };
+    gQuery = { access_token: parentOptions.token || config.accessToken() };
 
     console.log('Using server %s', gServer.cyan);
 }
@@ -183,8 +186,8 @@ function delOne(file, callback) {
     });
 }
 
-function get(filePath, options) {
-    checkConfig(options, this.parent);
+function get(filePath, options, program) {
+    checkConfig(options, program);
 
     // if no argument provided, fetch root
     filePath = filePath || '/';
@@ -211,8 +214,8 @@ function get(filePath, options) {
     });
 }
 
-function del(filePath, options) {
-    checkConfig(options, this.parent);
+function del(filePath, options, program) {
+    checkConfig(options, program);
 
     // construct a virtual file for further use
     var file = {
@@ -263,8 +266,8 @@ function legacyPut(filePaths, options) {
     });
 }
 
-function put(filePaths, options) {
-    checkConfig(options, this.parent);
+function put(filePaths, options, program) {
+    checkConfig(options, program);
 
     if (filePaths.length < 2) {
         console.log('Target directory argument is required'.red);
@@ -294,7 +297,7 @@ function put(filePaths, options) {
     superagent.get(gServer + path.join(API, absoluteDestPath)).query(query).end(function (error, result) {
         if (error) {
             if (error.status === 401) return console.log('Login failed');
-            if (error.status !== 404) return console.error(error);
+            if (error.status !== 404) return console.error(error.message);
 
             // 404 means remote not found so upload all
             remoteFiles = [];
@@ -347,7 +350,7 @@ function put(filePaths, options) {
 
             delOne(file, callback);
         }, function (error) {
-            if (error) return console.error('Failed', error);
+            if (error) return console.error(error.message);
 
             // now upload new files
             async.eachLimit(newLocalFiles, 10, function (filePath, callback) {
@@ -356,7 +359,7 @@ function put(filePaths, options) {
 
                 putOne(file, absoluteDestPath, callback);
             }, function (error) {
-                if (error) return console.error('Failed', error);
+                if (error) return console.error(error.message);
 
                 console.log('Done');
             });
