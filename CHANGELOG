@@ -177,3 +177,6 @@
 [5.14.0]
 * Enable multi-domain flag for setting domain aliases
 
+[5.14.1]
+* Fix upload progress
+
