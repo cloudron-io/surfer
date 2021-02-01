@@ -412,7 +412,7 @@ export default {
                 var formData = new FormData();
                 formData.append('file', file);
 
-                var finishedUploadSize = that.uploadStatus.done;
+                var finishedUploadSize = 0;
 
                 superagent.post(`/api/files${path}`)
                   .query({ access_token: localStorage.accessToken })
@@ -421,7 +421,10 @@ export default {
                     // only handle upload events
                     if (!(event.target instanceof XMLHttpRequestUpload)) return;
 
-                    that.uploadStatus.done = finishedUploadSize + event.loaded;
+                    that.uploadStatus.done += event.loaded - finishedUploadSize;
+                    // keep track of progress diff not absolute
+                    finishedUploadSize = event.loaded;
+
                     var tmp = Math.round(that.uploadStatus.done / that.uploadStatus.size * 100);
                     that.uploadStatus.percentDone = tmp > 100 ? 100 : tmp;
                 }).end(function (error, result) {
