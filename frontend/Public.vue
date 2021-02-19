@@ -88,7 +88,8 @@ export default {
             window.location.href = encode('/api/files/' + sanitize(this.path + '/' + entry.fileName)) + '?access_token=' + localStorage.accessToken;
         },
         onUp: function () {
-            window.location.href = sanitize(this.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
+            // we slice of last 2 as public paths always end with /
+            window.location.href = sanitize(this.path.split('/').slice(0, -2).filter(function (p) { return !!p; }).join('/'));
         },
         onEntryOpen: function (entry) {
             // ignore item open on row clicks if we are renaming this entry
