@@ -183,6 +183,14 @@ function protectedLogin(req, res, next) {
     }
 }
 
+function send404(res) {
+    // first check if /404.htm(l) exists, if so send that
+    if (fs.existsSync(path.join(ROOT_FOLDER, '404.html'))) return res.status(404).sendFile(path.join(ROOT_FOLDER, '404.html'));
+    if (fs.existsSync(path.join(ROOT_FOLDER, '404.htm' ))) return res.status(404).sendFile(path.join(ROOT_FOLDER, '404.htm'));
+
+    res.status(404).sendFile(__dirname + '/dist/404.html');
+}
+
 // Load the config file
 try {
     console.log(`Using config file at: ${CONFIG_FILE}`);
@@ -247,9 +255,8 @@ app.use('/', function welcomePage(req, res, next) {
     res.status(200).sendFile(path.join(__dirname, '/dist/welcome.html'));
 });
 app.use('/', function (req, res) {
-    if (!config.folderListingEnabled) return res.status(404).sendFile(__dirname + '/dist/404.html');
-
-    if (!fs.existsSync(path.join(ROOT_FOLDER, decodeURIComponent(req.path)))) return res.status(404).sendFile(__dirname + '/dist/404.html');
+    if (!config.folderListingEnabled) return send404(res);
+    if (!fs.existsSync(path.join(ROOT_FOLDER, decodeURIComponent(req.path)))) return send404(res);
 
     res.status(200).sendFile(__dirname + '/dist/public.html');
 });
