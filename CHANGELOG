@@ -180,3 +180,8 @@
 [5.14.1]
 * Fix upload progress
 
+[5.15.0]
+* Allow to have custom 404.htm(l) in root folder
+* Fix back button
+* Update to base image v3
+
