@@ -13,11 +13,11 @@
     <div class="tbody">
       <div class="tr-placeholder" v-show="entries.length === 0">Folder is empty</div>
       <div class="tr-placeholder" v-show="entries.length !== 0 && filteredAndSortedEntries.length === 0">Nothing found</div>
-      <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @click="onEntryOpen(entry)" @drop.stop.prevent="drop(entry)" @dragover.stop.prevent="dragOver(entry)" :class="{ 'active': entry === active,  'drag-active': entry === dragActive }">
+      <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @dblclick="onEntryOpen(entry)" @click="onEntrySelect(entry)" @drop.stop.prevent="drop(entry)" @dragover.stop.prevent="dragOver(entry)" :class="{ 'active': entry === active,  'drag-active': entry === dragActive }">
         <div class="td" style="max-width: 50px;"><img :src="entry.previewUrl" style="width: 32px; height: 32px; vertical-align: middle;"/></div>
         <div class="td" style="flex-grow: 2;">
           <InputText @keyup.enter="onRenameSubmit(entry)" @keyup.esc="onRenameEnd(entry)" @blur="onRenameEnd(entry)" v-model="entry.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="entry.rename" class="rename-input"/>
-          <span v-show="!entry.rename">{{ entry.fileName }}</span>
+          <a v-show="!entry.rename" :href="entry.filePath" @click.stop.prevent="onEntryOpen(entry)">{{ entry.fileName }}</a>
           <Button class="p-button-sm p-button-rounded p-button-text rename-action" icon="pi pi-pencil" v-show="editable && !entry.rename" @click.stop="onRename(entry)"/>
         </div>
         <div class="td p-d-none p-d-md-flex" style="max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
@@ -90,6 +90,9 @@ export default {
         onSort: function (prop) {
             if (this.sort.prop === prop) this.sort.desc = !this.sort.desc;
             else this.sort.prop = prop;
+        },
+        onEntrySelect: function (entry) {
+            entry.selected = true;
         },
         onEntryOpen: function (entry) {
             if (entry.rename) return;
@@ -224,7 +227,6 @@ export default {
     width: 100%;
     display: flex;
     flex-flow: row nowrap;
-    cursor: pointer;
     border-radius: 3px;
 }
 
@@ -242,6 +244,10 @@ export default {
     margin-top: 20vh;
 }
 
+.td > a {
+    color: inherit;
+}
+
 .td {
     display: flex;
     flex-flow: row nowrap;
@@ -250,6 +256,7 @@ export default {
     padding: 0.5em;
     line-height: 2.3rem;
     min-width: 0px;
+    margin: auto;
 }
 
 .th > .td {
