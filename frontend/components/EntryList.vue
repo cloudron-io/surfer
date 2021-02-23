@@ -13,17 +13,18 @@
     <div class="tbody">
       <div class="tr-placeholder" v-show="entries.length === 0">Folder is empty</div>
       <div class="tr-placeholder" v-show="entries.length !== 0 && filteredAndSortedEntries.length === 0">Nothing found</div>
-      <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @dblclick="onEntryOpen(entry)" @click="onEntrySelect(entry)" @drop.stop.prevent="drop(entry)" @dragover.stop.prevent="dragOver(entry)" :class="{ 'active': entry === active,  'drag-active': entry === dragActive }">
+      <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @dblclick="onEntryOpen(entry, false)" @click="onEntrySelect(entry)" @drop.stop.prevent="drop(entry)" @dragover.stop.prevent="dragOver(entry)" :class="{ 'selected': selected.includes(entry.filePath), 'active': entry === active,  'drag-active': entry === dragActive }">
         <div class="td" style="max-width: 50px;"><img :src="entry.previewUrl" style="width: 32px; height: 32px; vertical-align: middle;"/></div>
         <div class="td" style="flex-grow: 2;">
           <InputText @keyup.enter="onRenameSubmit(entry)" @keyup.esc="onRenameEnd(entry)" @blur="onRenameEnd(entry)" v-model="entry.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="entry.rename" class="rename-input"/>
-          <a v-show="!entry.rename" :href="entry.filePath" @click.stop.prevent="onEntryOpen(entry)">{{ entry.fileName }}</a>
+          <a v-show="!entry.rename" :href="entry.filePath" @click.stop.prevent="onEntryOpen(entry, true)">{{ entry.fileName }}</a>
           <Button class="p-button-sm p-button-rounded p-button-text rename-action" icon="pi pi-pencil" v-show="editable && !entry.rename" @click.stop="onRename(entry)"/>
         </div>
         <div class="td p-d-none p-d-md-flex" style="max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
         <div class="td p-d-none p-d-md-flex" style="max-width: 150px;"><span v-tooltip.top="prettyLongDate(entry.mtime)">{{ prettyDate(entry.mtime) }}</span></div>
         <div class="td" style="max-width: 120px; justify-content: flex-end;">
           <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-download" v-show="!entry.rename && entry.isFile" @click.stop="onDownload(entry)"/>
+          <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-copy" v-show="!entry.rename && entry.isFile" @click.stop="onCopyLink(entry)"/>
           <a :href="entry.filePath" target="_blank" @click.stop>
             <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-external-link" v-show="!entry.rename"/>
           </a>
@@ -37,14 +38,15 @@
 <script>
 
 import { nextTick } from 'vue';
-import { prettyDate, prettyLongDate, prettyFileSize, download } from '../utils.js';
+import { prettyDate, prettyLongDate, prettyFileSize, download, encode, copyToClipboard } from '../utils.js';
 
 export default {
     name: 'EntryList',
-    emits: [ 'entry-activated', 'entry-renamed', 'entry-delete', 'dropped' ],
+    emits: [ 'selection-changed', 'entry-activated', 'entry-renamed', 'entry-delete', 'dropped' ],
     data() {
         return {
             active: {},
+            selected: [],
             sort: {
                 prop: 'fileName',
                 desc: true
@@ -92,14 +94,29 @@ export default {
             else this.sort.prop = prop;
         },
         onEntrySelect: function (entry) {
-            entry.selected = true;
+            var that = this;
+            // TODO handle multiselect here
+
+            this.selected = [];
+
+            if (!this.selected.includes(entry.filePath)) this.selected.push(entry.filePath);
+
+            var selectedEntries = this.entries.filter(function (e) { return that.selected.includes(e.filePath); });
+            this.$emit('selection-changed', selectedEntries);
         },
-        onEntryOpen: function (entry) {
+        onEntryOpen: function (entry, select) {
             if (entry.rename) return;
+
             this.$emit('entry-activated', entry);
+
+            if (select) this.onEntrySelect(entry);
         },
         onDownload: function (entry) {
             download(entry);
+        },
+        onCopyLink: function (entry) {
+            copyToClipboard(location.origin + encode(entry.filePath));
+            this.$toast.add({ severity:'success', summary: 'Link copied to Clipboard', life: 1500 });
         },
         onRename: function (entry) {
             if (entry.rename) return entry.rename = false;
@@ -228,13 +245,14 @@ export default {
     display: flex;
     flex-flow: row nowrap;
     border-radius: 3px;
+    cursor: default;
 }
 
 .tr:hover {
     background-color: #f5f7fa;
 }
 
-.tr.active {
+.tr.active, .tr.selected {
     background-color: #dbedfb;
 }
 

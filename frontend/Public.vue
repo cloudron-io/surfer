@@ -1,4 +1,8 @@
 <template>
+  <!-- This is re-used and thus global -->
+  <ConfirmDialog></ConfirmDialog>
+  <Toast position="top-center" />
+
   <div class="main-container" v-show="ready">
     <div class="main-container-toolbar">
       <Toolbar>
@@ -14,7 +18,7 @@
     </div>
     <div class="main-container-body">
       <div class="main-container-content">
-        <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @entry-activated="onEntryOpen"/>
+        <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @selection-changed="onSelectionChanged" @entry-activated="onEntryOpen"/>
       </div>
       <Preview :entry="activeEntry" @close="onPreviewClose"/>
     </div>
@@ -102,14 +106,27 @@ export default {
                 return;
             }
 
-            this.activeEntry = entry;
+            // TODO open file viewer
+            console.error('To be implemented');
+        },
+        onSelectionChanged: function (selectedEntries) {
+            this.activeEntry = selectedEntries[0];
         },
         onPreviewClose: function () {
+            this.activeEntry = {};
+        },
+        clearSelection: function () {
             this.activeEntry = {};
         }
     },
     mounted() {
         var that = this;
+
+        // global key handler to unset activeEntry
+        window.addEventListener('keyup', function () {
+            // only do this if no modal is active - body classlist would be empty
+            if (event.key === 'Escape' && event.target.classList.length === 0) that.clearSelection();
+        });
 
         superagent.get(`${that.origin}/api/settings`).end(function (error, result) {
             if (error) console.error(error);
