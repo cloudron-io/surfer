@@ -23,12 +23,12 @@
         <div class="td p-d-none p-d-md-flex" style="max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
         <div class="td p-d-none p-d-md-flex" style="max-width: 150px;"><span v-tooltip.top="prettyLongDate(entry.mtime)">{{ prettyDate(entry.mtime) }}</span></div>
         <div class="td" style="max-width: 120px; justify-content: flex-end;">
-          <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-download" v-show="!entry.rename && entry.isFile" @click.stop="onDownload(entry)"/>
-          <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-copy" v-show="!entry.rename && entry.isFile" @click.stop="onCopyLink(entry)"/>
+          <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-download" v-tooltip.top="'Download'" v-show="!entry.rename && entry.isFile" @click.stop="onDownload(entry)"/>
+          <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-copy" v-tooltip.top="'Copy Link'" v-show="!entry.rename && entry.isFile" @click.stop="onCopyLink(entry)"/>
           <a :href="entry.filePath" target="_blank" @click.stop>
-            <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-external-link" v-show="!entry.rename"/>
+            <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-external-link" v-tooltip.top="'Open'" v-show="!entry.rename"/>
           </a>
-          <Button class="p-button-sm p-button-rounded p-button-danger p-button-text" icon="pi pi-trash" v-show="editable && !entry.rename" @click.stop="onDelete(entry)"/>
+          <Button class="p-button-sm p-button-rounded p-button-danger p-button-text" icon="pi pi-trash" v-tooltip.top="'Delete'" v-show="editable && !entry.rename" @click.stop="onDelete(entry)"/>
         </div>
       </div>
     </div>
