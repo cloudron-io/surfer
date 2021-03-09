@@ -1,0 +1,5 @@
+<ul>
+<% entries.forEach(function (entry) { -%>
+  <%- '<li><a href="' + entry.filePath + '">' + entry.fileName + '</a></li>' %>
+<% }); -%>
+</ul>

@@ -7,6 +7,7 @@ var express = require('express'),
     morgan = require('morgan'),
     path = require('path'),
     session = require('express-session'),
+    ejs = require('ejs'),
     fs = require('fs'),
     crypto = require('crypto'),
     cors = require('./src/cors.js'),
@@ -219,6 +220,9 @@ webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(ROOT_FOLDER), func
     if (!success) console.error('Failed to setup webdav server!');
 });
 
+const PUBLIC_HTML = fs.readFileSync(__dirname + '/dist/public.html', 'utf8');
+const PUBLIC_NOSCRIPT_EJS = fs.readFileSync(__dirname + '/frontend/public.noscript.ejs', 'utf8');
+
 var multipart = multipart({ maxFieldsSize: 2 * 1024, limit: '512mb', timeout: 3 * 60 * 1000 });
 
 router.post  ('/api/protectedLogin', protectedLogin);
@@ -254,11 +258,22 @@ app.use('/', function welcomePage(req, res, next) {
     if (config.folderListingEnabled || req.path !== '/') return next();
     res.status(200).sendFile(path.join(__dirname, '/dist/welcome.html'));
 });
-app.use('/', function (req, res) {
+app.use('/', function (req, res, next) {
     if (!config.folderListingEnabled) return send404(res);
     if (!fs.existsSync(path.join(ROOT_FOLDER, decodeURIComponent(req.path)))) return send404(res);
 
-    res.status(200).sendFile(__dirname + '/dist/public.html');
+    // we provision the public app with all the info so we can do static and dynamic rendering
+    files.getFolderListing(decodeURIComponent(req.path), function (error, result) {
+        if (error) return next(error);
+
+        var html = ejs.render(PUBLIC_NOSCRIPT_EJS, result, {});
+
+        var out = PUBLIC_HTML;
+        out = out.replace('<noscript></noscript>', `<noscript>${html}</noscript>`);
+        out = out.replace('<withscript></withscript>', `<script>window.surfer = { entries: ${JSON.stringify(result.entries)}, stat: ${JSON.stringify(result.stat)} };</script>`);
+
+        res.status(200).send(out);
+    });
 });
 app.use(lastMile());
 

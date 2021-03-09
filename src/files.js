@@ -15,6 +15,8 @@ exports = module.exports = function (basePath) {
     gBasePath = basePath;
 
     return {
+        getFolderListing: getFolderListing,
+
         get: get,
         put: put,
         post: post,
@@ -90,6 +92,38 @@ function collectFiles(folderPath, recursive, callback) {
                     if (!--pending) callback(null, results);
                 }
             });
+        });
+    });
+}
+
+// TODO maybe unify getFolderListing() and get()
+function getFolderListing(filePath, callback) {
+    var absoluteFilePath = getAbsolutePath(filePath);
+    if (!absoluteFilePath) return callback(new HttpError(403, 'Path not allowed'));
+
+    fs.stat(absoluteFilePath, function (error, stat) {
+        if (error) return callback(new HttpError(404, error));
+
+        debug('get', absoluteFilePath);
+
+        if (!stat.isDirectory()) return callback(new HttpError(500, 'unsupported type'));
+
+        collectFiles(absoluteFilePath, false /* recursive */, function (error, results) {
+            if (error) return callback(new HttpError(500, error));
+
+            var tmp = {
+                isDirectory: true,
+                isFile: false,
+                atime: stat.atime,
+                mtime: stat.mtime,
+                ctime: stat.ctime,
+                birthtime: stat.birthtime,
+                size: stat.size,
+                fileName: '',
+                filePath: removeBasePath(absoluteFilePath)
+            };
+
+            callback(null, { stat: tmp, entries: results });
         });
     });
 }

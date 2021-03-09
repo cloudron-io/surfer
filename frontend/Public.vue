@@ -37,7 +37,7 @@ export default {
     data() {
         return {
             ready: false,
-            busy: true,
+            busy: false,
             origin: ORIGIN,
             domain: window.location.host,
             path: '/',
@@ -59,32 +59,27 @@ export default {
         loadDirectory (folderPath) {
             var that = this;
 
-            that.busy = true;
             that.activeEntry = {};
 
             folderPath = folderPath ? sanitize(folderPath) : '/';
 
-            superagent.get(`${that.origin}/api/files/` + encode(folderPath)).query({ access_token: localStorage.accessToken }).end(function (error, result) {
-                that.busy = false;
+            // this is injected via ejs in server.js
+            var entries = window.surfer.entries;
 
-                if (result && result.statusCode === 401) return that.logout();
-                if (error) return console.error(error);
-
-                result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
-                that.entries = result.body.entries.map(function (entry) {
-                    entry.previewUrl = getPreviewUrl(entry, folderPath);
-                    entry.extension = getExtension(entry);
-                    entry.rename = false;
-                    entry.filePathNew = entry.fileName;
-                    return entry;
-                });
-                that.path = folderPath;
-                that.breadCrumbs.items = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
-                    return {
-                        label: e,
-                        url: sanitize('/' + a.slice(0, i).join('/') + '/' + e)
-                    };
-                });
+            entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
+            that.entries = entries.map(function (entry) {
+                entry.previewUrl = getPreviewUrl(entry, folderPath);
+                entry.extension = getExtension(entry);
+                entry.rename = false;
+                entry.filePathNew = entry.fileName;
+                return entry;
+            });
+            that.path = folderPath;
+            that.breadCrumbs.items = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
+                return {
+                    label: e,
+                    url: sanitize('/' + a.slice(0, i).join('/') + '/' + e)
+                };
             });
         },
         onDownload: function (entry) {
