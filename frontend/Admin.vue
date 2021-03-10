@@ -46,7 +46,7 @@
     </div>
     <div class="main-container-body">
       <div class="main-container-content">
-        <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @dropped="onDrop" @entry-activated="onEntryOpen" @entry-renamed="onRename" @entry-delete="onDelete" editable/>
+        <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @dropped="onDrop" @entry-activated="onEntryOpen" @entry-renamed="onRename" @entry-delete="onDelete" @selection-changed="onSelectionChanged" editable/>
       </div>
       <Preview :entry="activeEntry" @close="onPreviewClose"/>
     </div>
@@ -711,6 +711,9 @@ export default {
             }
 
             this.activeEntry = entry;
+        },
+        onSelectionChanged: function (selectedEntries) {
+            this.activeEntry = selectedEntries[0];
         },
         onPreviewClose: function () {
             this.activeEntry = {};

@@ -73,6 +73,7 @@ export default {
             if (e.target.contentWindow.document.body.firstChild) {
                 e.target.contentWindow.document.body.firstChild.style.maxWidth = '100%';
                 e.target.contentWindow.document.body.firstChild.style.maxHeight = '100%';
+                e.target.contentWindow.document.body.firstChild.style.margin = '0';
             }
         });
     }
