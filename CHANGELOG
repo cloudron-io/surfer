@@ -185,3 +185,8 @@
 * Fix back button
 * Update to base image v3
 
+[5.16.0]
+* Add basic support for noscript usage
+* Improve preview behavior
+* Be more conform with web usage and create proper web links and allow initial selection to prepare multiselect
+* Fix alphanumeric sorting
