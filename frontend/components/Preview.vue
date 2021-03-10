@@ -36,10 +36,11 @@ export default {
     },
     watch: {
         entry(newEntry) {
-            this.iFrameSource = 'about:blank';
+            this.iFrameSource = newEntry.previewUrl || 'about:blank';
+
+            if (newEntry.isDirectory) return;
 
             setTimeout(() => {
-                if (newEntry.isDirectory) this.iFrameSource = '/_admin/mime-types/directory.png';
                 this.iFrameSource = newEntry.filePath;
             }, 100);
         }

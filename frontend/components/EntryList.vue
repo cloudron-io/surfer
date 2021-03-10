@@ -259,7 +259,6 @@ export default {
 }
 
 .tr:hover .action-buttons {
-    /*display: inline-block;*/
     visibility: visible;
 }
 
