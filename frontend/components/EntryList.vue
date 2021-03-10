@@ -73,7 +73,11 @@ export default {
 
             function sorting(list) {
                 var tmp = list.sort(function (a, b) {
-                    return (a[that.sort.prop] < b[that.sort.prop]) ? -1 : 1;
+                    var av = a[that.sort.prop];
+                    var bv = b[that.sort.prop];
+
+                    if (typeof av === 'string') return (av.toUpperCase() < bv.toUpperCase()) ? -1 : 1;
+                    else return (av < bv) ? -1 : 1;
                 });
 
                 if (that.sort.desc) return tmp;
