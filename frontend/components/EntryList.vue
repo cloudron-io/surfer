@@ -255,11 +255,12 @@ export default {
 }
 
 .action-buttons {
-    display: none;
+    visibility: hidden;
 }
 
 .tr:hover .action-buttons {
-    display: inline-block;
+    /*display: inline-block;*/
+    visibility: visible;
 }
 
 .tr.active, .tr.selected {
@@ -282,7 +283,6 @@ export default {
     flex-grow: 1;
     flex-basis: 0;
     padding: 0.5em;
-    line-height: 2.4rem;
     min-width: 0px;
     margin: auto;
 }

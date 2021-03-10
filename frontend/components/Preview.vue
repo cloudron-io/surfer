@@ -26,15 +26,22 @@ import { download, encode, copyToClipboard } from '../utils.js';
 export default {
     name: 'Preview',
     emits: [ 'close' ],
-    data() {},
-    props: {
-        entry: Object
+    data() {
+        return {
+            iFrameSource: 'about:blank'
+        };
     },
-    computed: {
-        iFrameSource: function () {
-            if (this.entry.isDirectory) return '/_admin/mime-types/directory.png';
+    props: {
+        entry: Object,
+    },
+    watch: {
+        entry(newEntry) {
+            this.iFrameSource = 'about:blank';
 
-            return this.entry.filePath;
+            setTimeout(() => {
+                if (newEntry.isDirectory) this.iFrameSource = '/_admin/mime-types/directory.png';
+                this.iFrameSource = newEntry.filePath;
+            }, 100);
         }
     },
     methods: {
@@ -61,8 +68,11 @@ export default {
             e.target.contentWindow.document.body.style.alignItems = 'center';
             e.target.contentWindow.document.body.style.height = '100%';
 
-            e.target.contentWindow.document.body.firstChild.style.maxWidth = '100%';
-            e.target.contentWindow.document.body.firstChild.style.maxHeight = '100%';
+            // this will ensure the content for example img is scaled
+            if (e.target.contentWindow.document.body.firstChild) {
+                e.target.contentWindow.document.body.firstChild.style.maxWidth = '100%';
+                e.target.contentWindow.document.body.firstChild.style.maxHeight = '100%';
+            }
         });
     }
 };

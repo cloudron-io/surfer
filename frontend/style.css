@@ -91,3 +91,7 @@ a:hover {
 .p-menu.p-menu-overlay {
     margin-top: 5px;
 }
+
+.p-button.p-button-icon-only.p-button-rounded {
+    height: unset;
+}
