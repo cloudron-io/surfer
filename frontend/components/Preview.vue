@@ -8,9 +8,9 @@
             <Button class="p-button-sm p-button-rounded p-button-text" icon="pi pi-times" @click="onClose"/>
           </div>
         </div>
-        <iframe id="previewIframe" ref="iframe" :src="entry.filePath" style="width: 100%; height: 100%; border: none;"></iframe>
+        <iframe id="previewIframe" ref="iframe" :src="iFrameSource" style="width: 100%; height: 100%; border: none;"></iframe>
         <center>
-          <Button class="p-button-sm p-button-outlined" label="Download" icon="pi pi-download" style="margin: 10px;" @click="onDownload(entry)"/>
+          <Button class="p-button-sm p-button-outlined" v-show="entry.isFile" label="Download" icon="pi pi-download" style="margin: 10px;" @click="onDownload(entry)"/>
           <a :href="entry.filePath" target="_blank">
             <Button class="p-button-sm p-button-outlined" label="Open" icon="pi pi-external-link" style="margin: 10px;"/>
           </a>
@@ -29,6 +29,13 @@ export default {
     data() {},
     props: {
         entry: Object
+    },
+    computed: {
+        iFrameSource: function () {
+            if (this.entry.isDirectory) return '/_admin/mime-types/directory.png';
+
+            return this.entry.filePath;
+        }
     },
     methods: {
         onDownload: function (entry) {
@@ -53,6 +60,9 @@ export default {
             e.target.contentWindow.document.body.style.justifyContent = 'center';
             e.target.contentWindow.document.body.style.alignItems = 'center';
             e.target.contentWindow.document.body.style.height = '100%';
+
+            e.target.contentWindow.document.body.firstChild.style.maxWidth = '100%';
+            e.target.contentWindow.document.body.firstChild.style.maxHeight = '100%';
         });
     }
 };

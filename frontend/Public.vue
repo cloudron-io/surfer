@@ -94,10 +94,8 @@ export default {
             // ignore item open on row clicks if we are renaming this entry
             if (entry.rename) return;
 
-            var path = sanitize(this.path + '/' + entry.fileName);
-
             if (entry.isDirectory) {
-                window.location.pathname = path;
+                window.location.pathname = sanitize(this.path + '/' + entry.fileName);
                 return;
             }
 
