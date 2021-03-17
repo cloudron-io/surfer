@@ -193,4 +193,5 @@
 
 [5.16.1]
 * Use proper mime-type database for content-type delivery
+* Fix rename selection bug
 
