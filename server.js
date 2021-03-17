@@ -19,6 +19,7 @@ var express = require('express'),
     HttpSuccess = require('connect-lastmile').HttpSuccess,
     multipart = require('./src/multipart'),
     auth = require('./src/auth.js'),
+    mime = require('./src/mime.js'),
     webdav = require('webdav-server').v2,
     files = require('./src/files.js')(path.resolve(__dirname, process.argv[2] || 'files'));
 
@@ -206,6 +207,9 @@ if (typeof config.sortFoldersFirst !== 'boolean') config.sortFoldersFirst = true
 if (typeof config.title !== 'string') config.title = 'Surfer';
 if (typeof config.accessRestriction !== 'string') config.accessRestriction = '';
 if (typeof config.accessPassword !== 'string') config.accessPassword = '';
+
+// Setup mime-type handling
+mime(express);
 
 // Setup the express server and routes
 var app = express();
