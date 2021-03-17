@@ -16,7 +16,7 @@
       <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @dblclick="onEntryOpen(entry, false)" @click="onEntrySelect(entry)" @drop.stop.prevent="drop(entry)" @dragover.stop.prevent="dragOver(entry)" :class="{ 'selected': selected.includes(entry.filePath), 'active': entry === active,  'drag-active': entry === dragActive }">
         <div class="td" style="max-width: 50px;"><img :src="entry.previewUrl" style="width: 32px; height: 32px; vertical-align: middle;"/></div>
         <div class="td" style="flex-grow: 2;">
-          <InputText @keyup.enter="onRenameSubmit(entry)" @keyup.esc="onRenameEnd(entry)" @blur="onRenameEnd(entry)" v-model="entry.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="entry.rename" class="rename-input"/>
+          <InputText @click.stop @keyup.enter="onRenameSubmit(entry)" @keyup.esc="onRenameEnd(entry)" @blur="onRenameEnd(entry)" v-model="entry.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="entry.rename" class="rename-input"/>
           <a v-show="!entry.rename" :href="entry.filePath" @click.stop.prevent="onEntryOpen(entry, true)">{{ entry.fileName }}</a>
           <Button class="p-button-sm p-button-rounded p-button-text rename-action" icon="pi pi-pencil" v-show="editable && !entry.rename" @click.stop="onRename(entry)"/>
         </div>
@@ -103,9 +103,10 @@ export default {
             var that = this;
             // TODO handle multiselect here
 
-            this.selected = [];
+            // this.selected = [];
+            // if (!this.selected.includes(entry.filePath)) this.selected.push(entry.filePath);
 
-            if (!this.selected.includes(entry.filePath)) this.selected.push(entry.filePath);
+            this.selected = [ entry.filePath ];
 
             var selectedEntries = this.entries.filter(function (e) { return that.selected.includes(e.filePath); });
             this.$emit('selection-changed', selectedEntries);
