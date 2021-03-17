@@ -190,3 +190,7 @@
 * Improve preview behavior
 * Be more conform with web usage and create proper web links and allow initial selection to prepare multiselect
 * Fix alphanumeric sorting
+
+[5.16.1]
+* Use proper mime-type database for content-type delivery
+
