@@ -187,6 +187,30 @@ export default {
             if (entry && entry.isDirectory) this.$emit('dropped', event, entry);
             else this.$emit('dropped', event, null);
         }
+    },
+    mounted() {
+        var that = this;
+
+        // global key handler for up/down selection
+        window.addEventListener('keydown', function () {
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                if (that.selected.length === 0) return;
+
+                var index = that.filteredAndSortedEntries.findIndex(function (entry) { return entry.filePath === that.selected[0]; });
+                if (index === -1) return;
+
+                if (event.key === 'ArrowUp') {
+                    if (index === 0) return;
+                    that.onEntrySelect(that.filteredAndSortedEntries[index-1]);
+                } else {
+                    if (index === that.filteredAndSortedEntries.length-1) return;
+                    that.onEntrySelect(that.filteredAndSortedEntries[index+1]);
+                }
+
+                // prevents scrolling the viewport
+                event.preventDefault();
+            }
+        });
     }
 };
 

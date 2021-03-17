@@ -56,7 +56,7 @@ export default {
         };
     },
     methods: {
-        loadDirectory (folderPath) {
+        loadDirectory: function (folderPath) {
             var that = this;
 
             that.activeEntry = {};
