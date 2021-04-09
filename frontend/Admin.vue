@@ -302,6 +302,10 @@ export default {
         };
     },
     methods: {
+        error: function (header, message) {
+            this.$toast.add({ severity: 'error', summary: header, detail: message, life: 4000 });
+            console.error(header, message);
+        },
         initWithToken: function (accessToken) {
             var that = this;
 
@@ -624,8 +628,8 @@ export default {
 
               superagent.del(`/api/files${path}`).query({ access_token: localStorage.accessToken, recursive: true }).end(function (error, result) {
                   if (result && result.statusCode === 401) return that.logout();
-                  if (result && result.statusCode !== 200) return that.$message.error('Error deleting file: ' + result.statusCode);
-                  if (error) return that.$message.error(error.message);
+                  if (result && result.statusCode !== 200) return that.error('Error deleting file');
+                  if (error) return that.error(error.message);
 
                   that.refresh();
               });
@@ -638,8 +642,8 @@ export default {
 
             superagent.put(`/api/files${path}`).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end(function (error, result) {
                 if (result && result.statusCode === 401) return that.logout();
-                if (result && result.statusCode !== 200) return that.$message.error('Error renaming file: ' + result.statusCode);
-                if (error) return that.$message.error(error.message);
+                if (result && result.statusCode !== 200) return that.error('Error renaming file');
+                if (error) return that.error(error.message);
 
                 // update in-place to avoid reload
                 entry.fileName = newFileName;
@@ -651,7 +655,7 @@ export default {
             var that = this;
 
             superagent.get('/api/tokens').query({ access_token: localStorage.accessToken }).end(function (error, result) {
-                if (error && !result) return that.$message.error(error.message);
+                if (error && !result) return that.error(error.message);
 
                 // have to create an array of objects for referencing in v-for -> input
                 that.accessTokens = result.body.accessTokens.map(function (t) { return { value: t }; });
@@ -672,7 +676,7 @@ export default {
             var that = this;
 
             superagent.post('/api/tokens').query({ access_token: localStorage.accessToken }).end(function (error, result) {
-                if (error && !result) return that.$message.error(error.message);
+                if (error && !result) return that.error(error.message);
 
                 that.refreshAccessTokens();
             });
@@ -688,7 +692,7 @@ export default {
                 acceptClass: 'p-button-danger',
                 accept: () => {
                     superagent.delete(`/api/tokens/${token}`).query({ access_token: localStorage.accessToken }).end(function (error, result) {
-                        if (error && !result) return that.$message.error(error.message);
+                        if (error && !result) return that.error(error.message);
 
                         that.refreshAccessTokens();
                     });
