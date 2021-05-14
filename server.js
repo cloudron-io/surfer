@@ -48,11 +48,15 @@ var config = {
     accessPassword: ''
 };
 
+// we will regenerate this if settings change
+var staticServMiddleware = express.static(ROOT_FOLDER, { index: 'index.html' });
+
 function getSettings(req, res) {
     res.send({
         folderListingEnabled: !!config.folderListingEnabled,
         sortFoldersFirst: !!config.sortFoldersFirst,
         title: config.title || 'Surfer',
+        index: config.index || '',
         accessRestriction: config.accessRestriction || '',
         accessPassword: config.accessPassword ? PASSWORD_PLACEHOLDER : '' // don't send the password, helps the UI to figure if a password was set at all
     });
@@ -62,6 +66,7 @@ function setSettings(req, res, next) {
     if (typeof req.body.folderListingEnabled !== 'boolean') return next(new HttpError(400, 'missing folderListingEnabled boolean'));
     if (typeof req.body.sortFoldersFirst !== 'boolean') return next(new HttpError(400, 'missing sortFoldersFirst boolean'));
     if (typeof req.body.title !== 'string') return next(new HttpError(400, 'missing title string'));
+    if (req.body.index && typeof req.body.index !== 'string') return next(new HttpError(400, 'index must be falsy or a string'));
     if (typeof req.body.accessRestriction !== 'string') return next(new HttpError(400, 'missing accessRestriction string'));
     if ('accessPassword' in req.body && typeof req.body.accessPassword !== 'string') return next(new HttpError(400, 'accessPassword must be a string'));
 
@@ -102,6 +107,9 @@ function setSettings(req, res, next) {
     config.folderListingEnabled = !!req.body.folderListingEnabled;
     config.sortFoldersFirst = !!req.body.sortFoldersFirst;
     config.title = req.body.title;
+    config.index = req.body.index;
+
+    staticServMiddleware = express.static(ROOT_FOLDER, { index: config.index || 'index.html' });
 
     // if changed invalidate sessions
     if (config.accessRestriction !== req.body.accessRestriction) clearNonAdminSessions();
@@ -257,7 +265,7 @@ app.use(router);
 app.use(webdav.extensions.express('/_webdav', webdavServer));
 app.use('/_admin', express.static(__dirname + '/dist'));
 app.use('/', handleProtection);
-app.use('/', express.static(ROOT_FOLDER));
+app.use('/', function (req, res, next) { staticServMiddleware(req, res, next); });
 app.use('/', function welcomePage(req, res, next) {
     if (config.folderListingEnabled || req.path !== '/') return next();
     res.status(200).sendFile(path.join(__dirname, '/dist/welcome.html'));

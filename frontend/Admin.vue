@@ -62,11 +62,17 @@
   <!-- Settings Dialog -->
   <Dialog v-model:visible="settingsDialog.visible" header="Settings" :dismissableMask="true" :modal="true" :closable="true" :style="{width: '50vw'}">
     <div>
-      <div class="p-field-checkbox">
-        <Checkbox id="publicFolderListing" v-model="settingsDialog.folderListingEnabled" :binary="true"/>
-        <label for="publicFolderListing" style="font-weight: bold; font-size: 16.38px;">Public Folder Listing</label>
+      <div class="p-fluid p-formgrid p-grid">
+        <div class="p-field-checkbox">
+          <Checkbox id="publicFolderListing" v-model="settingsDialog.folderListingEnabled" :binary="true"/>
+          <label for="publicFolderListing" style="font-weight: bold; font-size: 16.38px;">Public Folder Listing</label>
+        </div>
+        <p>If this is enabled, all folders and files will be publicly listed. If a folder contains a file with the below set index name, this will be displayed instead.</p>
+        <div class="p-field p-col-12">
+          <label for="indexInput">Index Filename</label>
+          <InputText id="indexInput" type="text" placeholder="index.html" v-model="settingsDialog.index"/>
+        </div>
       </div>
-      <p>If this is enabled, all folders and files will be publicly listed. If a folder contains an index.html or index.htm file, this will be displayed instead.</p>
     </div>
 
     <hr/>
@@ -252,7 +258,8 @@ export default {
                 title: '',
                 faviconFile: null,
                 accessRestriction: '',
-                accessPassword: ''
+                accessPassword: '',
+                index: ''
             },
             accessTokenDialog: {
                 visible: false,
@@ -530,6 +537,7 @@ export default {
             this.settingsDialog.visible = true;
             this.settingsDialog.title = this.settings.title;
             this.settingsDialog.faviconFile = null;
+            this.settingsDialog.index = this.settings.index;
             this.settingsDialog.accessRestriction = this.settings.accessRestriction;
             this.settingsDialog.accessPassword = this.settings.accessPassword;
         },
@@ -542,6 +550,7 @@ export default {
                 folderListingEnabled: this.settingsDialog.folderListingEnabled,
                 sortFoldersFirst: this.settingsDialog.sortFoldersFirst,
                 title: this.settingsDialog.title,
+                index: this.settingsDialog.index,
                 accessRestriction: this.settingsDialog.accessRestriction
             };
 
@@ -557,6 +566,7 @@ export default {
                 that.settings.folderListingEnabled = data.folderListingEnabled;
                 that.settings.sortFoldersFirst = data.sortFoldersFirst;
                 that.settings.title = data.title;
+                that.settings.index = data.index;
                 that.settings.accessRestriction = data.accessRestriction;
 
                 // refresh immedately
@@ -732,6 +742,7 @@ export default {
             that.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
             that.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
             that.settings.title = result.body.title || 'Surfer';
+            that.settings.index = result.body.index || '';
             that.settings.accessRestriction = result.body.accessRestriction || '';
             that.settings.accessPassword = result.body.accessPassword || '';
 
