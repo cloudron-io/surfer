@@ -62,20 +62,25 @@
   <!-- Settings Dialog -->
   <Dialog v-model:visible="settingsDialog.visible" header="Settings" :dismissableMask="true" :modal="true" :closable="true" :style="{width: '50vw'}">
     <div>
+      <div class="p-field-checkbox">
+        <Checkbox id="publicFolderListing" v-model="settingsDialog.folderListingEnabled" :binary="true"/>
+        <label for="publicFolderListing" style="font-weight: bold; font-size: 16.38px;">Public Folder Listing</label>
+      </div>
+      <p>If this is enabled, all folders and files will be publicly listed. If a folder contains a file with the below set index name, this will be displayed instead.</p>
+    </div>
+
+    <hr/>
+
+    <div>
+      <h3>Index Document</h3>
+      <p>By default files names index.html will be served up automatically in each folder. This settings allows to specify any filename as index document.</p>
       <div class="p-fluid p-formgrid p-grid">
-        <div class="p-field-checkbox">
-          <Checkbox id="publicFolderListing" v-model="settingsDialog.folderListingEnabled" :binary="true"/>
-          <label for="publicFolderListing" style="font-weight: bold; font-size: 16.38px;">Public Folder Listing</label>
-        </div>
-        <p>If this is enabled, all folders and files will be publicly listed. If a folder contains a file with the below set index name, this will be displayed instead.</p>
         <div class="p-field p-col-12">
-          <label for="indexInput">Index Filename</label>
+          <label for="indexInput">Filename</label>
           <InputText id="indexInput" type="text" placeholder="index.html" v-model="settingsDialog.index"/>
         </div>
       </div>
     </div>
-
-    <hr/>
 
     <div>
       <h3>Display</h3>

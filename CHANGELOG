@@ -196,3 +196,6 @@
 * Fix rename selection bug
 * Allow keyboard up/down navigation
 
+[5.16.2]
+* Allow to set index filename
+
