@@ -129,15 +129,16 @@ function getFolderListing(filePath, callback) {
 }
 
 function get(req, res, next) {
-    var recursive = boolLike(req.query.recursive);
-    var filePath = decodeURIComponent(req.params[0]);
-    var absoluteFilePath = getAbsolutePath(filePath);
+    const recursive = boolLike(req.query.recursive);
+    const filePath = req.params[0];
+
+    const absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath) return next(new HttpError(403, 'Path not allowed'));
 
     fs.stat(absoluteFilePath, function (error, stat) {
         if (error) return next(new HttpError(404, error));
 
-        debug('get', absoluteFilePath);
+        debug('get:', absoluteFilePath);
 
         if (!stat.isDirectory() && !stat.isFile()) return next(new HttpError(500, 'unsupported type'));
         if (stat.isFile()) return res.download(absoluteFilePath);
@@ -163,17 +164,17 @@ function get(req, res, next) {
 }
 
 function post(req, res, next) {
-    var filePath = decodeURIComponent(req.params[0]);
-    var isDirectory = boolLike(req.query.directory);
+    const filePath = req.params[0];
+    const isDirectory = boolLike(req.query.directory);
 
     if (!(req.files && req.files.file) && !isDirectory) return next(new HttpError(400, 'missing file or directory'));
     if ((req.files && req.files.file) && isDirectory) return next(new HttpError(400, 'either file or directory'));
 
-    var mtime = req.fields && req.fields.mtime ? new Date(req.fields.mtime) : null;
+    const mtime = req.fields && req.fields.mtime ? new Date(req.fields.mtime) : null;
 
     debug('post:', filePath, mtime);
 
-    var absoluteFilePath = getAbsolutePath(filePath);
+    const absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath || isProtected(absoluteFilePath)) return next(new HttpError(403, 'Path not allowed'));
 
     fs.stat(absoluteFilePath, function (error, result) {
@@ -210,18 +211,18 @@ function post(req, res, next) {
 }
 
 function put(req, res, next) {
-    var oldFilePath = decodeURIComponent(req.params[0]);
+    const oldFilePath = req.params[0];
 
     if (!req.body || !req.body.newFilePath) return next(new HttpError(400, 'missing newFilePath'));
 
-    var newFilePath = decodeURIComponent(req.body.newFilePath);
+    const newFilePath = decodeURIComponent(req.body.newFilePath);
 
     debug('put: %s -> %s', oldFilePath, newFilePath);
 
-    var absoluteOldFilePath = getAbsolutePath(oldFilePath);
+    const absoluteOldFilePath = getAbsolutePath(oldFilePath);
     if (!absoluteOldFilePath || isProtected(absoluteOldFilePath)) return next(new HttpError(403, 'Path not allowed'));
 
-    var absoluteNewFilePath = getAbsolutePath(newFilePath);
+    const absoluteNewFilePath = getAbsolutePath(newFilePath);
     if (!absoluteNewFilePath || isProtected(absoluteNewFilePath)) return next(new HttpError(403, 'Path not allowed'));
 
     fs.rename(absoluteOldFilePath, absoluteNewFilePath, function (error) {
@@ -234,11 +235,11 @@ function put(req, res, next) {
 }
 
 function del(req, res, next) {
-    var filePath = decodeURIComponent(req.params[0]);
-    var recursive = boolLike(req.query.recursive);
-    var dryRun = boolLike(req.query.dryRun);
+    const filePath = req.params[0];
+    const recursive = boolLike(req.query.recursive);
+    const dryRun = boolLike(req.query.dryRun);
 
-    var absoluteFilePath = getAbsolutePath(filePath);
+    const absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath) return next(new HttpError(404, 'Not found'));
 
     if (isProtected(absoluteFilePath)) return next(new HttpError(403, 'Path not allowed'));

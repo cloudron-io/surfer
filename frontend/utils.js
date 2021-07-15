@@ -46,7 +46,7 @@ function decode(path) {
 
 function download(entry) {
     if (entry.isDirectory) return;
-    window.location.href = encode('/api/files/' + entry.filePath);
+    window.location.href = '/api/files/' + encode(entry.filePath);
 }
 
 const mimeTypes = {
@@ -62,7 +62,7 @@ function getPreviewUrl(entry, basePath) {
     var path = '/_admin/mime-types/';
 
     if (entry.isDirectory) return path + 'directory.png';
-    if (mimeTypes.images.some(function (e) { return entry.fileName.endsWith(e); })) return sanitize(basePath + '/' + entry.fileName);
+    if (mimeTypes.images.some(function (e) { return entry.fileName.endsWith(e); })) return encode(sanitize(basePath + '/' + entry.fileName));
     if (mimeTypes.text.some(function (e) { return entry.fileName.endsWith(e); })) return path +'text.png';
     if (mimeTypes.pdf.some(function (e) { return entry.fileName.endsWith(e); })) return path + 'pdf.png';
     if (mimeTypes.html.some(function (e) { return entry.fileName.endsWith(e); })) return path + 'html.png';

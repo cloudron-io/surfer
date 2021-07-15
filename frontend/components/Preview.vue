@@ -41,7 +41,7 @@ export default {
             if (newEntry.isDirectory) return;
 
             setTimeout(() => {
-                this.iFrameSource = newEntry.filePath;
+                this.iFrameSource = encode(newEntry.filePath);
             }, 100);
         }
     },
