@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 
-'use strict';
-
+/* jshint esversion: 8 */
 /* global describe */
 /* global before */
 /* global after */
 /* global it */
+
+'use strict';
 
 require('chromedriver');
 
@@ -123,6 +124,12 @@ describe('Application life cycle test', function () {
         });
     }
 
+    async function checkFileInFolder() {
+        const encodedSpecialFilepath = `/testfiles/%3F%20!%20%2B%20%23folder/Fancy%20-%20%2B!%22%23%24%26'()*%2B%2C%3A%3B%3D%3F%40%20-%20Filename`;
+        const result = await superagent.get('https://' + app.fqdn + encodedSpecialFilepath);
+        expect(result.statusCode).to.equal(200);
+    }
+
     function cliLogin() {
         execSync(`${CLI} login ${app.fqdn} --username ${process.env.USERNAME} --password ${process.env.PASSWORD}`, { stdio: 'inherit' });
     }
@@ -157,6 +164,10 @@ describe('Application life cycle test', function () {
         execSync(`${CLI} --token ${gApiToken} put ${path.join(__dirname, name)} /`,  { stdio: 'inherit' } );
     }
 
+    function uploadFolder() {
+        execSync(`${CLI} put ${path.join(__dirname, 'testfiles')} /`,  { stdio: 'inherit' } );
+    }
+
     function checkFolderExists() {
         var result;
         result = execSync(`${CLI} get`).toString();
@@ -182,6 +193,8 @@ describe('Application life cycle test', function () {
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
     it('file is served up', checkFileIsPresent);
     it('file is served up', checkIndexFileIsServedUp);
+    it('can upload folder', uploadFolder);
+    it('special file in folder exists', checkFileInFolder);
     it('can create api token', createApiToken);
     it('can upload second file with token', uploadFileWithToken.bind(null, TEST_FILE_NAME_1));
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_1));
@@ -207,17 +220,17 @@ describe('Application life cycle test', function () {
     it('file is served up', checkFileIsPresent);
     it('file is served up', checkIndexFileIsServedUp);
     it('second file is still gone', checkFileIsGone.bind(null, TEST_FILE_NAME_1));
+    it('special file in folder exists', checkFileInFolder);
     it('folder exists', checkFolderExists);
     it('can logout', logout);
 
-    it('move to different location', function (done) {
+    it('move to different location', async function () {
         browser.manage().deleteAllCookies();
 
         // ensure we don't hit NXDOMAIN in the mean time
-        browser.get('about:blank').then(function () {
-            execSync(`cloudron configure --location ${LOCATION}2 --app ${app.id}`, EXEC_ARGS);
-            done();
-        });
+        await browser.get('about:blank');
+
+        execSync(`cloudron configure --location ${LOCATION}2 --app ${app.id}`, EXEC_ARGS);
     });
     it('can get app information', getAppInfo);
 
@@ -227,22 +240,20 @@ describe('Application life cycle test', function () {
     it('file is served up', checkFileIsPresent);
     it('file is served up', checkIndexFileIsServedUp);
     it('folder exists', checkFolderExists);
+    it('special file in folder exists', checkFileInFolder);
     it('can delete folder', function () { execSync(`${CLI}  del --recursive test`,  { stdio: 'inherit' }); });
     it('folder is gone', checkFolderIsGone);
     it('can logout', logout);
 
-    it('uninstall app', function (done) {
+    it('uninstall app', async function () {
         // ensure we don't hit NXDOMAIN in the mean time
-        browser.get('about:blank').then(function () {
-            execSync(`cloudron uninstall --app ${app.id}`, EXEC_ARGS);
-            done();
-        });
+        await browser.get('about:blank');
+
+        execSync(`cloudron uninstall --app ${app.id}`, EXEC_ARGS);
     });
 
     // test update
-    it('can install app', function () {
-        execSync(`cloudron install --appstore-id io.cloudron.surfer --location ${LOCATION}`, EXEC_ARGS);
-    });
+    it('can install app', function () { execSync(`cloudron install --appstore-id io.cloudron.surfer --location ${LOCATION}`, EXEC_ARGS); });
 
     it('can get app information', getAppInfo);
     it('can login', login);
@@ -251,23 +262,22 @@ describe('Application life cycle test', function () {
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
     it('file is served up', checkFileIsPresent);
     it('file is served up', checkIndexFileIsServedUp);
+    it('can upload folder', uploadFolder);
     it('can logout', logout);
 
-    it('can update', function () {
-        execSync(`cloudron update --app ${LOCATION}`, EXEC_ARGS);
-    });
+    it('can update', function () { execSync(`cloudron update --app ${LOCATION}`, EXEC_ARGS); });
 
     it('can login', login);
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
     it('file is served up', checkFileIsPresent);
     it('file is served up', checkIndexFileIsServedUp);
+    it('special file in folder exists', checkFileInFolder);
     it('can logout', logout);
 
-    it('uninstall app', function (done) {
+    it('uninstall app', async function () {
         // ensure we don't hit NXDOMAIN in the mean time
-        browser.get('about:blank').then(function () {
-            execSync(`cloudron uninstall --app ${app.id}`, EXEC_ARGS);
-            done();
-        });
+        await browser.get('about:blank');
+
+        execSync(`cloudron uninstall --app ${app.id}`, EXEC_ARGS);
     });
 });
