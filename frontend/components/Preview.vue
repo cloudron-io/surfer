@@ -11,7 +11,7 @@
         <iframe id="previewIframe" ref="iframe" :src="iFrameSource" style="width: 100%; height: 100%; border: none;"></iframe>
         <center>
           <Button class="p-button-sm p-button-outlined" v-show="entry.isFile" label="Download" icon="pi pi-download" style="margin: 10px;" @click="onDownload(entry)"/>
-          <a :href="entry.filePath" target="_blank">
+          <a :href="encode(entry.filePath)" target="_blank">
             <Button class="p-button-sm p-button-outlined" label="Open" icon="pi pi-external-link" style="margin: 10px;"/>
           </a>
           <Button class="p-button-sm p-button-outlined" label="Copy Link" icon="pi pi-copy" style="margin: 10px;" @click="onCopyLink(entry)"/>
@@ -46,6 +46,7 @@ export default {
         }
     },
     methods: {
+        encode,
         onDownload: function (entry) {
             download(entry);
         },

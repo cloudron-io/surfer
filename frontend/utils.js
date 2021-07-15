@@ -37,10 +37,14 @@ function sanitize(path) {
 }
 
 function encode(path) {
+    if (!path) return '';
+
     return path.split('/').map(encodeURIComponent).join('/');
 }
 
 function decode(path) {
+    if (!path) return '';
+
     return path.split('/').map(decodeURIComponent).join('/');
 }
 
