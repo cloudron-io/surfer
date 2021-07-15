@@ -199,3 +199,6 @@
 [5.16.2]
 * Allow to set index filename
 
+[5.16.3]
+* Fixup various path encoding issues
+
