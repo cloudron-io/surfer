@@ -30,10 +30,13 @@ describe('Application life cycle test', function () {
     const TEST_TIMEOUT = 10000;
     const TEST_FILE_NAME_0 = 'index.html';
     const TEST_FILE_NAME_1 = 'test.txt';
+    const SPECIAL_FOLDER_NAME_0 = 'Tâm Tình Với Bạn';
+    const SPECIAL_FOLDER_NAME_1 = '? ! + #';
     const CLI = path.join(__dirname, '/../cli/surfer.js');
 
     var browser;
     var app;
+    var proto = 'https://'; // helps with local testing
     var gApiToken;
 
     before(function () {
@@ -48,6 +51,10 @@ describe('Application life cycle test', function () {
         var inspect = JSON.parse(execSync('cloudron inspect'));
         app = inspect.apps.filter(function (a) { return a.location.indexOf(LOCATION) === 0; })[0];
         expect(app).to.be.an('object');
+
+        // just for local testing
+        // proto = 'http://';
+        // app.fqdn = 'localhost:3000';
     }
 
     function waitForElement(elem) {
@@ -56,10 +63,15 @@ describe('Application life cycle test', function () {
         });
     }
 
+    async function waitForElementAsync(elem) {
+        await browser.wait(until.elementLocated(elem), TEST_TIMEOUT);
+        await browser.wait(until.elementIsVisible(browser.findElement(elem)), TEST_TIMEOUT);
+    }
+
     // tests which are used more than once
     function login(done) {
         browser.manage().deleteAllCookies();
-        browser.get('https://' + app.fqdn + '/_admin');
+        browser.get(proto + app.fqdn + '/_admin');
 
         waitForElement(By.id('usernameInput')).then(function () {
             browser.findElement(By.id('usernameInput')).sendKeys(process.env.USERNAME);
@@ -73,7 +85,7 @@ describe('Application life cycle test', function () {
     }
 
     function logout(done) {
-        browser.get('https://' + app.fqdn + '/_admin');
+        browser.get(proto + app.fqdn + '/_admin');
 
         waitForElement(By.id('burgerMenuButton')).then(function () {
             browser.findElement(By.id('burgerMenuButton')).click();
@@ -92,7 +104,7 @@ describe('Application life cycle test', function () {
     }
 
     function checkFileIsListed(name, done) {
-        browser.get('https://' + app.fqdn + '/_admin');
+        browser.get(proto + app.fqdn + '/_admin');
 
         waitForElement(By.xpath('//*[text()="' + name + '"]')).then(function () {
             done();
@@ -100,7 +112,7 @@ describe('Application life cycle test', function () {
     }
 
     function checkFileIsPresent(done) {
-        browser.get('https://' + app.fqdn + '/' + TEST_FILE_NAME_0);
+        browser.get(proto + app.fqdn + '/' + TEST_FILE_NAME_0);
 
         waitForElement(By.xpath('//*[text()="test"]')).then(function () {
             done();
@@ -108,7 +120,7 @@ describe('Application life cycle test', function () {
     }
 
     function checkIndexFileIsServedUp(done) {
-        browser.get('https://' + app.fqdn);
+        browser.get(proto + app.fqdn);
 
         waitForElement(By.xpath('//*[text()="test"]')).then(function () {
             done();
@@ -116,7 +128,7 @@ describe('Application life cycle test', function () {
     }
 
     function checkFileIsGone(name, done) {
-        superagent.get('https://' + app.fqdn + '/' + name).end(function (error, result) {
+        superagent.get(proto + app.fqdn + '/' + name).end(function (error, result) {
             expect(error).to.be.an('object');
             expect(error.response.status).to.equal(404);
             expect(result).to.be.an('object');
@@ -126,22 +138,45 @@ describe('Application life cycle test', function () {
 
     async function checkFileInFolder() {
         const encodedSpecialFilepath = `/testfiles/%3F%20!%20%2B%20%23folder/Fancy%20-%20%2B!%22%23%24%26'()*%2B%2C%3A%3B%3D%3F%40%20-%20Filename`;
-        const result = await superagent.get('https://' + app.fqdn + encodedSpecialFilepath);
+        const result = await superagent.get(proto + app.fqdn + encodedSpecialFilepath);
         expect(result.statusCode).to.equal(200);
     }
 
+    async function createSpecialFolders() {
+        const res0 = await superagent.post(`${proto}${app.fqdn}/api/files/${encodeURIComponent(SPECIAL_FOLDER_NAME_0)}`)
+            .query({ access_token: gApiToken, directory: true }).send({});
+        expect(res0.statusCode).to.equal(201);
+
+        const res1 = await superagent.post(`${proto}${app.fqdn}/api/files/${encodeURIComponent(SPECIAL_FOLDER_NAME_0)}/${encodeURIComponent(SPECIAL_FOLDER_NAME_1)}`)
+            .query({ access_token: gApiToken, directory: true });
+        expect(res1.statusCode).to.equal(201);
+    }
+
+    async function checkFilesInSpecialFolder() {
+        await browser.get(`${proto}${app.fqdn}/${SPECIAL_FOLDER_NAME_0}`);
+
+        await waitForElementAsync(By.xpath(`//a[text()="${SPECIAL_FOLDER_NAME_1}"]`));
+    }
+
+    async function enablePublicFolderListing() {
+        const res0 = await superagent.put(`${proto}${app.fqdn}/api/settings`)
+            .query({ access_token: gApiToken })
+            .send({"folderListingEnabled":true,"sortFoldersFirst":true,"title":"Surfer","index":"","accessRestriction":""});
+        expect(res0.statusCode).to.equal(201);
+    }
+
     function cliLogin() {
-        execSync(`${CLI} login ${app.fqdn} --username ${process.env.USERNAME} --password ${process.env.PASSWORD}`, { stdio: 'inherit' });
+        execSync(`${CLI} login ${proto}${app.fqdn} --username ${process.env.USERNAME} --password ${process.env.PASSWORD}`, { stdio: 'inherit' });
     }
 
     function createApiToken(done) {
-        superagent.post('https://' + app.fqdn + '/api/login').send({ username: process.env.USERNAME, password: process.env.PASSWORD }).end(function (error, result) {
+        superagent.post(proto + app.fqdn + '/api/login').send({ username: process.env.USERNAME, password: process.env.PASSWORD }).end(function (error, result) {
             expect(error).to.not.be.ok();
             expect(result.status).to.equal(201);
             expect(result.body).to.be.an('object');
             expect(result.body.accessToken).to.be.a('string');
 
-            superagent.post('https://' + app.fqdn + '/api/tokens').send({ accessToken: result.body.accessToken }).end(function (error, result) {
+            superagent.post(proto + app.fqdn + '/api/tokens').send({ accessToken: result.body.accessToken }).end(function (error, result) {
                 expect(error).to.not.be.ok();
                 expect(result.status).to.equal(201);
                 expect(result.body).to.be.an('object');
@@ -189,13 +224,16 @@ describe('Application life cycle test', function () {
 
     it('can login', login);
     it('can cli login', cliLogin);
+    it('can create api token', createApiToken);
     it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
     it('file is served up', checkFileIsPresent);
     it('file is served up', checkIndexFileIsServedUp);
     it('can upload folder', uploadFolder);
     it('special file in folder exists', checkFileInFolder);
-    it('can create api token', createApiToken);
+    it('can create special folder names', createSpecialFolders);
+    it('can enable public folder listing', enablePublicFolderListing);
+    it('special folder names allow public listings', checkFilesInSpecialFolder);
     it('can upload second file with token', uploadFileWithToken.bind(null, TEST_FILE_NAME_1));
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_1));
     it('can delete second file with cli', function () {
@@ -221,6 +259,7 @@ describe('Application life cycle test', function () {
     it('file is served up', checkIndexFileIsServedUp);
     it('second file is still gone', checkFileIsGone.bind(null, TEST_FILE_NAME_1));
     it('special file in folder exists', checkFileInFolder);
+    it('special folder names allow public listings', checkFilesInSpecialFolder);
     it('folder exists', checkFolderExists);
     it('can logout', logout);
 
@@ -241,6 +280,7 @@ describe('Application life cycle test', function () {
     it('file is served up', checkIndexFileIsServedUp);
     it('folder exists', checkFolderExists);
     it('special file in folder exists', checkFileInFolder);
+    it('special folder names allow public listings', checkFilesInSpecialFolder);
     it('can delete folder', function () { execSync(`${CLI}  del --recursive test`,  { stdio: 'inherit' }); });
     it('folder is gone', checkFolderIsGone);
     it('can logout', logout);
@@ -258,10 +298,14 @@ describe('Application life cycle test', function () {
     it('can get app information', getAppInfo);
     it('can login', login);
     it('can cli login', cliLogin);
+    it('can create api token', createApiToken);
     it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
     it('file is served up', checkFileIsPresent);
     it('file is served up', checkIndexFileIsServedUp);
+    it('can create special folder names', createSpecialFolders);
+    it('can enable public folder listing', enablePublicFolderListing);
+    it('special folder names allow public listings', checkFilesInSpecialFolder);
     it('can upload folder', uploadFolder);
     it('can logout', logout);
 
@@ -272,6 +316,7 @@ describe('Application life cycle test', function () {
     it('file is served up', checkFileIsPresent);
     it('file is served up', checkIndexFileIsServedUp);
     it('special file in folder exists', checkFileInFolder);
+    it('special folder names allow public listings', checkFilesInSpecialFolder);
     it('can logout', logout);
 
     it('uninstall app', async function () {
