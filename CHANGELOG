@@ -202,3 +202,6 @@
 [5.16.3]
 * Fixup various path encoding issues
 
+[5.16.4]
+* Fix public listing regression for folders with special characters
+
