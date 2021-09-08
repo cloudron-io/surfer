@@ -52,11 +52,11 @@
     "@vue/cli-service": "~4.5.13",
     "@vue/compiler-sfc": "^3.0.11",
     "babel-eslint": "^10.1.0",
-    "chromedriver": "^90.0.0",
+    "chromedriver": "^93.0.1",
     "eslint": "^7.26.0",
     "eslint-plugin-vue": "^7.9.0",
     "expect.js": "^0.3.1",
-    "mocha": "^8.4.0",
+    "mocha": "^9.1.1",
     "selenium-webdriver": "^3.6.0"
   },
   "eslintConfig": {
