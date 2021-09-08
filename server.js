@@ -223,6 +223,9 @@ mime(express);
 var app = express();
 var router = new express.Router();
 
+// needed for secure cookies
+app.enable('trust proxy');
+
 var webdavServer = new webdav.WebDAVServer({
     requireAuthentification: true,
     httpAuthentication: new webdav.HTTPBasicAuthentication(new auth.WebdavUserManager(), 'Cloudron Surfer')
@@ -260,7 +263,7 @@ app.use(compression());
 app.use(cors({ origins: [ '*' ], allowCredentials: false }));
 app.use('/api', bodyParser.json());
 app.use('/api', bodyParser.urlencoded({ extended: false, limit: '100mb' }));
-app.use(session({ store: sessionStore, secret: 'surfin surfin', resave: false, saveUninitialized: true, cookie: {} }));
+app.use(session({ store: sessionStore, secret: 'surfin surfin', resave: false, saveUninitialized: true, cookie: { secure: true, sameSite: 'strict' } }));
 app.use(router);
 app.use(webdav.extensions.express('/_webdav', webdavServer));
 app.use('/_admin', express.static(__dirname + '/dist'));
