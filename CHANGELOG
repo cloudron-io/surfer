@@ -205,3 +205,6 @@
 [5.16.4]
 * Fix public listing regression for folders with special characters
 
+[5.16.5]
+* Use secure cookies
+
