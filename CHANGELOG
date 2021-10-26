@@ -208,3 +208,6 @@
 [5.16.5]
 * Use secure cookies
 
+[5.16.6]
+* Fix action overflow in file listing
+
