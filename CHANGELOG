@@ -211,3 +211,6 @@
 [5.16.6]
 * Fix action overflow in file listing
 
+[5.16.7]
+* Update base image to v3.2.0
+
