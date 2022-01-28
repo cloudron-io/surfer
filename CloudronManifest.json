@@ -13,7 +13,7 @@
     "sftp",
     "webdav"
   ],
-  "version": "5.16.7",
+  "version": "5.17.0",
   "healthCheckPath": "/api/healthcheck",
   "configurePath": "/_admin",
   "httpPort": 3000,

@@ -214,3 +214,8 @@
 [5.16.7]
 * Update base image to v3.2.0
 
+[5.17.0]
+* Update dependencies
+* Reduce flickering on login
+* Reduce padding in list
+
