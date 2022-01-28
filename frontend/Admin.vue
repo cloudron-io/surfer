@@ -348,6 +348,8 @@ export default {
             this.$refs.menu.toggle(event);
         },
         loadDirectory: function (folderPath) {
+            if (!folderPath) return window.location.hash = '/';
+
             var that = this;
 
             that.busy = true;
