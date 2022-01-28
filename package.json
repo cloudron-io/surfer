@@ -31,7 +31,6 @@
     "express-session": "^1.17.2",
     "filesize": "^6.3.0",
     "ldapjs": "^2.3.1",
-    "mitt": "^2.1.0",
     "morgan": "^1.10.0",
     "multiparty": "^4.2.3",
     "primeflex": "^2.0.0",
