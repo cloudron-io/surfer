@@ -71,7 +71,6 @@ describe('Application life cycle test', function () {
     // tests which are used more than once
     function login(done) {
         browser.manage().deleteAllCookies();
-        console.log(proto + app.fqdn + '/_admin')
         browser.get(proto + app.fqdn + '/_admin');
 
         waitForElement(By.id('usernameInput')).then(function () {
@@ -219,7 +218,7 @@ describe('Application life cycle test', function () {
     }
 
     xit('build app', function () { execSync('cloudron build', EXEC_ARGS); });
-    // it('install app', function () { execSync(`cloudron install --location ${LOCATION}`, EXEC_ARGS); });
+    it('install app', function () { execSync(`cloudron install --location ${LOCATION}`, EXEC_ARGS); });
 
     it('can get app information', getAppInfo);
 
