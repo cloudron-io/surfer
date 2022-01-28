@@ -34,7 +34,7 @@
     "morgan": "^1.10.0",
     "multiparty": "^4.2.3",
     "primeflex": "^2.0.0",
-    "primeicons": "^4.1.0",
+    "primeicons": "^5.0.0",
     "primevue": "^3.3.4",
     "readline-sync": "^1.4.10",
     "request": "^2.88.2",
