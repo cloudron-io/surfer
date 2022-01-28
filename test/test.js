@@ -57,74 +57,54 @@ describe('Application life cycle test', function () {
         // app.fqdn = 'localhost:3000';
     }
 
-    function waitForElement(elem) {
-        return browser.wait(until.elementLocated(elem), TEST_TIMEOUT).then(function () {
-            return browser.wait(until.elementIsVisible(browser.findElement(elem)), TEST_TIMEOUT);
-        });
-    }
-
-    async function waitForElementAsync(elem) {
+    async function waitForElement(elem) {
         await browser.wait(until.elementLocated(elem), TEST_TIMEOUT);
         await browser.wait(until.elementIsVisible(browser.findElement(elem)), TEST_TIMEOUT);
     }
 
-    // tests which are used more than once
-    function login(done) {
-        browser.manage().deleteAllCookies();
-        browser.get(proto + app.fqdn + '/_admin');
+    async function login() {
+        await browser.manage().deleteAllCookies();
+        await browser.get(proto + app.fqdn + '/_admin');
 
-        waitForElement(By.id('usernameInput')).then(function () {
-            browser.findElement(By.id('usernameInput')).sendKeys(process.env.USERNAME);
-            browser.findElement(By.id('passwordInput')).sendKeys(process.env.PASSWORD);
-            browser.findElement(By.id('loginButton')).click();
+        await waitForElement(By.id('usernameInput'));
+        await browser.findElement(By.id('usernameInput')).sendKeys(process.env.USERNAME);
+        await browser.findElement(By.id('passwordInput')).sendKeys(process.env.PASSWORD);
+        await browser.findElement(By.id('loginButton')).click();
 
-            waitForElement(By.id('burgerMenuButton')).then(function () {
-                done();
-            });
-        });
+        await waitForElement(By.id('burgerMenuButton'));
     }
 
-    function logout(done) {
-        browser.get(proto + app.fqdn + '/_admin');
+    async function logout() {
+        await browser.get(proto + app.fqdn + '/_admin');
 
-        waitForElement(By.id('burgerMenuButton')).then(function () {
-            browser.findElement(By.id('burgerMenuButton')).click();
+        await waitForElement(By.id('burgerMenuButton'));
+        await browser.findElement(By.id('burgerMenuButton')).click();
 
-            // wait for open animation
-            browser.sleep(1000);
+        // wait for open animation
+        await browser.sleep(1000);
 
-            waitForElement(By.xpath('//span[text() = "Logout"]')).then(function () {
-                browser.findElement(By.xpath('//span[text() = "Logout"]')).click();
+        await waitForElement(By.xpath('//span[text() = "Logout"]'));
+        await browser.findElement(By.xpath('//span[text() = "Logout"]')).click();
 
-                waitForElement(By.id('usernameInput')).then(function () {
-                    done();
-                });
-            });
-        });
+        await waitForElement(By.id('usernameInput'));
     }
 
-    function checkFileIsListed(name, done) {
-        browser.get(proto + app.fqdn + '/_admin');
+    async function checkFileIsListed(name) {
+        await browser.get(proto + app.fqdn + '/_admin');
 
-        waitForElement(By.xpath('//*[text()="' + name + '"]')).then(function () {
-            done();
-        });
+        await waitForElement(By.xpath('//*[text()="' + name + '"]'));
     }
 
-    function checkFileIsPresent(done) {
-        browser.get(proto + app.fqdn + '/' + TEST_FILE_NAME_0);
+    async function checkFileIsPresent() {
+        await browser.get(proto + app.fqdn + '/' + TEST_FILE_NAME_0);
 
-        waitForElement(By.xpath('//*[text()="test"]')).then(function () {
-            done();
-        });
+        await waitForElement(By.xpath('//*[text()="test"]'));
     }
 
-    function checkIndexFileIsServedUp(done) {
-        browser.get(proto + app.fqdn);
+    async function checkIndexFileIsServedUp() {
+        await browser.get(proto + app.fqdn);
 
-        waitForElement(By.xpath('//*[text()="test"]')).then(function () {
-            done();
-        });
+        await waitForElement(By.xpath('//*[text()="test"]'));
     }
 
     function checkFileIsGone(name, done) {
@@ -155,7 +135,7 @@ describe('Application life cycle test', function () {
     async function checkFilesInSpecialFolder() {
         await browser.get(`${proto}${app.fqdn}/${SPECIAL_FOLDER_NAME_0}`);
 
-        await waitForElementAsync(By.xpath(`//a[text()="${SPECIAL_FOLDER_NAME_1}"]`));
+        await waitForElement(By.xpath(`//a[text()="${SPECIAL_FOLDER_NAME_1}"]`));
     }
 
     async function enablePublicFolderListing() {
