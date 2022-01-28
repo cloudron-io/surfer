@@ -312,7 +312,7 @@ export default {
     flex-flow: row nowrap;
     flex-grow: 1;
     flex-basis: 0;
-    padding: 0.5em;
+    padding: 0.2em;
     min-width: 0px;
     margin: auto;
 }
