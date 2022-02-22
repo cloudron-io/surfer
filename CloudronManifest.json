@@ -2,6 +2,7 @@
   "id": "io.cloudron.surfer",
   "title": "Surfer",
   "author": "Cloudron Team",
+  "upstreamVersion": "5.17.1",
   "description": "file://DESCRIPTION.md",
   "tagline": "Static file server",
   "tags": [
@@ -13,13 +14,13 @@
     "sftp",
     "webdav"
   ],
-  "version": "5.17.0",
+  "version": "5.17.1",
   "healthCheckPath": "/api/healthcheck",
   "configurePath": "/_admin",
   "httpPort": 3000,
+  "minBoxVersion": "7.1.2",
   "manifestVersion": 2,
   "multiDomain": true,
-  "minBoxVersion": "6.1.0",
   "website": "https://git.cloudron.io/cloudron/surfer",
   "documentationUrl": "https://docs.cloudron.io/apps/surfer/",
   "forumUrl": "https://forum.cloudron.io/category/28/surfer",

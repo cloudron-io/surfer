@@ -219,3 +219,7 @@
 * Reduce flickering on login
 * Reduce padding in list
 
+[5.17.1]
+* Migrate to upstreamVerison in manifest
+* Update dependencies
+

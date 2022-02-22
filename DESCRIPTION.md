@@ -1,5 +1,3 @@
-This app packages Surfer <upstream>5.17.0</upstream>
-
 ### Overview
 
 Surfer is a Simple static file server. It comes with a webinterface and commandline tooling to manage files.
