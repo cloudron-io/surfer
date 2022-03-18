@@ -223,3 +223,7 @@
 * Migrate to upstreamVerison in manifest
 * Update dependencies
 
+[5.17.2]
+* Always protect /api/files/*
+* Stop using GET /api/files/* in UI
+

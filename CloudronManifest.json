@@ -2,7 +2,8 @@
   "id": "io.cloudron.surfer",
   "title": "Surfer",
   "author": "Cloudron Team",
-  "upstreamVersion": "5.17.1",
+  "version": "5.17.2",
+  "upstreamVersion": "5.17.2",
   "description": "file://DESCRIPTION.md",
   "tagline": "Static file server",
   "tags": [
@@ -14,7 +15,6 @@
     "sftp",
     "webdav"
   ],
-  "version": "5.17.1",
   "healthCheckPath": "/api/healthcheck",
   "configurePath": "/_admin",
   "httpPort": 3000,
