@@ -13,6 +13,7 @@ var express = require('express'),
     cors = require('./src/cors.js'),
     copyFile = require('./src/copyFile.js'),
     compression = require('compression'),
+    contentDisposition = require('content-disposition'),
     bodyParser = require('body-parser'),
     lastMile = require('connect-lastmile'),
     HttpError = require('connect-lastmile').HttpError,
@@ -48,8 +49,13 @@ var config = {
     accessPassword: ''
 };
 
+function setServMiddlewareHeaders (res, path) {
+    // handle ?download in query
+    if ('download' in res.req.query) res.setHeader('Content-Disposition', contentDisposition(path));
+}
+
 // we will regenerate this if settings change
-var staticServMiddleware = express.static(ROOT_FOLDER, { index: 'index.html' });
+var staticServMiddleware = express.static(ROOT_FOLDER, { index: 'index.html', setHeaders: setServMiddlewareHeaders });
 
 function getSettings(req, res) {
     res.send({
@@ -109,7 +115,7 @@ function setSettings(req, res, next) {
     config.title = req.body.title;
     config.index = req.body.index;
 
-    staticServMiddleware = express.static(ROOT_FOLDER, { index: config.index || 'index.html' });
+    staticServMiddleware = express.static(ROOT_FOLDER, { index: config.index || 'index.html', setHeaders: setServMiddlewareHeaders });
 
     // if changed invalidate sessions
     if (config.accessRestriction !== req.body.accessRestriction) clearNonAdminSessions();

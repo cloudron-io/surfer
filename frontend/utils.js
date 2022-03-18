@@ -50,7 +50,7 @@ function decode(path) {
 
 function download(entry) {
     if (entry.isDirectory) return;
-    window.location.href = '/api/files/' + encode(entry.filePath);
+    window.location.href = encode(entry.filePath) + '?download';
 }
 
 const mimeTypes = {
