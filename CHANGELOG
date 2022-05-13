@@ -227,3 +227,6 @@
 * Always protect /api/files/*
 * Stop using GET /api/files/* in UI
 
+[5.17.3]
+* Send 401 status code instead of 200 when authentication is required first
+
