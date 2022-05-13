@@ -167,7 +167,7 @@ function handleProtection(req, res, next) {
     if (!config.accessRestriction) return next();
     if (req.session.isValid) return next();
 
-    res.status(200).sendFile(path.join(__dirname, '/dist/protected.html'));
+    res.status(401).sendFile(path.join(__dirname, '/dist/protected.html'));
 }
 
 function protectedLogin(req, res, next) {
