@@ -9,13 +9,13 @@
           </div>
         </div>
         <iframe id="previewIframe" ref="iframe" :src="iFrameSource" style="width: 100%; height: 100%; border: none;"></iframe>
-        <center>
+        <div class="actions">
           <Button class="p-button-sm p-button-outlined" v-show="entry.isFile" label="Download" icon="pi pi-download" style="margin: 10px;" @click="onDownload(entry)"/>
           <a :href="encode(entry.filePath)" target="_blank">
             <Button class="p-button-sm p-button-outlined" label="Open" icon="pi pi-external-link" style="margin: 10px;"/>
           </a>
           <Button class="p-button-sm p-button-outlined" label="Copy Link" icon="pi pi-copy" style="margin: 10px;" @click="onCopyLink(entry)"/>
-        </center>
+        </div>
     </div>
 </template>
 
@@ -39,6 +39,8 @@ export default {
             this.iFrameSource = newEntry.previewUrl || 'about:blank';
 
             if (newEntry.isDirectory) return;
+
+            console.log(newEntry)
 
             setTimeout(() => {
                 this.iFrameSource = encode(newEntry.filePath);
@@ -105,6 +107,10 @@ export default {
     margin: auto;
     white-space: nowrap;
     overflow: hidden;
+}
+
+.actions {
+    text-align: center;
 }
 
 @media only screen and (max-width: 767px)  {
