@@ -231,3 +231,8 @@
 * Send 401 status code instead of 200 when authentication is required first
 * Update dependencies
 
+[5.17.4]
+* Update dependencies
+* Only show preview for supported types to avoid immediate download
+* Fix various vuejs warnings
+
