@@ -44,7 +44,7 @@ import { prettyDate, prettyLongDate, prettyFileSize, download, encode, copyToCli
 
 export default {
     name: 'EntryList',
-    emits: [ 'selection-changed', 'entry-activated', 'entry-renamed', 'entry-delete', 'dropped' ],
+    emits: [ 'selectionChanged', 'entryActivated', 'entryRenamed', 'entryDelete', 'dropped' ],
     data() {
         return {
             active: {},
