@@ -6,12 +6,12 @@
   <div class="main-container" v-show="ready">
     <div class="main-container-toolbar">
       <Toolbar>
-        <template #left>
+        <template #start>
           <Button icon="pi pi-chevron-left" class="p-mr-2 p-button-sm" :disabled="breadCrumbs.items.length === 0" @click="onUp"/>
           <Breadcrumb :home="breadCrumbs.home" :model="breadCrumbs.items"/>
         </template>
 
-        <template #right>
+        <template #end>
           <a href="/_admin"><Button class="p-button-sm" label="Login" icon="pi pi-sign-in"/></a>
         </template>
       </Toolbar>

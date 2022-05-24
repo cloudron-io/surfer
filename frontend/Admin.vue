@@ -28,12 +28,12 @@
   <div class="main-container" v-show="ready && session.valid">
     <div class="main-container-toolbar">
       <Toolbar>
-        <template #left>
+        <template #start>
           <Button icon="pi pi-chevron-left" class="p-mr-2 p-button-sm" :disabled="breadCrumbs.items.length === 0" @click="onUp"/>
           <Breadcrumb :home="breadCrumbs.home" :model="breadCrumbs.items"/>
         </template>
 
-        <template #right>
+        <template #end>
           <span class="p-buttonset p-d-none p-d-md-flex">
             <Button class="p-button-sm" label="Upload File" icon="pi pi-upload" @click="onUpload"/>
             <Button class="p-button-sm" label="Upload Folder" icon="pi pi-cloud-upload" @click="onUploadFolder"/>
