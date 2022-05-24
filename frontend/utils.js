@@ -76,6 +76,18 @@ function getPreviewUrl(entry, basePath) {
     return path + 'unknown.png';
 }
 
+function hasViewer(entry) {
+    if (entry.isDirectory) return false;
+    if (mimeTypes.images.some(function (e) { return entry.fileName.endsWith(e); })) return true;
+    if (mimeTypes.text.some(function (e) { return entry.fileName.endsWith(e); })) return true;
+    if (mimeTypes.pdf.some(function (e) { return entry.fileName.endsWith(e); })) return true;
+    if (mimeTypes.html.some(function (e) { return entry.fileName.endsWith(e); })) return true;
+    if (mimeTypes.music.some(function (e) { return entry.fileName.endsWith(e); })) return true;
+    if (mimeTypes.video.some(function (e) { return entry.fileName.endsWith(e); })) return true;
+
+    return false;
+}
+
 // simple extension detection, does not work with double extension like .tar.gz
 function getExtension(entry) {
     if (entry.isFile) return entry.fileName.slice(entry.fileName.lastIndexOf('.') + 1);
@@ -100,6 +112,7 @@ export {
     decode,
     download,
     getPreviewUrl,
+    hasViewer,
     getExtension,
     copyToClipboard
 };

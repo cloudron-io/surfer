@@ -21,7 +21,7 @@
 
 <script>
 
-import { download, encode, copyToClipboard } from '../utils.js';
+import { download, encode, copyToClipboard, hasViewer } from '../utils.js';
 
 export default {
     name: 'Preview',
@@ -36,15 +36,13 @@ export default {
     },
     watch: {
         entry(newEntry) {
+            if (!newEntry.fileName) return;
+
             this.iFrameSource = newEntry.previewUrl || 'about:blank';
 
-            if (newEntry.isDirectory) return;
+            if (newEntry.isDirectory || !hasViewer(newEntry)) return;
 
-            console.log(newEntry)
-
-            setTimeout(() => {
-                this.iFrameSource = encode(newEntry.filePath);
-            }, 100);
+            setTimeout(() => { this.iFrameSource = encode(newEntry.filePath); }, 100);
         }
     },
     methods: {
