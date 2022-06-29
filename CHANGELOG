@@ -236,3 +236,7 @@
 * Only show preview for supported types to avoid immediate download
 * Fix various vuejs warnings
 
+[5.17.5]
+* Update depenencies
+* Fixup cli tool to report better error status codes
+
