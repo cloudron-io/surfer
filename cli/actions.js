@@ -128,7 +128,7 @@ function logout() {
 
     superagent.post(gServer + '/api/logout').query({ access_token: config.accessToken() }).end(function (error, result) {
         if (result && result.statusCode !== 200) exit('Failed to logout: ' + result.statusCode);
-        if (error) exit(error);
+        if (error) exit(error.message);
 
         config.set('server', '');
         config.set('accessToken', '');
@@ -190,9 +190,9 @@ function get(filePath, options, program) {
     filePath = filePath || '/';
 
     request.get(gServer + path.join(API, encodeURIComponent(filePath)), { qs: gQuery }, function (error, result, body) {
-        if (result && result.statusCode === 401) return console.log('Login failed');
-        if (result && result.statusCode === 404) return console.log('No such file or directory %s', filePath.yellow);
-        if (error) return console.error(error);
+        if (result && result.statusCode === 401) exit('Login failed');
+        if (result && result.statusCode === 404) exit('No such file or directory %s', filePath.yellow);
+        if (error) exit(error.message);
 
         // 222 indicates directory listing
         if (result.statusCode === 222) {
@@ -226,7 +226,7 @@ function del(filePath, options, program) {
     }
 
     delOne(file, function (error, result) {
-        if (error) console.log(error.red);
+        if (error) exit(error.red);
         else console.log('Success. Removed %s entries.', result.length);
     });
 }
@@ -277,8 +277,8 @@ function put(filePaths, options, program) {
 
     superagent.get(gServer + path.join(API, absoluteDestPath)).query(query).end(function (error, result) {
         if (error) {
-            if (error.status === 401) return console.log('Login failed');
-            if (error.status !== 404) return console.error(error.message);
+            if (error.status === 401) exit('Login failed');
+            if (error.status !== 404) exit(error.message);
 
             // 404 means remote not found so upload all
             remoteFiles = [];
@@ -328,7 +328,7 @@ function put(filePaths, options, program) {
 
             delOne(file, callback);
         }, function (error) {
-            if (error) return console.error(error.message);
+            if (error) return exit(error.message);
 
             // now upload new files
             async.eachLimit(newLocalFiles, 10, function (filePath, callback) {
@@ -337,7 +337,7 @@ function put(filePaths, options, program) {
 
                 putOne(file, absoluteDestPath, callback);
             }, function (error) {
-                if (error) return console.error(error.message);
+                if (error) exit(error.message);
 
                 console.log('Done');
             });
