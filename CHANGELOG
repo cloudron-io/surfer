@@ -240,3 +240,6 @@
 * Update depenencies
 * Fixup cli tool to report better error status codes
 
+[5.17.6]
+* Further cli tool exit status code fixes
+
