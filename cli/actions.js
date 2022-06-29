@@ -23,14 +23,20 @@ var API = '/api/files/';
 var gServer = '';
 var gQuery = {};
 
+function exit(errorArgs) {
+    if (errorArgs) {
+        console.error.apply(console, arguments);
+        process.exit(1);
+    }
+
+    process.exit(0);
+}
+
 function checkConfig(options, program) {
     // FIXME this uses private API of commander. I was not able to figure out how to otherwise access program wide args
     let parentOptions = program.parent._optionValues;
 
-    if (!parentOptions.server && !config.server()) {
-        console.log('Run %s first, or provide %s', 'surfer login'.bold, '--server <url>'.bold);
-        process.exit(1);
-    }
+    if (!parentOptions.server && !config.server()) exit('Run %s first, or provide %s', 'surfer login'.bold, '--server <url>'.bold);
 
     if (parentOptions.server) {
         var tmp = url.parse(parentOptions.server);
@@ -40,10 +46,7 @@ function checkConfig(options, program) {
         gServer = config.server();
     }
 
-    if (!parentOptions.token && !config.accessToken()) {
-        console.log('Run %s first or provide %s', 'surfer login'.bold, '--token <access token>'.bold);
-        process.exit(1);
-    }
+    if (!parentOptions.token && !config.accessToken()) exit('Run %s first or provide %s', 'surfer login'.bold, '--token <access token>'.bold);
 
     gQuery = { access_token: parentOptions.token || config.accessToken() };
 
@@ -99,17 +102,11 @@ function login(uri, options) {
     var username = options.username || readlineSync.question('Username: ');
     var password = options.password || readlineSync.question('Password: ', { hideEchoBack: true, mask: '' });
 
-    if (!username || !password) process.exit(1);
+    if (!username || !password) exit('Provide username and password');
 
     superagent.post(server + '/api/login').send({ username: username, password: password }).end(function (error, result) {
-        if (error && error.code === 'ENOTFOUND') {
-            console.log('Server %s not found.'.red, server.bold);
-            process.exit(1);
-        }
-        if (error && error.code) {
-            console.log('Failed to connect to server %s'.red, server.bold, error.code);
-            process.exit(1);
-        }
+        if (error && error.code === 'ENOTFOUND') exit('Server %s not found.'.red, server.bold);
+        if (error && error.code) exit('Failed to connect to server %s'.red, server.bold, error.code);
         if (result.status !== 201) {
             console.log('Login failed.\n'.red);
 
@@ -130,8 +127,8 @@ function logout() {
     if (!config.accessToken()) return console.log('Done'.green);
 
     superagent.post(gServer + '/api/logout').query({ access_token: config.accessToken() }).end(function (error, result) {
-        if (result && result.statusCode !== 200) console.log('Failed to logout: ' + result.statusCode);
-        if (error) console.log(error);
+        if (result && result.statusCode !== 200) exit('Failed to logout: ' + result.statusCode);
+        if (error) exit(error);
 
         config.set('server', '');
         config.set('accessToken', '');
@@ -224,12 +221,8 @@ function del(filePath, options, program) {
     };
 
     if (filePath === '/') {
-        if (!options.recursive) {
-            console.log('To delete all files --recursive is required.'.yellow);
-            process.exit(1);
-        }
-
-        if (!options.yes && !readlineSync.keyInYN('Really delete all files?')) process.exit(0);
+        if (!options.recursive) exit('To delete all files --recursive is required.'.yellow);
+        if (!options.yes && !readlineSync.keyInYN('Really delete all files?')) exit();
     }
 
     delOne(file, function (error, result) {
@@ -242,10 +235,7 @@ function legacyPut(filePaths, options) {
     console.log('Server is on older version, falling back to old behavior.'.yellow);
 
     let destination = filePaths.pop();
-    if (!path.isAbsolute(destination)) {
-        console.log('target directory must be absolute'.red);
-        process.exit(1);
-    }
+    if (!path.isAbsolute(destination)) exit('target directory must be absolute'.red);
     if (!destination.endsWith('/')) destination += '/';
 
     var files = [];
@@ -257,10 +247,7 @@ function legacyPut(filePaths, options) {
     });
 
     async.eachLimit(files, 10, (file, iteratorDone) => putOne(file, destination, iteratorDone), function (error) {
-        if (error) {
-            console.log('Failed to upload file.', error.message.red);
-            process.exit(1);
-        }
+        if (error) exit('Failed to upload file.', error.message.red);
 
         console.log('Done');
     });
@@ -269,16 +256,10 @@ function legacyPut(filePaths, options) {
 function put(filePaths, options, program) {
     checkConfig(options, program);
 
-    if (filePaths.length < 2) {
-        console.log('Target directory argument is required'.red);
-        process.exit(1);
-    }
+    if (filePaths.length < 2) exit('Target directory argument is required'.red);
 
     let absoluteDestPath = filePaths.pop();
-    if (!path.isAbsolute(absoluteDestPath)) {
-        console.log('Target directory must be absolute, starting with /'.red);
-        process.exit(1);
-    }
+    if (!path.isAbsolute(absoluteDestPath)) exit('Target directory must be absolute, starting with /'.red);
     if (!absoluteDestPath.endsWith('/')) absoluteDestPath += '/';
 
     var localFiles = [];
@@ -303,10 +284,7 @@ function put(filePaths, options, program) {
             remoteFiles = [];
         } else {
             // 222 indicates directory listing
-            if (result.statusCode !== 222) {
-                console.error('Destination is not a directory. Cannot continue.');
-                process.exit(1);
-            }
+            if (result.statusCode !== 222) exit('Destination is not a directory. Cannot continue.');
 
             // TODO this is just to keep old version supported for some time
             if (!result.body.stat) {
