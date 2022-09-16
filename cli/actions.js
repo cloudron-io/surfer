@@ -91,52 +91,6 @@ function collectFiles(filePath, basePath, options) {
     return tmp;
 }
 
-function login(uri, options) {
-    var tmp = url.parse(uri);
-    if (!tmp.slashes) tmp = url.parse('https://' + uri);
-
-    var server = tmp.protocol + '//' + tmp.host;
-
-    console.log('Using server', server.cyan);
-
-    var username = options.username || readlineSync.question('Username: ');
-    var password = options.password || readlineSync.question('Password: ', { hideEchoBack: true, mask: '' });
-
-    if (!username || !password) exit('Provide username and password');
-
-    superagent.post(server + '/api/login').send({ username: username, password: password }).end(function (error, result) {
-        if (error && error.code === 'ENOTFOUND') exit('Server %s not found.'.red, server.bold);
-        if (error && error.code) exit('Failed to connect to server %s'.red, server.bold, error.code);
-        if (result.status !== 201) {
-            console.log('Login failed.\n'.red);
-
-            // remove the password to avoid a login loop
-            delete options.password;
-
-            return login(uri, options);
-        }
-
-        config.set('server', server);
-        config.set('accessToken', result.body.accessToken);
-
-        console.log('Login successful'.green);
-    });
-}
-
-function logout() {
-    if (!config.accessToken()) return console.log('Done'.green);
-
-    superagent.post(gServer + '/api/logout').query({ access_token: config.accessToken() }).end(function (error, result) {
-        if (result && result.statusCode !== 200) exit('Failed to logout: ' + result.statusCode);
-        if (error) exit(error.message);
-
-        config.set('server', '');
-        config.set('accessToken', '');
-
-        console.log('Done'.green);
-    });
-}
-
 function putOne(file, destination, callback) {
     let destinationPath = path.join(destination, file.filePath);
 
@@ -180,6 +134,54 @@ function delOne(file, callback) {
         if (error) return callback('Failed %s', result ? result.body : error);
 
         callback(null, result.body.entries);
+    });
+}
+
+function login(uri, options) {
+    var tmp = url.parse(uri);
+    if (!tmp.slashes) tmp = url.parse('https://' + uri);
+
+    var server = tmp.protocol + '//' + tmp.host;
+
+    console.log('Using server', server.cyan);
+
+    var username = options.username || readlineSync.question('Username: ');
+    var password = options.password || readlineSync.question('Password: ', { hideEchoBack: true, mask: '' });
+
+    if (!username || !password) exit('Provide username and password');
+
+    superagent.post(server + '/api/login').send({ username: username, password: password }).end(function (error, result) {
+        if (error && error.code === 'ENOTFOUND') exit('Server %s not found.'.red, server.bold);
+        if (error && error.code) exit('Failed to connect to server %s'.red, server.bold, error.code);
+        if (result.status !== 201) {
+            console.log('Login failed.\n'.red);
+
+            // remove the password to avoid a login loop
+            delete options.password;
+
+            return login(uri, options);
+        }
+
+        config.set('server', server);
+        config.set('accessToken', result.body.accessToken);
+
+        console.log('Login successful'.green);
+    });
+}
+
+function logout(options, program) {
+    checkConfig(options, program);
+
+    if (!config.accessToken()) return console.log('Done'.green);
+
+    superagent.post(gServer + '/api/logout').query({ access_token: config.accessToken() }).end(function (error, result) {
+        if (result && result.statusCode !== 200) exit('Failed to logout: ' + result.statusCode);
+        if (error) exit(error.message);
+
+        config.set('server', '');
+        config.set('accessToken', '');
+
+        console.log('Done'.green);
     });
 }
 
