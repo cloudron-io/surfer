@@ -1,6 +1,6 @@
 {
   "name": "cloudron-surfer",
-  "version": "5.17.6",
+  "version": "5.17.7",
   "description": "Simple file server",
   "author": {
     "name": "Johannes Zellner",
@@ -51,12 +51,12 @@
     "@vue/cli-service": "~5.0.4",
     "@vue/compiler-sfc": "^3.2.36",
     "babel-eslint": "^10.1.0",
-    "chromedriver": "^103.0.0",
+    "chromedriver": "^105.0.0",
     "eslint": "^8.16.0",
     "eslint-plugin-vue": "^9.0.1",
     "expect.js": "^0.3.1",
     "mocha": "^10.0.0",
-    "selenium-webdriver": "^4.3.0"
+    "selenium-webdriver": "^4.4.0"
   },
   "eslintConfig": {
     "root": true,

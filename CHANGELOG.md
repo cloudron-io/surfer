@@ -243,3 +243,6 @@
 [5.17.6]
 * Further cli tool exit status code fixes
 
+[5.17.7]
+* Fixup cli logout
+

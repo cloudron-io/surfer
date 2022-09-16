@@ -2,8 +2,8 @@
   "id": "io.cloudron.surfer",
   "title": "Surfer",
   "author": "Cloudron Team",
-  "version": "5.17.6",
-  "upstreamVersion": "5.17.6",
+  "version": "5.17.7",
+  "upstreamVersion": "5.17.7",
   "description": "file://DESCRIPTION.md",
   "tagline": "Static file server",
   "tags": [
@@ -40,6 +40,6 @@
     "https://screenshots.cloudron.io/io.cloudron.surfer/img02.png",
     "https://screenshots.cloudron.io/io.cloudron.surfer/img03.png"
   ],
-  "changelog": "file://CHANGELOG",
+  "changelog": "file://CHANGELOG.md",
   "postInstallMessage": "file://POSTINSTALL.md"
 }
