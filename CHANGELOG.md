@@ -245,4 +245,5 @@
 
 [5.17.7]
 * Fixup cli logout
+* Update dependencies
 
