@@ -25,7 +25,11 @@ module.exports = function multipart(options) {
         req.files = { };
 
         form.parse(req, function (err, fields, files) {
-            if (err) return res.status(400).send('Error parsing request');
+            if (err) {
+                if (!res.headersSent) res.status(400).send('Error parsing request');
+                return;
+            }
+
             next(null);
         });
 
