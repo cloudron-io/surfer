@@ -247,3 +247,6 @@
 * Fixup cli logout
 * Update dependencies
 
+[5.17.8]
+* Remove timeout on upload
+* Do not crash if upload is cancelled and headers are already sent
