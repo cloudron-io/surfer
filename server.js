@@ -244,7 +244,7 @@ webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(ROOT_FOLDER), func
 const PUBLIC_HTML = fs.readFileSync(__dirname + '/dist/public.html', 'utf8');
 const PUBLIC_NOSCRIPT_EJS = fs.readFileSync(__dirname + '/frontend/public.noscript.ejs', 'utf8');
 
-var multipart = multipart({ maxFieldsSize: 2 * 1024, limit: '512mb', timeout: 3 * 60 * 1000 });
+var multipart = multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' });
 
 router.post  ('/api/protectedLogin', protectedLogin);
 router.post  ('/api/login', auth.login);
