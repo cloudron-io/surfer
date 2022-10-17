@@ -50,12 +50,12 @@
     "@vue/cli-service": "~5.0.4",
     "@vue/compiler-sfc": "^3.2.36",
     "babel-eslint": "^10.1.0",
-    "chromedriver": "^105.0.0",
+    "chromedriver": "^106.0.1",
     "eslint": "^8.16.0",
     "eslint-plugin-vue": "^9.0.1",
     "expect.js": "^0.3.1",
-    "mocha": "^10.0.0",
-    "selenium-webdriver": "^4.4.0"
+    "mocha": "^10.1.0",
+    "selenium-webdriver": "^4.5.0"
   },
   "eslintConfig": {
     "root": true,
