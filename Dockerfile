@@ -1,7 +1,13 @@
-FROM cloudron/base:3.2.0@sha256:ba1d566164a67c266782545ea9809dc611c4152e27686fd14060332dd88263ea
+FROM cloudron/base:4.0.0@sha256:3324a94a3b1ef045b6d41623d0b1d3b82ca1721e87a2406c1876b47cbd005d8f
 
 RUN mkdir -p /app/code
 WORKDIR /app/code
+
+# vue-cli does not support node 18, have to move to vite
+ARG NODE_VERSION=16.18.1
+RUN mkdir -p /usr/local/node-${NODE_VERSION} && \
+    curl -L https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz | tar zxf - --strip-components 1 -C /usr/local/node-${NODE_VERSION}
+ENV PATH /usr/local/node-${NODE_VERSION}/bin:$PATH
 
 ADD . /app/code/
 
