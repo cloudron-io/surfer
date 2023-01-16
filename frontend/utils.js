@@ -1,5 +1,5 @@
 
-import filesize from 'filesize';
+import { filesize } from 'filesize';
 
 function prettyDate(value) {
     var date = new Date(value),
