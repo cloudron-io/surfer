@@ -4,7 +4,7 @@ var fs = require('fs'),
     copyFile = require('./copyFile.js'),
     util = require('util'),
     path = require('path'),
-    rm = require('del'),
+    { rimraf } = require('rimraf'),
     debug = require('debug')('files'),
     HttpError = require('connect-lastmile').HttpError,
     HttpSuccess = require('connect-lastmile').HttpSuccess;
@@ -237,7 +237,6 @@ function put(req, res, next) {
 function del(req, res, next) {
     const filePath = req.params[0];
     const recursive = boolLike(req.query.recursive);
-    const dryRun = boolLike(req.query.dryRun);
 
     const absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath) return next(new HttpError(404, 'Not found'));
@@ -247,21 +246,21 @@ function del(req, res, next) {
     // absoltueFilePath has to have the base path prepended
     if (absoluteFilePath.indexOf(gBasePath) !== 0) return next(new HttpError(404, 'Not found'));
 
-    fs.stat(absoluteFilePath, function (error, result) {
+    fs.stat(absoluteFilePath, async function (error, result) {
         if (error) return next(new HttpError(404, error));
 
         if (result.isDirectory() && !recursive) return next(new HttpError(403, 'Is directory'));
 
-        rm(absoluteFilePath, { dryRun: dryRun, force: true }).then(function (result) {
-            result = result.map(removeBasePath);
+        try {
+            await rimraf(absoluteFilePath);
 
             // in case we deleted all files, ensure gBasePath still exists after
             if (absoluteFilePath === gBasePath) fs.mkdirSync(gBasePath);
 
-            next(new HttpSuccess(200, { entries: result }));
-        }, function (error) {
+            next(new HttpSuccess(200, {}));
+        } catch (error) {
             console.error(error);
             next(new HttpError(500, 'Unable to remove'));
-        });
+        }
     });
 }
