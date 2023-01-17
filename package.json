@@ -37,7 +37,6 @@
     "primevue": "^3.22.2",
     "readline-sync": "^1.4.10",
     "request": "^2.88.2",
-    "rimraf": "^4.1.0",
     "safetydance": "^2.2.0",
     "superagent": "^8.0.6",
     "underscore": "^1.13.6",

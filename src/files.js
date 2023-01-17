@@ -1,10 +1,11 @@
 'use strict';
 
 var fs = require('fs'),
+    fsPromises = require('node:fs/promises'),
     copyFile = require('./copyFile.js'),
     util = require('util'),
     path = require('path'),
-    { rimraf } = require('rimraf'),
+    safe = require('safetydance'),
     debug = require('debug')('files'),
     HttpError = require('connect-lastmile').HttpError,
     HttpSuccess = require('connect-lastmile').HttpSuccess;
@@ -251,16 +252,13 @@ function del(req, res, next) {
 
         if (result.isDirectory() && !recursive) return next(new HttpError(403, 'Is directory'));
 
-        try {
-            await rimraf(absoluteFilePath);
-
-            // in case we deleted all files, ensure gBasePath still exists after
-            if (absoluteFilePath === gBasePath) fs.mkdirSync(gBasePath);
-
-            next(new HttpSuccess(200, {}));
-        } catch (error) {
+        [error] = await safe(fsPromises.rm(absoluteFilePath, { recursive: true }));
+        if (error) {
             console.error(error);
-            next(new HttpError(500, 'Unable to remove'));
+            return next(new HttpError(500, 'Unable to remove'));
         }
+
+        // TODO remove result after some time
+        next(new HttpSuccess(200, { result: [] }));
     });
 }
