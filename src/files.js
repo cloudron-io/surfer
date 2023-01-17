@@ -259,6 +259,6 @@ function del(req, res, next) {
         }
 
         // TODO remove result after some time
-        next(new HttpSuccess(200, { result: [] }));
+        next(new HttpSuccess(200, { entries: [] }));
     });
 }

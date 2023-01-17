@@ -129,11 +129,11 @@ function delOne(file, callback) {
 
     superagent.del(gServer + path.join(API, encodeURIComponent(file.filePath))).query(query).end(function (error, result) {
         if (error && error.status === 401) return callback('Login failed');
-        if (error && error.status === 404) return callback(null, []); // file already removed
+        if (error && error.status === 404) return callback(null); // file already removed
         if (error && error.status === 403) return callback('Failed. Target is a directory. Use --recursive to delete directories.');
         if (error) return callback('Failed %s', result ? result.body : error);
 
-        callback(null, result.body.entries);
+        callback(null);
     });
 }
 
@@ -227,9 +227,9 @@ function del(filePath, options, program) {
         if (!options.yes && !readlineSync.keyInYN('Really delete all files?')) exit();
     }
 
-    delOne(file, function (error, result) {
+    delOne(file, function (error) {
         if (error) exit(error.red);
-        else console.log('Success. Removed %s entries.', result.length);
+        else console.log('Success.');
     });
 }
 
