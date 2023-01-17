@@ -68,7 +68,7 @@ describe('Application life cycle test', function () {
 
         await waitForElement(By.id('usernameInput'));
         await browser.findElement(By.id('usernameInput')).sendKeys(process.env.USERNAME);
-        await browser.findElement(By.id('passwordInput')).sendKeys(process.env.PASSWORD);
+        await browser.findElement(By.xpath('//div[@id="passwordInput"]/input')).sendKeys(process.env.PASSWORD);
         await browser.findElement(By.id('loginButton')).click();
 
         await waitForElement(By.id('burgerMenuButton'));
