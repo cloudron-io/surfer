@@ -74,18 +74,6 @@ describe('Application life cycle test', function () {
         await waitForElement(By.id('burgerMenuButton'));
     }
 
-    async function loginOld() {
-        await browser.manage().deleteAllCookies();
-        await browser.get(proto + app.fqdn + '/_admin');
-
-        await waitForElement(By.id('usernameInput'));
-        await browser.findElement(By.id('usernameInput')).sendKeys(process.env.USERNAME);
-        await browser.findElement(By.id('passwordInput')).sendKeys(process.env.PASSWORD);
-        await browser.findElement(By.id('loginButton')).click();
-
-        await waitForElement(By.id('burgerMenuButton'));
-    }
-
     async function logout() {
         await browser.get(proto + app.fqdn + '/_admin');
 
@@ -288,7 +276,7 @@ describe('Application life cycle test', function () {
     it('can install app', function () { execSync(`cloudron install --appstore-id io.cloudron.surfer --location ${LOCATION}`, EXEC_ARGS); });
 
     it('can get app information', getAppInfo);
-    it('can login', loginOld);
+    it('can login', login);
     it('can cli login', cliLogin);
     it('can create api token', createApiToken);
     it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
