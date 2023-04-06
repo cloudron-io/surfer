@@ -169,6 +169,12 @@ exports.logout = function (req, res, next) {
     tokenStore.del(accessToken, function (error) {
         if (error) console.error(error);
 
+        if (req.session.isValid) {
+            req.session.destroy(function (error) {
+                if (error) console.error('Failed to destroy session.', error);
+            });
+        }
+
         next(new HttpSuccess(200, {}));
     });
 };
