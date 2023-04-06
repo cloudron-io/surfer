@@ -122,7 +122,7 @@
         <label for="accessPassword">Password restricted</label>
       </div>
       <div class="p-field p-col-12" v-show="settingsDialog.accessRestriction === 'password'">
-        <Password :feedback="false" v-model="settingsDialog.accessPassword" :required="settingsDialog.accessRestriction === 'password'"/><br/>
+        <Password :feedback="false" v-model="settingsDialog.accessPassword" :required="settingsDialog.accessRestriction === 'password'" toggleMask/><br/>
         <small>Changing the password will require every user to re-login.</small>
       </div>
       <div class="p-field-radiobutton">
@@ -146,7 +146,7 @@
 
     <template #footer>
       <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="settingsDialog.visible = false" :disabled="settingsDialog.busy"/>
-      <Button label="Save" icon="pi pi-check" class="p-button-text p-button-success" @click="onSaveSettingsDialog" :disabled="settingsDialog.busy || (settingsDialog.accessRestriction === 'password' && !settingsDialog.accessPassword)"/>
+      <Button label="Save" icon="pi pi-check" class="p-button-text p-button-success" @click="onSaveSettingsDialog" :disabled="settingsDialog.busy"/>
     </template>
   </Dialog>
 
@@ -546,7 +546,6 @@ export default {
             this.settingsDialog.faviconFile = null;
             this.settingsDialog.index = this.settings.index;
             this.settingsDialog.accessRestriction = this.settings.accessRestriction;
-            this.settingsDialog.accessPassword = this.settings.accessPassword;
         },
         onSaveSettingsDialog: function () {
             var that = this;
