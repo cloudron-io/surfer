@@ -254,3 +254,7 @@
 [5.17.9]
 * Update dependencies
 
+[5.17.10]
+* Clear password protection session on user logout
+* Fix settings dialog save button
+
