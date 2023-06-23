@@ -3,11 +3,11 @@
     <form @submit="onLogin" @submit.prevent>
       <h1>Login to {{ settings.title }}</h1>
       <div class="p-fluid">
-        <div class="p-field" v-show="settings.accessRestriction === 'user'">
+        <div v-show="settings.accessRestriction === 'user'">
           <label for="usernameInput">Username</label>
           <InputText id="usernameInput" type="text" v-model="username"/>
         </div>
-        <div class="p-field">
+        <div>
           <label for="passwordInput">Password</label>
           <Password id="passwordInput" :feedback="false" v-model="password" :class="{ 'p-invalid': error }"/>
           <small v-show="error" :class="{ 'p-invalid': error }">Wrong username or password.</small>
@@ -90,6 +90,10 @@ export default {
     max-width: 480px;
     margin: auto;
     padding: 20px;
+}
+
+.p-fluid > div {
+    margin-bottom: 10px;
 }
 
 </style>

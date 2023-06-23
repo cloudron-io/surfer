@@ -7,7 +7,7 @@
     <div class="main-container-toolbar">
       <Toolbar>
         <template #start>
-          <Button icon="pi pi-chevron-left" class="p-mr-2 p-button-sm" :disabled="breadCrumbs.items.length === 0" @click="onUp"/>
+          <Button icon="pi pi-chevron-left" class="p-button-sm" style="margin-right: 20px;" :disabled="breadCrumbs.items.length === 0" @click="onUp"/>
           <Breadcrumb :home="breadCrumbs.home" :model="breadCrumbs.items"/>
         </template>
 

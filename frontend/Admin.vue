@@ -11,11 +11,11 @@
     <form @submit="onLogin" @submit.prevent>
       <h1>Login to {{ settings.title }}</h1>
       <div class="p-fluid">
-        <div class="p-field">
+        <div>
           <label for="usernameInput">Username</label>
           <InputText id="usernameInput" type="text" v-model="loginData.username" autofocus/>
         </div>
-        <div class="p-field">
+        <div>
           <label for="passwordInput">Password</label>
           <Password id="passwordInput" :feedback="false" v-model="loginData.password" :class="{ 'p-invalid': loginData.error }"/>
           <small v-show="loginData.error" :class="{ 'p-invalid': loginData.error }">Wrong username or password.</small>
@@ -29,17 +29,17 @@
     <div class="main-container-toolbar">
       <Toolbar>
         <template #start>
-          <Button icon="pi pi-chevron-left" class="p-mr-2 p-button-sm" :disabled="breadCrumbs.items.length === 0" @click="onUp"/>
+          <Button icon="pi pi-chevron-left" class="p-button-sm" style="margin-right: 20px;" :disabled="breadCrumbs.items.length === 0" @click="onUp"/>
           <Breadcrumb :home="breadCrumbs.home" :model="breadCrumbs.items"/>
         </template>
 
         <template #end>
-          <span class="p-buttonset p-d-none p-d-md-flex">
+          <span class="p-buttonset">
             <Button class="p-button-sm" label="Upload File" icon="pi pi-upload" @click="onUpload"/>
             <Button class="p-button-sm" label="Upload Folder" icon="pi pi-cloud-upload" @click="onUploadFolder"/>
             <Button class="p-button-sm" label="New Folder" icon="pi pi-plus" @click="openNewFolderDialog"/>
           </span>
-          <Button icon="pi pi-ellipsis-h" class="p-ml-2 p-button-sm p-button-outlined" id="burgerMenuButton" @click="toggleMenu"/>
+          <Button icon="pi pi-ellipsis-h" class="p-button-sm p-button-outlined" style="margin-left: 20px;" id="burgerMenuButton" @click="toggleMenu"/>
           <Menu ref="menu" :model="mainMenu" :popup="true"/>
         </template>
       </Toolbar>
@@ -121,7 +121,7 @@
         <RadioButton id="accessPassword" value="password" v-model="settingsDialog.accessRestriction" />
         <label for="accessPassword">Password restricted</label>
       </div>
-      <div class="p-field p-col-12" v-show="settingsDialog.accessRestriction === 'password'">
+      <div class="p-field" v-show="settingsDialog.accessRestriction === 'password'">
         <Password :feedback="false" v-model="settingsDialog.accessPassword" :required="settingsDialog.accessRestriction === 'password'" toggleMask/><br/>
         <small>Changing the password will require every user to re-login.</small>
       </div>
@@ -804,6 +804,10 @@ label {
 
 .p-toast {
     z-index: 2000 !important;
+}
+
+.p-fluid > div {
+    margin-bottom: 10px;
 }
 
 </style>

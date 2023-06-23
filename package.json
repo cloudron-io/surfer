@@ -30,7 +30,6 @@
     "ldapjs": "^2.3.3",
     "morgan": "^1.10.0",
     "multiparty": "^4.2.3",
-    "primeflex": "^2.0.0",
     "primeicons": "^6.0.1",
     "primevue": "^3.29.2",
     "readline-sync": "^1.4.10",
