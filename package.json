@@ -44,7 +44,6 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.2.3",
-    "@vue/compiler-sfc": "^3.3.4",
     "chromedriver": "^114.0.2",
     "eslint": "^8.43.0",
     "eslint-plugin-vue": "^8.7.1",
