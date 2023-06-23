@@ -258,3 +258,6 @@
 * Clear password protection session on user logout
 * Fix settings dialog save button
 
+[5.17.11]
+* Update dependencies
+
