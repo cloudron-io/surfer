@@ -261,3 +261,6 @@
 [5.17.11]
 * Update dependencies
 
+[5.18.0]
+* Move to vitejs as the buildtool
+* Use nodejs 18.12.1
