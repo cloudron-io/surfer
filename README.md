@@ -81,10 +81,10 @@ cd surfer
 npm install
 ```
 
-During UI development, the assets have to be built after changes. This can be done automatically with
+During UI development, the assets have to be built after changes. This can be done with
 
 ```bash
-npm run watch
+npm run build
 ```
 
 While having the `./server.js` instance running.
