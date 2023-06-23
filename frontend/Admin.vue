@@ -5,7 +5,7 @@
 
   <!-- This is re-used and thus global -->
   <ConfirmDialog></ConfirmDialog>
-  <Toast position="top-center" />
+  <Toast position="top-left"/>
 
   <div class="login-container" v-show="ready && !session.valid">
     <form @submit="onLogin" @submit.prevent>
@@ -62,8 +62,8 @@
   <!-- Settings Dialog -->
   <Dialog v-model:visible="settingsDialog.visible" header="Settings" :dismissableMask="true" :modal="true" :closable="true" :style="{width: '50vw'}">
     <div>
-      <div class="p-field-checkbox">
-        <Checkbox id="publicFolderListing" v-model="settingsDialog.folderListingEnabled" :binary="true"/>
+      <div class="radio-checkbox-field">
+        <Checkbox inputId="publicFolderListing" v-model="settingsDialog.folderListingEnabled" :binary="true"/>
         <label for="publicFolderListing" style="font-weight: bold; font-size: 16.38px;">Public Folder Listing</label>
       </div>
       <p>If this is enabled, all folders and files will be publicly listed. If a folder contains a file with the below set index name, this will be displayed instead.</p>
@@ -74,8 +74,8 @@
     <div>
       <h3>Index Document</h3>
       <p>By default files names index.html will be served up automatically in each folder. This settings allows to specify any filename as index document.</p>
-      <div class="p-fluid p-formgrid p-grid">
-        <div class="p-field p-col-12">
+      <div class="p-fluid">
+        <div>
           <label for="indexInput">Filename</label>
           <InputText id="indexInput" type="text" placeholder="index.html" v-model="settingsDialog.index"/>
         </div>
@@ -85,25 +85,23 @@
     <div>
       <h3>Display</h3>
       <p>These settings only apply if public folder listing is enabled and no custom index file is present.</p>
-      <div class="p-field-checkbox">
+      <div class="radio-checkbox-field">
         <Checkbox id="sortShowFoldersFirst" v-model="settingsDialog.sortFoldersFirst" :binary="true"/>
         <label for="sortShowFoldersFirst">Always show folders first</label>
       </div>
-      <div class="p-fluid p-formgrid p-grid">
-        <div class="p-field p-col-12">
+      <div class="p-fluid">
+        <div>
           <label for="titleInput">Title</label>
           <InputText id="titleInput" type="text" placeholder="Surfer" v-model="settingsDialog.title"/>
         </div>
-        <div class="p-field p-col-12">
-          <label for="faviconInput">Favicon</label>
+        <div>
+          <label>Favicon</label>
           <br/>
           <img ref="faviconImage" :src="'/api/favicon?' + Date.now()" width="64" height="64"/>
         </div>
-        <div class="p-field p-col-3">
-          <Button id="faviconInput" class="p-button p-button-sm" label="Upload Favicon" icon="pi pi-upload" @click="onUploadFavicon"/>
-        </div>
-        <div class="p-field p-col-3">
-          <Button class="p-button p-button-sm p-button-outlined" label="Reset Favicon" icon="pi pi-replay" @click="onResetFavicon"/>
+        <div>
+          <Button style="width: auto; margin-right: 0.5rem;" class="p-button p-button-sm" label="Upload Favicon" icon="pi pi-upload" @click="onUploadFavicon"/>
+          <Button style="width: auto;" class="p-button p-button-sm p-button-outlined" label="Reset Favicon" icon="pi pi-replay" @click="onResetFavicon"/>
         </div>
       </div>
     </div>
@@ -113,20 +111,20 @@
     <div>
       <h3>Access</h3>
       <p>This controls how the public folder listing or any served up site can be accessed.</p>
-      <div class="p-field-radiobutton">
-        <RadioButton id="accessPublic" value="" v-model="settingsDialog.accessRestriction" />
+      <div class="radio-checkbox-field">
+        <RadioButton inputId="accessPublic" value="" v-model="settingsDialog.accessRestriction" />
         <label for="accessPublic">Public (everyone)</label>
       </div>
-      <div class="p-field-radiobutton">
-        <RadioButton id="accessPassword" value="password" v-model="settingsDialog.accessRestriction" />
+      <div class="radio-checkbox-field">
+        <RadioButton inputId="accessPassword" value="password" v-model="settingsDialog.accessRestriction" />
         <label for="accessPassword">Password restricted</label>
       </div>
       <div class="p-field" v-show="settingsDialog.accessRestriction === 'password'">
         <Password :feedback="false" v-model="settingsDialog.accessPassword" :required="settingsDialog.accessRestriction === 'password'" toggleMask/><br/>
         <small>Changing the password will require every user to re-login.</small>
       </div>
-      <div class="p-field-radiobutton">
-        <RadioButton id="accessUser" value="user" v-model="settingsDialog.accessRestriction" />
+      <div class="radio-checkbox-field">
+        <RadioButton inputId="accessUser" value="user" v-model="settingsDialog.accessRestriction" />
         <label for="accessUser">User restricted</label>
       </div>
     </div>
@@ -158,17 +156,12 @@
     <br/>
     <Message severity="warn" :closable="false">Tokens are shared between all users.</Message>
     <br/>
-    <div class="p-fluid">
-      <div v-for="accessToken in accessTokens" :key="accessToken.value" class="p-grid">
-        <div class="p-col">
-          <span class="p-input-icon-right">
-            <i class="pi pi-copy"></i>
-            <InputText type="text" class="p-inputtext-sm" v-model="accessToken.value" @click="onCopyAccessToken" readonly style="cursor: copy !important;" />
-          </span>
-        </div>
-        <div class="p-col-fixed">
-          <Button class="p-col-12 p-button-sm p-button-danger" icon="pi pi-trash" @click="onDeleteAccessToken(accessToken.value)"/>
-        </div>
+    <div>
+      <div v-for="accessToken in accessTokens" :key="accessToken.value" class="p-fluid">
+        <span class="p-inputgroup" style="margin-bottom: 5px;">
+          <InputText type="text" class="p-inputtext-sm" v-model="accessToken.value" @click="onCopyAccessToken" readonly style="cursor: copy !important;" />
+          <Button class="p-button-sm p-button-danger" icon="pi pi-trash" @click="onDeleteAccessToken(accessToken.value)"/>
+        </span>
       </div>
     </div>
     <br/>

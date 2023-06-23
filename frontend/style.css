@@ -95,3 +95,15 @@ a:hover {
 .p-button.p-button-icon-only.p-button-rounded {
     height: unset;
 }
+
+.radio-checkbox-field {
+    margin-bottom: .4rem;;
+}
+
+.radio-checkbox-field > label {
+    margin-left: .5rem;;
+}
+
+.p-inputtext {
+    margin-top: 0.4rem;
+}

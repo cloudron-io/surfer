@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "watch": "vite build --watch",
     "serve": "vite preview",
     "test": "./node_modules/mocha/bin/_mocha --bail -R spec ./test/test.js"
   },
