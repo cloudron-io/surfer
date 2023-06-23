@@ -284,10 +284,7 @@ app.use('/', function (req, res, next) {
     if (!config.folderListingEnabled) return send404(res);
 
     const filePath = req.path ? decodeURIComponent(req.path) : '';
-    if (!fs.existsSync(path.join(ROOT_FOLDER, filePath))) {
-        console.log('hit this?', path.join(ROOT_FOLDER, filePath));
-        return send404(res);
-    }
+    if (!fs.existsSync(path.join(ROOT_FOLDER, filePath))) return send404(res);
 
     // we provision the public app with all the info so we can do static and dynamic rendering
     files.getFolderListing(filePath, function (error, result) {
