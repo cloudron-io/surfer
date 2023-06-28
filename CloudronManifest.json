@@ -27,7 +27,6 @@
   "contactEmail": "support@cloudron.io",
   "icon": "file://logo.png",
   "addons": {
-    "ldap": {},
     "oidc": {
       "loginRedirectUri": "/api/oidc/callback"
     },
