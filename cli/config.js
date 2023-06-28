@@ -19,8 +19,8 @@ exports = module.exports = {
     accessToken: function () { return get('accessToken'); }
 };
 
-var HOME = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
-var CONFIG_FILE_PATH = path.join(HOME, '.surfer.json');
+const HOME = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
+const CONFIG_FILE_PATH = path.join(HOME, '.surfer.json');
 
 var gConfig = (function () {
     return safe.JSON.parse(safe.fs.readFileSync(CONFIG_FILE_PATH)) || {};

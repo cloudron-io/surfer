@@ -18,7 +18,7 @@ var superagent = require('superagent'),
 
 require('colors');
 
-var API = '/api/files/';
+const API = '/api/files/';
 
 var gServer = '';
 var gQuery = {};
@@ -36,7 +36,7 @@ function checkConfig(options, program) {
     // FIXME this uses private API of commander. I was not able to figure out how to otherwise access program wide args
     let parentOptions = program.parent._optionValues;
 
-    if (!parentOptions.server && !config.server()) exit('Run %s first, or provide %s', 'surfer login'.bold, '--server <url>'.bold);
+    if (!parentOptions.server && !config.server()) exit('Run %s first, or provide %s', 'surfer login'.bold, '--server <url>'.bold, '--token <access token>'.bold);
 
     if (parentOptions.server) {
         var tmp = url.parse(parentOptions.server);
@@ -137,33 +137,20 @@ function delOne(file, callback) {
     });
 }
 
-function login(uri, options) {
-    var tmp = url.parse(uri);
-    if (!tmp.slashes) tmp = url.parse('https://' + uri);
+function login(options, program) {
+    checkConfig(options, program);
 
-    var server = tmp.protocol + '//' + tmp.host;
-
-    console.log('Using server', server.cyan);
-
-    var username = options.username || readlineSync.question('Username: ');
-    var password = options.password || readlineSync.question('Password: ', { hideEchoBack: true, mask: '' });
-
-    if (!username || !password) exit('Provide username and password');
-
-    superagent.post(server + '/api/login').send({ username: username, password: password }).end(function (error, result) {
-        if (error && error.code === 'ENOTFOUND') exit('Server %s not found.'.red, server.bold);
-        if (error && error.code) exit('Failed to connect to server %s'.red, server.bold, error.code);
-        if (result.status !== 201) {
-            console.log('Login failed.\n'.red);
-
-            // remove the password to avoid a login loop
-            delete options.password;
-
-            return login(uri, options);
+    superagent.get(gServer + '/api/profile').query(gQuery).end(function (error, result) {
+        if (error && error.code === 'ENOTFOUND') exit('Server %s not found.'.red, gServer.bold);
+        if (error && error.code) exit('Failed to connect to server %s'.red, gServer.bold, error.code);
+        if (result.status !== 200) {
+            console.log(result.status, gQuery)
+            console.log('Login failed. Provide an api access token with --token\n'.red);
+            process.exit(1);
         }
 
-        config.set('server', server);
-        config.set('accessToken', result.body.accessToken);
+        config.set('server', gServer);
+        config.set('accessToken', gQuery.access_token);
 
         console.log('Login successful'.green);
     });
@@ -174,15 +161,10 @@ function logout(options, program) {
 
     if (!config.accessToken()) return console.log('Done'.green);
 
-    superagent.post(gServer + '/api/logout').query({ access_token: config.accessToken() }).end(function (error, result) {
-        if (result && result.statusCode !== 200) exit('Failed to logout: ' + result.statusCode);
-        if (error) exit(error.message);
+    config.set('server', '');
+    config.set('accessToken', '');
 
-        config.set('server', '');
-        config.set('accessToken', '');
-
-        console.log('Done'.green);
-    });
+    console.log('Logout done'.green);
 }
 
 function get(filePath, options, program) {

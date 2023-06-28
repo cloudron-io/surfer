@@ -158,24 +158,6 @@ exports.oidcAuth = oidc.requiresAuth();
 
 exports.verifyUser = verifyUser;
 
-exports.login = function (req, res, next) {
-    verifyUser(req.body.username, req.body.password, function (error, user) {
-        if (error) return next(new HttpError(401, 'Invalid credentials'));
-
-        var accessToken = LOGIN_TOKEN_PREFIX + hat(128);
-
-        tokenStore.set(accessToken, user, function (error) {
-            if (error) return next(new HttpError(500, error));
-
-            // validate those session immediately
-            req.session.isValid = true;
-            req.session.isAdmin = true;
-
-            next(new HttpSuccess(201, { accessToken: accessToken, user: user }));
-        });
-    });
-};
-
 exports.verify = function (req, res, next) {
     var accessToken = req.query.access_token || req.body.accessToken;
 
@@ -191,22 +173,6 @@ exports.verify = function (req, res, next) {
         next();
     });
 
-};
-
-exports.logout = function (req, res, next) {
-    var accessToken = req.query.access_token || req.body.accessToken;
-
-    tokenStore.del(accessToken, function (error) {
-        if (error) console.error(error);
-
-        if (req.session.isValid) {
-            req.session.destroy(function (error) {
-                if (error) console.error('Failed to destroy session.', error);
-            });
-        }
-
-        next(new HttpSuccess(200, {}));
-    });
 };
 
 exports.getProfile = function (req, res, next) {

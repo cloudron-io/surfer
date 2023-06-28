@@ -246,8 +246,6 @@ const PUBLIC_NOSCRIPT_EJS = fs.readFileSync(__dirname + '/frontend/public.noscri
 
 router.post  ('/api/protectedLogin', protectedLogin);
 router.get   ('/api/oidc/login', auth.oidcLogin);
-router.post  ('/api/login', auth.login);
-router.post  ('/api/logout', auth.verify, auth.logout);
 router.get   ('/api/settings', getSettings);
 router.get   ('/api/favicon', getFavicon);
 router.put   ('/api/favicon', auth.verify, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), setFavicon);

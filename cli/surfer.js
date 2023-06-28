@@ -11,14 +11,12 @@ program.version(require('../package.json').version);
 program.option('-s, --server <url>', 'Server URL (optional)');
 program.option('-t, --token <access token>', 'Server Access Token (optional)');
 
-program.command('login <url>')
-    .description('Login to server')
-    .option('--username [username]', 'Username (optional)')
-    .option('--password [password]', 'Password (optional)')
+program.command('login')
+    .description('Set default server')
     .action(actions.login);
 
 program.command('logout')
-    .description('Logout from server')
+    .description('Unset default server')
     .action(actions.logout);
 
 program.command('put <file|dir...>')
