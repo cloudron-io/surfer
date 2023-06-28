@@ -1,7 +1,7 @@
 <template>
   <div class="login-container" v-show="ready">
     <h1>Login to {{ settings.title }}</h1>
-    <form @submit="onLogin" @submit.prevent v-show="settings.accessRestriction === 'password`'">
+    <form @submit="onLogin" @submit.prevent v-show="settings.accessRestriction === 'password'">
       <div class="p-fluid">
         <div>
           <label for="passwordInput">Password</label>
@@ -11,7 +11,7 @@
       </div>
       <Button type="submit" label="Login" id="loginButton"/>
     </form>
-    <a href="/api/oidc/login?returnTo=/"><Button class="p-button-sm" label="Login with Cloudron" icon="pi pi-sign-in"/></a>
+    <a href="/api/oidc/login?returnTo=/" v-show="settings.accessRestriction !== 'password'"><Button class="p-button-sm" label="Login with Cloudron" icon="pi pi-sign-in"/></a>
   </div>
 </template>
 
