@@ -120,7 +120,7 @@ exports.oidcMiddleware = oidc.auth({
 
 exports.oidcLogin = function (req, res) {
     res.oidc.login({
-        returnTo: '/_admin',
+        returnTo: req.query.returnTo || '/_admin',
         authorizationParams: {
             redirect_uri: process.env.CLOUDRON_APP_ORIGIN + '/api/oidc/callback',
         },
@@ -136,10 +136,6 @@ exports.verify = function (req, res, next) {
 
     tokenStore.get(accessToken, function (error, user) {
         if (error) return next(new HttpError(401, 'Invalid Access Token'));
-
-        // also mark this session valid and admin
-        req.session.isValid = true;
-        req.session.isAdmin = true;
 
         req.user = user;
 

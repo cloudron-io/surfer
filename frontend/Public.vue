@@ -33,7 +33,7 @@ import { sanitize, encode, decode, getPreviewUrl, getExtension } from './utils.j
 const ORIGIN = window.location.origin;
 
 export default {
-    name: 'Public',
+    name: 'PublicView',
     data() {
         return {
             ready: false,

@@ -192,7 +192,7 @@ import { eachLimit, each } from 'async';
 import { sanitize, encode, decode, getPreviewUrl, getExtension, copyToClipboard } from './utils.js';
 
 export default {
-    name: 'Admin',
+    name: 'AdminView',
     data() {
         return {
             ready: false,

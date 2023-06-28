@@ -36,7 +36,8 @@ const CRYPTO_ITERATIONS = 10000; // iterations
 const CRYPTO_KEY_LENGTH = 512; // bits
 const CRYPTO_DIGEST = 'sha1'; // used to be the default in node 4.1.1 cannot change since it will affect existing db records
 
-var sessionStore = new session.MemoryStore();
+// session is only used for passwort protection state
+const sessionStore = new session.MemoryStore();
 
 // Ensure the root folder exists
 fs.mkdirSync(ROOT_FOLDER, { recursive: true });
@@ -164,18 +165,14 @@ function resetFavicon(req, res, next) {
 }
 
 function handleProtection(req, res, next) {
-    if (!config.accessRestriction) return next();
-    if (req.session.isValid) return next();
+    if (!config.accessRestriction) return next();   // no protection
+    if (req.session.isValid) return next();         // password protection
+    if (req.oidc.isAuthenticated()) return next();  // openid user protection
 
     res.status(401).sendFile(path.join(__dirname, '/dist/protected.html'));
 }
 
 function protectedLogin(req, res, next) {
-    function success() {
-        req.session.isValid = true;
-        next(new HttpSuccess(200, {}));
-    }
-
     if (config.accessRestriction === 'password') {
         let saltBinary = Buffer.from(config.accessPasswordSalt, 'hex');
         crypto.pbkdf2(req.body.password, saltBinary, CRYPTO_ITERATIONS, CRYPTO_KEY_LENGTH, CRYPTO_DIGEST, function (error, derivedKey) {
@@ -187,12 +184,9 @@ function protectedLogin(req, res, next) {
             let derivedKeyHex = Buffer.from(derivedKey, 'binary').toString('hex');
             if (derivedKeyHex !== config.accessPassword) return next(new HttpError(403, 'forbidden'));
 
-            success();
-        });
-    } else if (config.accessRestriction === 'user') {
-        auth.verifyUser(req.body.username, req.body.password, function (error) {
-            if (error) return next(new HttpError(401, 'Invalid credentials'));
-            success();
+            req.session.isValid = true;
+
+            next(new HttpSuccess(200, {}));
         });
     } else {
         next(new HttpError(409, 'site is not protected'));

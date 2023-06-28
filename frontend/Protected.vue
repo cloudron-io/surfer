@@ -1,12 +1,8 @@
 <template>
   <div class="login-container" v-show="ready">
-    <form @submit="onLogin" @submit.prevent>
-      <h1>Login to {{ settings.title }}</h1>
+    <h1>Login to {{ settings.title }}</h1>
+    <form @submit="onLogin" @submit.prevent v-show="settings.accessRestriction === 'password`'">
       <div class="p-fluid">
-        <div v-show="settings.accessRestriction === 'user'">
-          <label for="usernameInput">Username</label>
-          <InputText id="usernameInput" type="text" v-model="username"/>
-        </div>
         <div>
           <label for="passwordInput">Password</label>
           <Password id="passwordInput" :feedback="false" v-model="password" :class="{ 'p-invalid': error }"/>
@@ -15,6 +11,7 @@
       </div>
       <Button type="submit" label="Login" id="loginButton"/>
     </form>
+    <a href="/api/oidc/login?returnTo=/"><Button class="p-button-sm" label="Login with Cloudron" icon="pi pi-sign-in"/></a>
   </div>
 </template>
 
@@ -25,14 +22,13 @@ import superagent from 'superagent';
 const ORIGIN = window.location.origin;
 
 export default {
-    name: 'Public',
+    name: 'ProtectedView',
     data() {
         return {
             ready: false,
             busy: true,
             origin: ORIGIN,
             error: false,
-            username: '',
             password: '',
             settings: {
                 accessRestriction: '',
@@ -47,7 +43,7 @@ export default {
             that.busy = true;
             that.error = false;
 
-            superagent.post(`${that.origin}/api/protectedLogin`).send({ username: that.username, password: that.password }).end(function (error, result) {
+            superagent.post(`${that.origin}/api/protectedLogin`).send({ password: that.password }).end(function (error, result) {
                 that.busy = false;
 
                 if (error || result.statusCode !== 200) {
@@ -75,8 +71,7 @@ export default {
             that.ready = true;
 
             that.$nextTick(function() {
-                if (that.settings.accessRestriction === 'user') document.getElementById('usernameInput').focus();
-                else document.getElementById('passwordInput').focus();
+                document.getElementById('passwordInput').focus();
             });
         });
     }
