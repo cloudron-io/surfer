@@ -33,10 +33,11 @@ describe('Application life cycle test', function () {
     const SPECIAL_FOLDER_NAME_0 = 'Tâm Tình Với Bạn';
     const SPECIAL_FOLDER_NAME_1 = '? ! + #';
     const CLI = path.join(__dirname, '/../cli/surfer.js');
+    const USERNAME = process.env.USERNAME;
+    const PASSWORD = process.env.PASSWORD;
 
     var browser;
     var app;
-    var proto = 'https://'; // helps with local testing
     var gApiToken;
 
     before(function () {
@@ -51,10 +52,6 @@ describe('Application life cycle test', function () {
         var inspect = JSON.parse(execSync('cloudron inspect'));
         app = inspect.apps.filter(function (a) { return a.location.indexOf(LOCATION) === 0; })[0];
         expect(app).to.be.an('object');
-
-        // just for local testing
-        // proto = 'http://';
-        // app.fqdn = 'localhost:3000';
     }
 
     async function waitForElement(elem) {
@@ -64,18 +61,31 @@ describe('Application life cycle test', function () {
 
     async function login() {
         await browser.manage().deleteAllCookies();
-        await browser.get(proto + app.fqdn + '/_admin');
+        await browser.get(`https://${app.fqdn}/_admin`);
 
-        await waitForElement(By.id('usernameInput'));
-        await browser.findElement(By.id('usernameInput')).sendKeys(process.env.USERNAME);
-        await browser.findElement(By.xpath('//div[@id="passwordInput"]/input')).sendKeys(process.env.PASSWORD);
-        await browser.findElement(By.id('loginButton')).click();
+        // some redirects later
+        await browser.sleep(2000);
+
+        // OIDC
+        if (await browser.findElements(By.xpath('//button[contains(text(), "Sign in using Cloudron")]')).then(found => !!found.length)) {
+            await browser.findElement(By.xpath('//button[contains(text(), "Sign in using Cloudron")]')).click();
+            await browser.sleep(2000);
+            await browser.findElement(By.xpath('//button[contains(text(), "Continue")]')).click();
+            await browser.sleep(2000);
+        }
+
+        if (await browser.findElements(By.xpath('//input[@name="username"]')).then(found => !!found.length)) {
+            await browser.findElement(By.xpath('//input[@name="username"]')).sendKeys(USERNAME);
+            await browser.findElement(By.xpath('//input[@name="password"]')).sendKeys(PASSWORD);
+            await browser.findElement(By.xpath('//button[@type="submit" and contains(text(), "Sign in")]')).click();
+            await browser.sleep(2000);
+        }
 
         await waitForElement(By.id('burgerMenuButton'));
     }
 
     async function logout() {
-        await browser.get(proto + app.fqdn + '/_admin');
+        await browser.get(`https://${app.fqdn}/_admin`);
 
         await waitForElement(By.id('burgerMenuButton'));
         await browser.findElement(By.id('burgerMenuButton')).click();
@@ -86,29 +96,30 @@ describe('Application life cycle test', function () {
         await waitForElement(By.xpath('//span[text() = "Logout"]'));
         await browser.findElement(By.xpath('//span[text() = "Logout"]')).click();
 
-        await waitForElement(By.id('usernameInput'));
+        // let it happen
+        await browser.sleep(2000);
     }
 
     async function checkFileIsListed(name) {
-        await browser.get(proto + app.fqdn + '/_admin');
+        await browser.get(`https://${app.fqdn}/_admin`);
 
         await waitForElement(By.xpath('//*[text()="' + name + '"]'));
     }
 
     async function checkFileIsPresent() {
-        await browser.get(proto + app.fqdn + '/' + TEST_FILE_NAME_0);
+        await browser.get(`https://${app.fqdn}/${TEST_FILE_NAME_0}`);
 
         await waitForElement(By.xpath('//*[text()="test"]'));
     }
 
     async function checkIndexFileIsServedUp() {
-        await browser.get(proto + app.fqdn);
+        await browser.get(`https://${app.fqdn}`);
 
         await waitForElement(By.xpath('//*[text()="test"]'));
     }
 
     function checkFileIsGone(name, done) {
-        superagent.get(proto + app.fqdn + '/' + name).end(function (error, result) {
+        superagent.get(`https://${app.fqdn}/${name}`).end(function (error, result) {
             expect(error).to.be.an('object');
             expect(error.response.status).to.equal(404);
             expect(result).to.be.an('object');
@@ -118,55 +129,57 @@ describe('Application life cycle test', function () {
 
     async function checkFileInFolder() {
         const encodedSpecialFilepath = `/testfiles/%3F%20!%20%2B%20%23folder/Fancy%20-%20%2B!%22%23%24%26'()*%2B%2C%3A%3B%3D%3F%40%20-%20Filename`;
-        const result = await superagent.get(proto + app.fqdn + encodedSpecialFilepath);
+        const result = await superagent.get(`https://${app.fqdn}${encodedSpecialFilepath}`);
         expect(result.statusCode).to.equal(200);
     }
 
     async function createSpecialFolders() {
-        const res0 = await superagent.post(`${proto}${app.fqdn}/api/files/${encodeURIComponent(SPECIAL_FOLDER_NAME_0)}`)
+        const res0 = await superagent.post(`https://${app.fqdn}/api/files/${encodeURIComponent(SPECIAL_FOLDER_NAME_0)}`)
             .query({ access_token: gApiToken, directory: true }).send({});
         expect(res0.statusCode).to.equal(201);
 
-        const res1 = await superagent.post(`${proto}${app.fqdn}/api/files/${encodeURIComponent(SPECIAL_FOLDER_NAME_0)}/${encodeURIComponent(SPECIAL_FOLDER_NAME_1)}`)
+        const res1 = await superagent.post(`https://${app.fqdn}/api/files/${encodeURIComponent(SPECIAL_FOLDER_NAME_0)}/${encodeURIComponent(SPECIAL_FOLDER_NAME_1)}`)
             .query({ access_token: gApiToken, directory: true });
         expect(res1.statusCode).to.equal(201);
     }
 
     async function checkFilesInSpecialFolder() {
-        await browser.get(`${proto}${app.fqdn}/${SPECIAL_FOLDER_NAME_0}`);
+        await browser.get(`https://${app.fqdn}/${SPECIAL_FOLDER_NAME_0}`);
 
         await waitForElement(By.xpath(`//a[text()="${SPECIAL_FOLDER_NAME_1}"]`));
     }
 
     async function enablePublicFolderListing() {
-        const res0 = await superagent.put(`${proto}${app.fqdn}/api/settings`)
+        const res0 = await superagent.put(`https://${app.fqdn}/api/settings`)
             .query({ access_token: gApiToken })
             .send({"folderListingEnabled":true,"sortFoldersFirst":true,"title":"Surfer","index":"","accessRestriction":""});
         expect(res0.statusCode).to.equal(201);
     }
 
     function cliLogin() {
-        execSync(`${CLI} login ${proto}${app.fqdn} --username ${process.env.USERNAME} --password ${process.env.PASSWORD}`, { stdio: 'inherit' });
+        execSync(`${CLI} login --server https://${app.fqdn} --token ${gApiToken}`, { stdio: 'inherit' });
     }
 
-    function createApiToken(done) {
-        superagent.post(proto + app.fqdn + '/api/login').send({ username: process.env.USERNAME, password: process.env.PASSWORD }).end(function (error, result) {
-            expect(error).to.not.be.ok();
-            expect(result.status).to.equal(201);
-            expect(result.body).to.be.an('object');
-            expect(result.body.accessToken).to.be.a('string');
+    async function createApiToken() {
+        await browser.get(`https://${app.fqdn}/_admin`);
 
-            superagent.post(proto + app.fqdn + '/api/tokens').send({ accessToken: result.body.accessToken }).end(function (error, result) {
-                expect(error).to.not.be.ok();
-                expect(result.status).to.equal(201);
-                expect(result.body).to.be.an('object');
-                expect(result.body.accessToken).to.be.a('string');
+        await waitForElement(By.id('burgerMenuButton'));
+        await browser.findElement(By.id('burgerMenuButton')).click();
 
-                gApiToken = result.body.accessToken;
+        // wait for open animation
+        await browser.sleep(1000);
 
-                done();
-            });
-        });
+        await waitForElement(By.xpath('//span[text() = "Access Tokens"]'));
+        await browser.findElement(By.xpath('//span[text() = "Access Tokens"]')).click();
+
+        await waitForElement(By.xpath('//span[text() = "Create Access Token"]'));
+        await browser.findElement(By.xpath('//span[text() = "Create Access Token"]')).click();
+
+        await waitForElement(By.xpath('//div[@class="p-dialog-content"]//input[@type="text"]'));
+        gApiToken = await browser.findElement(By.xpath('//div[@class="p-dialog-content"]//input[@type="text"]')).getAttribute("value");
+
+        expect(gApiToken).to.be.a('string');
+        expect(gApiToken).to.not.be.empty();
     }
 
     function uploadFile(name) {
@@ -203,8 +216,8 @@ describe('Application life cycle test', function () {
     it('can get app information', getAppInfo);
 
     it('can login', login);
-    it('can cli login', cliLogin);
     it('can create api token', createApiToken);
+    it('can cli login', cliLogin);
     it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
     it('file is served up', checkFileIsPresent);
@@ -277,8 +290,8 @@ describe('Application life cycle test', function () {
 
     it('can get app information', getAppInfo);
     it('can login', login);
-    it('can cli login', cliLogin);
     it('can create api token', createApiToken);
+    it('can cli login', cliLogin);
     it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
     it('file is served up', checkFileIsPresent);
