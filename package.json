@@ -29,7 +29,6 @@
     "express-openid-connect": "^2.16.0",
     "express-session": "^1.17.3",
     "filesize": "^10.0.7",
-    "ldapjs": "^2.3.3",
     "morgan": "^1.10.0",
     "multiparty": "^4.2.3",
     "primeicons": "^6.0.1",

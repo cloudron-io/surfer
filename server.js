@@ -77,15 +77,13 @@ function setSettings(req, res, next) {
     if (typeof req.body.accessRestriction !== 'string') return next(new HttpError(400, 'missing accessRestriction string'));
     if ('accessPassword' in req.body && typeof req.body.accessPassword !== 'string') return next(new HttpError(400, 'accessPassword must be a string'));
 
-    function clearNonAdminSessions(callback) {
+    function clearPassswordProtectionSessions(callback) {
         callback = callback || function () {};
 
         sessionStore.all(function (error, sessions) {
             if (error) return console.error('Failed to get sessions.', error);
 
             async.each(Object.keys(sessions), function (sid, callback) {
-                if (sessions[sid].isAdmin) return callback();
-
                 sessionStore.destroy(sid, function (error) {
                     if (error) console.error(`Failed to delete session %sid.`, error);
                     callback();
@@ -106,7 +104,7 @@ function setSettings(req, res, next) {
                 config.accessPassword = Buffer.from(derivedKey, 'binary').toString('hex');
                 config.accessPasswordSalt = salt.toString('hex');
 
-                clearNonAdminSessions(callback);
+                clearPassswordProtectionSessions(callback);
             });
         });
     }
@@ -119,7 +117,7 @@ function setSettings(req, res, next) {
     staticServMiddleware = express.static(ROOT_FOLDER, { index: config.index || 'index.html', setHeaders: setServMiddlewareHeaders });
 
     // if changed invalidate sessions
-    if (config.accessRestriction !== req.body.accessRestriction) clearNonAdminSessions();
+    if (config.accessRestriction !== req.body.accessRestriction) clearPassswordProtectionSessions();
 
     config.accessRestriction = req.body.accessRestriction;
 
@@ -132,7 +130,6 @@ function setSettings(req, res, next) {
             next(new HttpSuccess(201, {}));
         });
     });
-
 }
 
 function getFavicon(req, res) {
@@ -242,18 +239,18 @@ router.post  ('/api/protectedLogin', protectedLogin);
 router.get   ('/api/oidc/login', auth.oidcLogin);
 router.get   ('/api/settings', getSettings);
 router.get   ('/api/favicon', getFavicon);
-router.put   ('/api/favicon', auth.verify, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), setFavicon);
-router.delete('/api/favicon', auth.verify, resetFavicon);
-router.put   ('/api/settings', auth.verify, setSettings);
+router.put   ('/api/favicon', auth.verifyToken, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), setFavicon);
+router.delete('/api/favicon', auth.verifyToken, resetFavicon);
+router.put   ('/api/settings', auth.verifyToken, setSettings);
 router.get   ('/api/token', auth.oidcAuth, auth.createOidcToken);
-router.get   ('/api/tokens', auth.verify, auth.getTokens);
-router.post  ('/api/tokens', auth.verify, auth.createToken);
-router.delete('/api/tokens/:token', auth.verify, auth.delToken);
-router.get   ('/api/profile', auth.verify, auth.getProfile);
-router.get   ('/api/files/*', auth.verify, files.get);
-router.post  ('/api/files/*', auth.verify, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), files.post);
-router.put   ('/api/files/*', auth.verify, files.put);
-router.delete('/api/files/*', auth.verify, files.del);
+router.get   ('/api/tokens', auth.verifyToken, auth.getTokens);
+router.post  ('/api/tokens', auth.verifyToken, auth.createToken);
+router.delete('/api/tokens/:token', auth.verifyToken, auth.delToken);
+router.get   ('/api/profile', auth.verifyToken, auth.getProfile);
+router.get   ('/api/files/*', auth.verifyToken, files.get);
+router.post  ('/api/files/*', auth.verifyToken, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), files.post);
+router.put   ('/api/files/*', auth.verifyToken, files.put);
+router.delete('/api/files/*', auth.verifyToken, files.del);
 
 app.use('/api/healthcheck', function (req, res) { res.status(200).send(); });
 app.use(morgan('dev'));

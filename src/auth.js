@@ -1,11 +1,8 @@
 'use strict';
 
 var path = require('path'),
-    safe = require('safetydance'),
     fs = require('fs'),
-    bcrypt = require('bcryptjs'),
     crypto = require('crypto'),
-    ldapjs = require('ldapjs'),
     oidc = require('express-openid-connect'),
     HttpError = require('connect-lastmile').HttpError,
     HttpSuccess = require('connect-lastmile').HttpSuccess,
@@ -50,54 +47,8 @@ try {
     // start with empty token store
 }
 
-// https://tools.ietf.org/search/rfc4515#section-3
-function sanitizeInput(username) {
-    return username
-        .replace(/\*/g, '\\2a')
-        .replace(/\(/g, '\\28')
-        .replace(/\)/g, '\\29')
-        .replace(/\\/g, '\\5c')
-        .replace(/\0/g, '\\00')
-        .replace(/\//g, '\\2f');
-}
-
 function hat (bits) {
     return crypto.randomBytes(bits / 8).toString('hex');
-}
-
-function verifyUser(username, password, callback) {
-    username = sanitizeInput(username);
-
-    var ldapClient = ldapjs.createClient({ url: process.env.CLOUDRON_LDAP_URL });
-    ldapClient.on('error', function (error) {
-        console.error('LDAP error', error);
-    });
-
-    ldapClient.bind(process.env.CLOUDRON_LDAP_BIND_DN, process.env.CLOUDRON_LDAP_BIND_PASSWORD, function (error) {
-        if (error) return callback(error);
-
-        var filter = `(|(uid=${username})(mail=${username})(username=${username})(sAMAccountName=${username}))`;
-        ldapClient.search(process.env.CLOUDRON_LDAP_USERS_BASE_DN, { filter: filter }, function (error, result) {
-            if (error) return callback(error);
-
-            var items = [];
-
-            result.on('searchEntry', function(entry) { items.push(entry.object); });
-            result.on('error', callback);
-            result.on('end', function (result) {
-                if (result.status !== 0 || items.length === 0) return callback('Invalid credentials');
-
-                // pick the first found
-                var user = items[0];
-
-                ldapClient.bind(user.dn, password, function (error) {
-                    if (error) return callback('Invalid credentials');
-
-                    callback(null, { username: username });
-                });
-            });
-        });
-    });
 }
 
 exports.oidcMiddleware = oidc.auth({
@@ -129,9 +80,7 @@ exports.oidcLogin = function (req, res) {
 
 exports.oidcAuth = oidc.requiresAuth();
 
-exports.verifyUser = verifyUser;
-
-exports.verify = function (req, res, next) {
+exports.verifyToken = function (req, res, next) {
     var accessToken = req.query.access_token || req.body.accessToken;
 
     tokenStore.get(accessToken, function (error, user) {
