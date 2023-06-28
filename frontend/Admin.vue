@@ -135,6 +135,7 @@
     Access tokens are useful to programmatically deploy assets for example within a CI/CD pipeline.
     See the <a href="https://cloudron.io/documentation/apps/surfer/" target="_blank">docs</a> for more information on how to use this token.
     <br/>
+    <Message severity="warn" :closable="false">Those tokens are also used for webdav login as the password.</Message>
     <br/>
     <Message severity="warn" :closable="false">Tokens are shared between all users.</Message>
     <br/>

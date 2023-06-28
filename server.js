@@ -307,6 +307,4 @@ var server = app.listen(3000, function () {
     console.log(`Base path: ${ROOT_FOLDER}`);
     console.log();
     console.log(`Listening on http://${host}:${port}`);
-
-    auth.init(config);
 });

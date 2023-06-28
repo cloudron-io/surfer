@@ -25,9 +25,7 @@ if (AUTH_METHOD === 'ldap') {
     console.log(`Using local auth file at: ${LOCAL_AUTH_FILE}`);
 }
 
-var gConfig = {};
-
-var tokenStore = {
+const tokenStore = {
     data: {},
     save: function () {
         try {
@@ -123,10 +121,6 @@ function verifyUser(username, password, callback) {
     }
 }
 
-exports.init = function (config) {
-    gConfig = config;
-};
-
 exports.oidcMiddleware = oidc.auth({
     issuerBaseURL: process.env.CLOUDRON_OIDC_ISSUER,
     baseURL: process.env.CLOUDRON_APP_ORIGIN,
@@ -172,7 +166,6 @@ exports.verify = function (req, res, next) {
 
         next();
     });
-
 };
 
 exports.getProfile = function (req, res, next) {
@@ -180,7 +173,7 @@ exports.getProfile = function (req, res, next) {
 };
 
 exports.createOidcToken = function (req, res, next) {
-    const accessToken = hat(128);
+    const accessToken = LOGIN_TOKEN_PREFIX + hat(128);
 
     tokenStore.set(accessToken, { username: req.oidc.user.sub }, function (error) {
         if (error) return next(new HttpError(500, error));
@@ -238,25 +231,26 @@ WebdavUserManager.prototype.getDefaultUser = function (callback) {
     callback(user);
 };
 
+// password is the access token, username is ignored
 WebdavUserManager.prototype.getUserByNamePassword = function (username, password, callback) {
-    var that = this;
+    const that = this;
 
-    const cacheKey = 'key-'+username+password;
-    const user = {
-        username: username,
-        isAdministrator: true,
-        isDefaultUser: false,
-        uid: username
-    };
+    const cacheKey = 'key-' + password;
 
-    if (this._authCache[cacheKey] && this._authCache[cacheKey] > Date.now()) {
-        return callback(null, user);
-    } else {
-        delete this._authCache[cacheKey];
-    }
-
-    verifyUser(username, password, function (error) {
+    tokenStore.get(password, function (error, result) {
         if (error) return callback(webdavErrors.UserNotFound);
+
+        const user = {
+            username: result.username,
+            isAdministrator: true,
+            isDefaultUser: false,
+            uid: result.username
+        };
+
+        if (that._authCache[cacheKey] && that._authCache[cacheKey] > Date.now()) return callback(null, user);
+
+        // delete in case it expired
+        delete that._authCache[cacheKey];
 
         that._authCache[cacheKey] = Date.now() + (60 * 1000); // cache for up to 1 min
 
