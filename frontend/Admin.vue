@@ -107,7 +107,7 @@
       </div>
       <div class="radio-checkbox-field">
         <RadioButton inputId="accessUser" value="user" v-model="settingsDialog.accessRestriction" />
-        <label for="accessUser">User restricted</label>
+        <label for="accessUser">Private (only logged in users)</label>
       </div>
     </div>
 
