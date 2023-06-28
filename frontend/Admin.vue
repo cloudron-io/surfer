@@ -7,25 +7,7 @@
   <ConfirmDialog></ConfirmDialog>
   <Toast position="top-left"/>
 
-  <div class="login-container" v-show="ready && !session.valid">
-    <form @submit="onLogin" @submit.prevent>
-      <h1>Login to {{ settings.title }}</h1>
-      <div class="p-fluid">
-        <div>
-          <label for="usernameInput">Username</label>
-          <InputText id="usernameInput" type="text" v-model="loginData.username" autofocus/>
-        </div>
-        <div>
-          <label for="passwordInput">Password</label>
-          <Password id="passwordInput" :feedback="false" v-model="loginData.password" :class="{ 'p-invalid': loginData.error }"/>
-          <small v-show="loginData.error" :class="{ 'p-invalid': loginData.error }">Wrong username or password.</small>
-        </div>
-      </div>
-      <Button type="submit" label="Login" id="loginButton" @click="onLogin"/>
-    </form>
-  </div>
-
-  <div class="main-container" v-show="ready && session.valid">
+  <div class="main-container" v-show="ready">
     <div class="main-container-toolbar">
       <Toolbar>
         <template #start>
@@ -216,6 +198,7 @@ export default {
             busy: true,
             origin: window.location.origin,
             domain: window.location.host,
+            username: '',
             uploadStatus: {
                 busy: false,
                 count: 0,
@@ -227,15 +210,6 @@ export default {
             breadCrumbs: {
                 home: { icon: 'pi pi-home', url: '#/' },
                 items: []
-            },
-            session: {
-                valid: false
-            },
-            loginData: {
-                busy: false,
-                error: false,
-                username: '',
-                password: ''
             },
             entries: [],
             activeEntry: {},
@@ -314,10 +288,7 @@ export default {
         initWithToken: function (accessToken) {
             var that = this;
 
-            if (!accessToken) {
-                this.ready = true;
-                return;
-            }
+            if (!accessToken) return this.login();
 
             superagent.get('/api/profile').query({ access_token: accessToken }).end(function (error, result) {
                 that.ready = true;
@@ -325,12 +296,11 @@ export default {
                 if (error && !error.response) return console.error(error);
                 if (result.statusCode !== 200) {
                     delete localStorage.accessToken;
-                    return;
+                    return that.login();
                 }
 
                 localStorage.accessToken = accessToken;
-                that.session.username = result.body.username;
-                that.session.valid = true;
+                that.username = result.body.username;
 
                 that.loadDirectory(decode(window.location.hash.slice(1)));
 
@@ -377,24 +347,34 @@ export default {
                 window.location.hash = that.path;
             });
         },
+        login() {
+            const that = this;
+
+            // first try to get a new token if we have a session otherwise redirect to oidc login
+            superagent.get('/api/token').end(function (error, result) {
+                if (error) window.location.href = '/api/oidc/login';
+
+                const accessToken = result.body.accessToken;
+                localStorage.accessToken = accessToken;
+
+                that.initWithToken(accessToken);
+            });
+        },
         logout: function () {
             var that = this;
 
-            superagent.post('/api/logout').query({ access_token: localStorage.accessToken }).end(function (error) {
-                if (error) console.error(error);
+            superagent.del('/api/tokens/' + localStorage.accessToken).query({ access_token: localStorage.accessToken }).end(function (error) {
+                if (error) console.error('Failed to clear token', error);
 
                 // close all potential dialogs
                 that.newFolderDialog.visible = false;
                 that.settingsDialog.visible = false;
                 that.accessTokenDialog.visible = false;
-
-                that.loginData.username = '';
-                that.loginData.password = '';
-                that.loginData.error = false;
-
-                that.session.valid = false;
+                that.username = '';
 
                 delete localStorage.accessToken;
+
+                window.location.href = '/api/oidc/logout';
             });
         },
         refresh: function () {
@@ -591,25 +571,6 @@ export default {
                 }
             });
         },
-        onLogin: function () {
-            var that = this;
-
-            that.loginData.busy = true;
-            that.loginData.error = false;
-
-            superagent.post('/api/login').send({ username: that.loginData.username, password: that.loginData.password }).end(function (error, result) {
-                that.loginData.busy = false;
-
-                if (error || result.statusCode === 401) {
-                    that.loginData.error = true;
-                    that.loginData.password = '';
-                    document.getElementById('passwordInput').focus();
-                    return;
-                }
-
-                that.initWithToken(result.body.accessToken);
-            });
-        },
         onUploadFavicon: function () {
             // reset the form first to make the change handler retrigger even on the same file selected
             this.$refs.uploadFavicon.value = '';
@@ -779,12 +740,6 @@ export default {
 </script>
 
 <style>
-
-.login-container {
-    max-width: 480px;
-    margin: auto;
-    padding: 20px;
-}
 
 hr {
     border: none;

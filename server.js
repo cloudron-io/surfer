@@ -244,22 +244,22 @@ webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(ROOT_FOLDER), func
 const PUBLIC_HTML = fs.readFileSync(__dirname + '/dist/public.html', 'utf8');
 const PUBLIC_NOSCRIPT_EJS = fs.readFileSync(__dirname + '/frontend/public.noscript.ejs', 'utf8');
 
-var multipart = multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' });
-
 router.post  ('/api/protectedLogin', protectedLogin);
+router.get   ('/api/oidc/login', auth.oidcLogin);
 router.post  ('/api/login', auth.login);
 router.post  ('/api/logout', auth.verify, auth.logout);
 router.get   ('/api/settings', getSettings);
 router.get   ('/api/favicon', getFavicon);
-router.put   ('/api/favicon', auth.verify, multipart, setFavicon);
+router.put   ('/api/favicon', auth.verify, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), setFavicon);
 router.delete('/api/favicon', auth.verify, resetFavicon);
 router.put   ('/api/settings', auth.verify, setSettings);
+router.get   ('/api/token', auth.oidcAuth, auth.createOidcToken);
 router.get   ('/api/tokens', auth.verify, auth.getTokens);
 router.post  ('/api/tokens', auth.verify, auth.createToken);
 router.delete('/api/tokens/:token', auth.verify, auth.delToken);
 router.get   ('/api/profile', auth.verify, auth.getProfile);
 router.get   ('/api/files/*', auth.verify, files.get);
-router.post  ('/api/files/*', auth.verify, multipart, files.post);
+router.post  ('/api/files/*', auth.verify, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), files.post);
 router.put   ('/api/files/*', auth.verify, files.put);
 router.delete('/api/files/*', auth.verify, files.del);
 
@@ -270,6 +270,7 @@ app.use(cors({ origins: [ '*' ], allowCredentials: false }));
 app.use('/api', bodyParser.json());
 app.use('/api', bodyParser.urlencoded({ extended: false, limit: '100mb' }));
 app.use(session({ store: sessionStore, secret: 'surfin surfin', resave: false, saveUninitialized: true, cookie: { secure: !!process.env.CLOUDRON, sameSite: 'strict' } }));
+app.use(auth.oidcMiddleware);
 app.use(router);
 app.use(webdav.extensions.express('/_webdav', webdavServer));
 app.use('/_admin', express.static(__dirname + '/dist'));

@@ -6,6 +6,7 @@ var path = require('path'),
     bcrypt = require('bcryptjs'),
     crypto = require('crypto'),
     ldapjs = require('ldapjs'),
+    oidc = require('express-openid-connect'),
     HttpError = require('connect-lastmile').HttpError,
     HttpSuccess = require('connect-lastmile').HttpSuccess,
     webdavErrors = require('webdav-server').v2.Errors;
@@ -126,6 +127,35 @@ exports.init = function (config) {
     gConfig = config;
 };
 
+exports.oidcMiddleware = oidc.auth({
+    issuerBaseURL: process.env.CLOUDRON_OIDC_ISSUER,
+    baseURL: process.env.CLOUDRON_APP_ORIGIN,
+    clientID: process.env.CLOUDRON_OIDC_CLIENT_ID,
+    clientSecret: process.env.CLOUDRON_OIDC_CLIENT_SECRET,
+    secret: 'cookie secret',
+    authorizationParams: {
+        response_type: 'code',
+        scope: 'openid profile email'
+    },
+    authRequired: false,
+    routes: {
+        callback: '/api/oidc/callback',
+        login: false,
+        logout: '/api/oidc/logout'
+    }
+});
+
+exports.oidcLogin = function (req, res) {
+    res.oidc.login({
+        returnTo: '/_admin',
+        authorizationParams: {
+            redirect_uri: process.env.CLOUDRON_APP_ORIGIN + '/api/oidc/callback',
+        },
+    });
+};
+
+exports.oidcAuth = oidc.requiresAuth();
+
 exports.verifyUser = verifyUser;
 
 exports.login = function (req, res, next) {
@@ -183,6 +213,16 @@ exports.getProfile = function (req, res, next) {
     next(new HttpSuccess(200, { username: req.user.username }));
 };
 
+exports.createOidcToken = function (req, res, next) {
+    const accessToken = hat(128);
+
+    tokenStore.set(accessToken, { username: req.oidc.user.sub }, function (error) {
+        if (error) return next(new HttpError(500, error));
+
+        next(new HttpSuccess(201, { accessToken }));
+    });
+};
+
 exports.getTokens = function (req, res, next) {
     tokenStore.getApiTokens(function (error, result) {
         if (error) return next(new HttpError(500, error));
@@ -192,7 +232,7 @@ exports.getTokens = function (req, res, next) {
 };
 
 exports.createToken = function (req, res, next) {
-    var accessToken = API_TOKEN_PREFIX + hat(128);
+    const accessToken = API_TOKEN_PREFIX + hat(128);
 
     tokenStore.set(accessToken, req.user, function (error) {
         if (error) return next(new HttpError(500, error));

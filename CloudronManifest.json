@@ -28,6 +28,9 @@
   "icon": "file://logo.png",
   "addons": {
     "ldap": {},
+    "oidc": {
+      "loginRedirectUri": "/api/oidc/callback"
+    },
     "localstorage": {
       "ftp": {
         "uid": 1000,
