@@ -54,24 +54,13 @@
     <hr/>
 
     <div>
-      <h3>Index Document</h3>
-      <p>By default files names index.html will be served up automatically in each folder. This settings allows to specify any filename as index document.</p>
-      <div class="p-fluid">
-        <div>
-          <label for="indexInput">Filename</label>
-          <InputText id="indexInput" type="text" placeholder="index.html" v-model="settingsDialog.index"/>
-        </div>
-      </div>
-    </div>
-
-    <div>
       <h3>Display</h3>
       <p>These settings only apply if public folder listing is enabled and no custom index file is present.</p>
-      <div class="radio-checkbox-field">
-        <Checkbox id="sortShowFoldersFirst" v-model="settingsDialog.sortFoldersFirst" :binary="true"/>
-        <label for="sortShowFoldersFirst">Always show folders first</label>
-      </div>
       <div class="p-fluid">
+        <div class="radio-checkbox-field">
+          <Checkbox id="sortShowFoldersFirst" v-model="settingsDialog.sortFoldersFirst" :binary="true"/>
+          <label for="sortShowFoldersFirst">Always show folders first</label>
+        </div>
         <div>
           <label for="titleInput">Title</label>
           <InputText id="titleInput" type="text" placeholder="Surfer" v-model="settingsDialog.title"/>
@@ -88,7 +77,16 @@
       </div>
     </div>
 
-    <hr/>
+    <div>
+      <h3>Index Document</h3>
+      <p>By default files names index.html will be served up automatically in each folder. This settings allows to specify any filename as index document.</p>
+      <div class="p-fluid">
+        <div>
+          <label for="indexInput">Filename</label>
+          <InputText id="indexInput" type="text" placeholder="index.html" v-model="settingsDialog.index"/>
+        </div>
+      </div>
+    </div>
 
     <div>
       <h3>Access</h3>
@@ -111,8 +109,6 @@
       </div>
     </div>
 
-    <hr/>
-
     <div>
       <h3>WebDAV access</h3>
       <p>WebDAV provides a framework for users to create, change and move documents on a server.</p>
@@ -133,12 +129,12 @@
 
   <!-- Access Token Dialog -->
   <Dialog v-model:visible="accessTokenDialog.visible" header="Access Tokens" :dismissableMask="true" :modal="true" :closable="true" :style="{width: '50vw'}">
-    Access tokens are useful to programmatically deploy assets for example within a CI/CD pipeline.
-    See the <a href="https://cloudron.io/documentation/apps/surfer/" target="_blank">docs</a> for more information on how to use this token.
-    <br/>
-    <Message severity="warn" :closable="false">Those tokens are also used for webdav login as the password.</Message>
-    <br/>
-    <Message severity="warn" :closable="false">Tokens are shared between all users.</Message>
+    <p>
+      Access tokens are useful to programmatically deploy assets for example within a CI/CD pipeline.
+      These tokens are also used for WebDAV login as the password.
+      Tokens are shared between all users.
+      See the <a href="https://cloudron.io/documentation/apps/surfer/" target="_blank">docs</a> for more information on how to use this token.
+    </p>
     <br/>
     <div>
       <div v-for="accessToken in accessTokens" :key="accessToken.value" class="p-fluid">
