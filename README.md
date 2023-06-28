@@ -26,20 +26,6 @@ cloudron build
 cloudron install
 ```
 
-### Standalone
-
-Surfer can also be run standlone on any server:
-
-```bash
-git clone https://git.cloudron.io/cloudron/surfer.git
-cd surfer
-npm install
-npm run build
-./server.js <public folder>
-```
-
-Use the `admin` tool to manage local users.
-
 ## File management
 
 The admin interface is available under the `/_admin` location or you can upload files using the commandline tool.
@@ -53,24 +39,13 @@ npm -g install cloudron-surfer
 Login using your Cloudron credentials:
 
 ```bash
-surfer login <this app's url>
+surfer login --server <url> --token <apiAccessToken>
 ```
 
 Put some files:
 
 ```bash
 surfer put [file]
-```
-
-## Testing
-
-The e2e tests are located in the `test/` folder and require [nodejs](http://nodejs.org/). They are creating a fresh build, install the app on your Cloudron, perform tests, backup, restore and test if the files are still ok.
-
-```bash
-cd surfer
-
-npm install
-USERNAME=<cloudron username> PASSWORD=<cloudron password> mocha --bail test/test.js
 ```
 
 ## Development

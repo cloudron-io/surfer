@@ -11,19 +11,9 @@ var path = require('path'),
     HttpSuccess = require('connect-lastmile').HttpSuccess,
     webdavErrors = require('webdav-server').v2.Errors;
 
-const LDAP_URL = process.env.CLOUDRON_LDAP_URL;
-const LDAP_USERS_BASE_DN = process.env.CLOUDRON_LDAP_USERS_BASE_DN;
-const LOCAL_AUTH_FILE = path.resolve(process.env.LOCAL_AUTH_FILE || './.users.json');
 const TOKENSTORE_FILE = path.resolve(process.env.TOKENSTORE_FILE || './.tokens.json');
-const AUTH_METHOD = (LDAP_URL && LDAP_USERS_BASE_DN) ? 'ldap' : 'local';
 const LOGIN_TOKEN_PREFIX = 'login-';
 const API_TOKEN_PREFIX = 'api'; // keep this base64 for CI systems. see gitlab masked variables requirements
-
-if (AUTH_METHOD === 'ldap') {
-    console.log('Using ldap auth');
-} else {
-    console.log(`Using local auth file at: ${LOCAL_AUTH_FILE}`);
-}
 
 const tokenStore = {
     data: {},
@@ -78,47 +68,36 @@ function hat (bits) {
 function verifyUser(username, password, callback) {
     username = sanitizeInput(username);
 
-    if (AUTH_METHOD === 'ldap') {
-        var ldapClient = ldapjs.createClient({ url: process.env.CLOUDRON_LDAP_URL });
-        ldapClient.on('error', function (error) {
-            console.error('LDAP error', error);
-        });
+    var ldapClient = ldapjs.createClient({ url: process.env.CLOUDRON_LDAP_URL });
+    ldapClient.on('error', function (error) {
+        console.error('LDAP error', error);
+    });
 
-        ldapClient.bind(process.env.CLOUDRON_LDAP_BIND_DN, process.env.CLOUDRON_LDAP_BIND_PASSWORD, function (error) {
+    ldapClient.bind(process.env.CLOUDRON_LDAP_BIND_DN, process.env.CLOUDRON_LDAP_BIND_PASSWORD, function (error) {
+        if (error) return callback(error);
+
+        var filter = `(|(uid=${username})(mail=${username})(username=${username})(sAMAccountName=${username}))`;
+        ldapClient.search(process.env.CLOUDRON_LDAP_USERS_BASE_DN, { filter: filter }, function (error, result) {
             if (error) return callback(error);
 
-            var filter = `(|(uid=${username})(mail=${username})(username=${username})(sAMAccountName=${username}))`;
-            ldapClient.search(process.env.CLOUDRON_LDAP_USERS_BASE_DN, { filter: filter }, function (error, result) {
-                if (error) return callback(error);
+            var items = [];
 
-                var items = [];
+            result.on('searchEntry', function(entry) { items.push(entry.object); });
+            result.on('error', callback);
+            result.on('end', function (result) {
+                if (result.status !== 0 || items.length === 0) return callback('Invalid credentials');
 
-                result.on('searchEntry', function(entry) { items.push(entry.object); });
-                result.on('error', callback);
-                result.on('end', function (result) {
-                    if (result.status !== 0 || items.length === 0) return callback('Invalid credentials');
+                // pick the first found
+                var user = items[0];
 
-                    // pick the first found
-                    var user = items[0];
+                ldapClient.bind(user.dn, password, function (error) {
+                    if (error) return callback('Invalid credentials');
 
-                    ldapClient.bind(user.dn, password, function (error) {
-                        if (error) return callback('Invalid credentials');
-
-                        callback(null, { username: username });
-                    });
+                    callback(null, { username: username });
                 });
             });
         });
-    } else {
-        var users = safe.JSON.parse(safe.fs.readFileSync(LOCAL_AUTH_FILE));
-        if (!users || !users[username]) return callback('Invalid credentials');
-
-        bcrypt.compare(password, users[username].passwordHash, function (error, valid) {
-            if (error || !valid) return callback('Invalid credentials');
-
-            callback(null, { username: username });
-        });
-    }
+    });
 }
 
 exports.oidcMiddleware = oidc.auth({
