@@ -264,3 +264,8 @@
 [5.18.0]
 * Move to vitejs as the buildtool
 * Use nodejs 18.12.1
+
+[6.0.0]
+* Move from LDAP auth to Cloudron OpenID
+* surfer cli now only works with API access tokens created in the admin UI
+* WebDAV access requires an API access token as the password

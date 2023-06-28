@@ -235,6 +235,7 @@ describe('Application life cycle test', function () {
     it('second file is gone', checkFileIsGone.bind(null, TEST_FILE_NAME_1));
     it('can upload folder', uploadFile.bind(null, '.'));
     it('folder exists', checkFolderExists);
+
     it('can logout', logout);
 
     it('backup app', function () { execSync(`cloudron backup create --app ${app.id}`, EXEC_ARGS); });

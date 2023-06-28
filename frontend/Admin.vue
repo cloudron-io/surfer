@@ -116,6 +116,7 @@
     <div>
       <h3>WebDAV access</h3>
       <p>WebDAV provides a framework for users to create, change and move documents on a server.</p>
+      <p>To authenticate the password must be an API access token. The username is ignored.</p>
       <ul>
         <li><b>Windows:</b> Explorer > This PC > Map Network Drive > <code style="cursor: copy;" @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
         <li><b>MacOS:</b> Finder > Go > Connect to Server... > <code style="cursor: copy;" @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
