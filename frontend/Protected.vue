@@ -5,7 +5,7 @@
       <div class="p-fluid">
         <div>
           <label for="passwordInput">Password</label>
-          <Password id="passwordInput" :feedback="false" v-model="password" :class="{ 'p-invalid': error }"/>
+          <Password inputId="passwordInput" :feedback="false" v-model="password" :class="{ 'p-invalid': error }"/>
           <small v-show="error" :class="{ 'p-invalid': error }">Wrong username or password.</small>
         </div>
       </div>
