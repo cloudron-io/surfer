@@ -7,6 +7,9 @@ var fs = require('fs'),
     safe = require('safetydance'),
     _ = require('underscore');
 
+const HOME = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
+const CONFIG_FILE_PATH = path.join(HOME, '.surfer.json');
+
 exports = module.exports = {
     clear: clear,
     set: set,
@@ -14,13 +17,12 @@ exports = module.exports = {
     unset: unset,
     has: has,
 
+    filePath: CONFIG_FILE_PATH,
+
     // convenience
     server: function () { return get('server'); },
     accessToken: function () { return get('accessToken'); }
 };
-
-const HOME = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
-const CONFIG_FILE_PATH = path.join(HOME, '.surfer.json');
 
 var gConfig = (function () {
     return safe.JSON.parse(safe.fs.readFileSync(CONFIG_FILE_PATH)) || {};

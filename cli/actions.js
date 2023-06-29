@@ -2,6 +2,7 @@
 
 exports.login = login;
 exports.logout = logout;
+exports.config = configure;
 exports.put = put;
 exports.get = get;
 exports.del = del;
@@ -32,23 +33,20 @@ function exit(errorArgs) {
     process.exit(0);
 }
 
-function checkConfig(options, program) {
-    // FIXME this uses private API of commander. I was not able to figure out how to otherwise access program wide args
-    let parentOptions = program.parent._optionValues;
+function checkConfig(options) {
+    if (!options.server && !config.server()) exit('Run %s first, or provide %s', 'surfer login'.bold, '--server <domain>'.bold, '--token <access token>'.bold);
 
-    if (!parentOptions.server && !config.server()) exit('Run %s first, or provide %s', 'surfer login'.bold, '--server <url>'.bold, '--token <access token>'.bold);
-
-    if (parentOptions.server) {
-        var tmp = url.parse(parentOptions.server);
-        if (!tmp.slashes) tmp = url.parse('https://' + parentOptions.server);
+    if (options.server) {
+        var tmp = url.parse(options.server);
+        if (!tmp.slashes) tmp = url.parse('https://' + options.server);
         gServer = tmp.protocol + '//' + tmp.host;
     } else {
         gServer = config.server();
     }
 
-    if (!parentOptions.token && !config.accessToken()) exit('Run %s first or provide %s', 'surfer login'.bold, '--token <access token>'.bold);
+    if (!options.token && !config.accessToken()) exit('Run %s first or provide %s', 'surfer login'.bold, '--token <access token>'.bold);
 
-    gQuery = { access_token: parentOptions.token || config.accessToken() };
+    gQuery = { access_token: options.token || config.accessToken() };
 
     console.log('Using server %s', gServer.cyan);
 }
@@ -128,7 +126,7 @@ function delOne(file, callback) {
     if (file.isDirectory) query.recursive = true;
 
     superagent.del(gServer + path.join(API, encodeURIComponent(file.filePath))).query(query).end(function (error, result) {
-        if (error && error.status === 401) return callback('Login failed');
+        if (error && error.status === 401) return callback('Invalid token');
         if (error && error.status === 404) return callback(null); // file already removed
         if (error && error.status === 403) return callback('Failed. Target is a directory. Use --recursive to delete directories.');
         if (error) return callback('Failed %s', result ? result.body : error);
@@ -137,44 +135,41 @@ function delOne(file, callback) {
     });
 }
 
-function login(options, program) {
-    checkConfig(options, program);
+function configure(options) {
+    checkConfig(options);
 
     superagent.get(gServer + '/api/profile').query(gQuery).end(function (error, result) {
         if (error && error.code === 'ENOTFOUND') exit('Server %s not found.'.red, gServer.bold);
         if (error && error.code) exit('Failed to connect to server %s'.red, gServer.bold, error.code);
         if (result.status !== 200) {
             console.log(result.status, gQuery)
-            console.log('Login failed. Provide an api access token with --token\n'.red);
+            console.log('Access failed. Provide an api access token with --token\n'.red);
             process.exit(1);
         }
 
         config.set('server', gServer);
         config.set('accessToken', gQuery.access_token);
 
-        console.log('Login successful'.green);
+        console.log('Default server successfully set'.green);
     });
 }
 
-function logout(options, program) {
-    checkConfig(options, program);
-
-    if (!config.accessToken()) return console.log('Done'.green);
-
-    config.set('server', '');
-    config.set('accessToken', '');
-
-    console.log('Logout done'.green);
+function login() {
+    exit('Unsupported.'.red + ' Use "surfer config" instead.');
 }
 
-function get(filePath, options, program) {
-    checkConfig(options, program);
+function logout() {
+    exit('Unsupported.'.red + ` Delete the config file at ${config.filePath.bold} instead.`);
+}
+
+function get(filePath, options) {
+    checkConfig(options);
 
     // if no argument provided, fetch root
     filePath = filePath || '/';
 
     request.get(gServer + path.join(API, encodeURIComponent(filePath)), { qs: gQuery }, function (error, result, body) {
-        if (result && result.statusCode === 401) exit('Login failed');
+        if (result && result.statusCode === 401) exit('Invalid token');
         if (result && result.statusCode === 404) exit('No such file or directory %s', filePath.yellow);
         if (error) exit(error.message);
 
@@ -195,8 +190,8 @@ function get(filePath, options, program) {
     });
 }
 
-function del(filePath, options, program) {
-    checkConfig(options, program);
+function del(filePath, options) {
+    checkConfig(options);
 
     // construct a virtual file for further use
     var file = {
@@ -215,30 +210,8 @@ function del(filePath, options, program) {
     });
 }
 
-function legacyPut(filePaths, options) {
-    console.log('Server is on older version, falling back to old behavior.'.yellow);
-
-    let destination = filePaths.pop();
-    if (!path.isAbsolute(destination)) exit('target directory must be absolute'.red);
-    if (!destination.endsWith('/')) destination += '/';
-
-    var files = [];
-    filePaths.forEach(function (filePath) {
-        var absoluteFilePath = path.resolve(process.cwd(), filePath);
-        var baseFilePath = path.dirname(absoluteFilePath);
-
-        files = files.concat(collectFiles(absoluteFilePath, baseFilePath, options));
-    });
-
-    async.eachLimit(files, 10, (file, iteratorDone) => putOne(file, destination, iteratorDone), function (error) {
-        if (error) exit('Failed to upload file.', error.message.red);
-
-        console.log('Done');
-    });
-}
-
-function put(filePaths, options, program) {
-    checkConfig(options, program);
+function put(filePaths, options) {
+    checkConfig(options);
 
     if (filePaths.length < 2) exit('Target directory argument is required'.red);
 
@@ -261,7 +234,7 @@ function put(filePaths, options, program) {
 
     superagent.get(gServer + path.join(API, absoluteDestPath)).query(query).end(function (error, result) {
         if (error) {
-            if (error.status === 401) exit('Login failed');
+            if (error.status === 401) exit('Invalid token');
             if (error.status !== 404) exit(error.message);
 
             // 404 means remote not found so upload all
@@ -269,13 +242,6 @@ function put(filePaths, options, program) {
         } else {
             // 222 indicates directory listing
             if (result.statusCode !== 222) exit('Destination is not a directory. Cannot continue.');
-
-            // TODO this is just to keep old version supported for some time
-            if (!result.body.stat) {
-                filePaths.push(absoluteDestPath);
-                return legacyPut(filePaths, options);
-            }
-
             remoteFiles = result.body.entries;
         }
 

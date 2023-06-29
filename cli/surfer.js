@@ -7,10 +7,6 @@ var program = require('commander'),
 
 program.version(require('../package.json').version);
 
-// Those override the login settings if provided
-program.option('-s, --server <url>', 'Server URL (optional)');
-program.option('-t, --token <access token>', 'Server Access Token (optional)');
-
 program.command('login')
     .description('Set default server')
     .action(actions.login);
@@ -19,9 +15,18 @@ program.command('logout')
     .description('Unset default server')
     .action(actions.logout);
 
+program.command('config')
+    .description('Configure default server')
+    .alias('configure')
+    .requiredOption('-s, --server <domain>', 'Surfer Server Domain')
+    .requiredOption('-t, --token <access token>', 'Server Access Token')
+    .action(actions.config);
+
 program.command('put <file|dir...>')
     .option('-a --all', 'Also include hidden files and folders.', false)
     .option('-d --delete', 'Delete extraneous files from dest dirs.', false)
+    .option('-s, --server <domain>', 'Surfer Server Domain (optional)')
+    .option('-t, --token <access token>', 'Server Access Token (optional)')
     .description('Uploads a list of files or dirs to the destination. The last argument is destination dir')
     .action(actions.put)
     .on('--help', function() {
@@ -38,11 +43,15 @@ program.command('put <file|dir...>')
 
 program.command('get [file|dir]')
     .description('Get a file or directory listing')
+    .option('-s, --server <domain>', 'Surfer Server Domain (optional)')
+    .option('-t, --token <access token>', 'Server Access Token (optional)')
     .action(actions.get);
 
 program.command('del <file>')
     .option('-r --recursive', 'Recursive delete directories.', false)
     .option('-y --yes', 'Answer questions always with yes.', false)
+    .option('-s, --server <domain>', 'Surfer Server Domain (optional)')
+    .option('-t, --token <access token>', 'Server Access Token (optional)')
     .description('Delete a file or directory')
     .action(actions.del);
 
