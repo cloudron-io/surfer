@@ -11,7 +11,7 @@
       </div>
       <Button type="submit" label="Login" id="loginButton"/>
     </form>
-    <a href="/api/oidc/login?returnTo=/" v-show="settings.accessRestriction !== 'password'"><Button class="p-button-sm" label="Login with Cloudron" icon="pi pi-sign-in"/></a>
+    <a :href="'/api/oidc/login?returnTo=' + returnTo" v-show="settings.accessRestriction !== 'password'"><Button class="p-button-sm" label="Login with Cloudron" icon="pi pi-sign-in"/></a>
   </div>
 </template>
 
@@ -29,6 +29,7 @@ export default {
             busy: true,
             origin: ORIGIN,
             error: false,
+            returnTo: '/',
             password: '',
             settings: {
                 accessRestriction: '',
@@ -38,18 +39,16 @@ export default {
     },
     methods: {
         onLogin: function () {
-            var that = this;
+            this.busy = true;
+            this.error = false;
 
-            that.busy = true;
-            that.error = false;
-
-            superagent.post(`${that.origin}/api/protectedLogin`).send({ password: that.password }).end(function (error, result) {
-                that.busy = false;
+            superagent.post(`${this.origin}/api/protectedLogin`).send({ password: that.password }).end((error, result) => {
+                this.busy = false;
 
                 if (error || result.statusCode !== 200) {
                     console.error(error);
-                    that.password = '';
-                    that.error = true;
+                    this.password = '';
+                    this.error = true;
                     return;
                 }
 
@@ -58,21 +57,20 @@ export default {
         }
     },
     mounted() {
-        var that = this;
+        // ensure we end up in the target destination after oidc login
+        this.returnTo = window.location.pathname || '/';
 
-        superagent.get(`${that.origin}/api/settings`).end(function (error, result) {
+        superagent.get(`${this.origin}/api/settings`).end((error, result) => {
             if (error) console.error(error);
 
-            that.settings.title =  result.body.title;
-            that.settings.accessRestriction =  result.body.accessRestriction;
+            this.settings.title =  result.body.title;
+            this.settings.accessRestriction =  result.body.accessRestriction;
 
-            window.document.title = that.settings.title;
+            window.document.title = this.settings.title;
 
-            that.ready = true;
+            this.ready = true;
 
-            that.$nextTick(function() {
-                document.getElementById('passwordInput').focus();
-            });
+            this.$nextTick(() => document.getElementById('passwordInput').focus());
         });
     }
 };
