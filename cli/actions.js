@@ -34,7 +34,7 @@ function exit(errorArgs) {
 }
 
 function checkConfig(options) {
-    if (!options.server && !config.server()) exit('Run %s first, or provide %s', 'surfer login'.bold, '--server <domain>'.bold, '--token <access token>'.bold);
+    if ((!options.server && !config.server()) || (!options.token && !config.accessToken())) exit('Run %s first, or provide %s', 'surfer config'.bold, '--server <domain>'.bold, '--token <access token>'.bold);
 
     if (options.server) {
         var tmp = url.parse(options.server);
@@ -43,8 +43,6 @@ function checkConfig(options) {
     } else {
         gServer = config.server();
     }
-
-    if (!options.token && !config.accessToken()) exit('Run %s first or provide %s', 'surfer login'.bold, '--token <access token>'.bold);
 
     gQuery = { access_token: options.token || config.accessToken() };
 

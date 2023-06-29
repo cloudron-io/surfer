@@ -19,9 +19,9 @@ First, install the surfer cli tool using npm.
     sudo npm -g install cloudron-surfer
 
 
-Login using your Cloudron credentials:
+Configure cli using your app domain and an API token created via the surfer admin user interface:
 
-    surfer login --server <appdomain> --token <apiAccessToken>
+    surfer config --server <appdomain> --token <apiAccessToken>
 
 
 Put some files:
