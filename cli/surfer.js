@@ -8,11 +8,11 @@ var program = require('commander'),
 program.version(require('../package.json').version);
 
 program.command('login')
-    .description('Set default server')
+    .description('Unsupported')
     .action(actions.login);
 
 program.command('logout')
-    .description('Unset default server')
+    .description('Unsupported')
     .action(actions.logout);
 
 program.command('config')
