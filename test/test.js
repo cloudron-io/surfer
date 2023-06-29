@@ -157,7 +157,7 @@ describe('Application life cycle test', function () {
     }
 
     function cliLogin() {
-        execSync(`${CLI} login --server https://${app.fqdn} --token ${gApiToken}`, { stdio: 'inherit' });
+        execSync(`${CLI} config --server https://${app.fqdn} --token ${gApiToken}`, { stdio: 'inherit' });
     }
 
     async function createApiToken() {
@@ -189,7 +189,7 @@ describe('Application life cycle test', function () {
 
     function uploadFileWithToken(name) {
         // File upload can't be tested with selenium, since the file input is not visible and thus can't be interacted with :-(
-        execSync(`${CLI} --token ${gApiToken} put ${path.join(__dirname, name)} /`,  { stdio: 'inherit' } );
+        execSync(`${CLI} put --token ${gApiToken} ${path.join(__dirname, name)} /`,  { stdio: 'inherit' } );
     }
 
     function uploadFolder() {
