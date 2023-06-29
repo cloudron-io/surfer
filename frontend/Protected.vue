@@ -42,7 +42,7 @@ export default {
             this.busy = true;
             this.error = false;
 
-            superagent.post(`${this.origin}/api/protectedLogin`).send({ password: that.password }).end((error, result) => {
+            superagent.post(`${this.origin}/api/protectedLogin`).send({ password: this.password }).end((error, result) => {
                 this.busy = false;
 
                 if (error || result.statusCode !== 200) {
