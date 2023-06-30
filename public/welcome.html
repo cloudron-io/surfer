@@ -39,6 +39,25 @@
           color: var(--text-color-secondary);
       }
 
+      .button {
+          font-size: .875rem;
+          padding: .4375rem .875rem;
+          margin: 0;
+          display: inline-flex;
+          cursor: pointer;
+          user-select: none;
+          align-items: center;
+          vertical-align: bottom;
+          text-align: center;
+          overflow: hidden;
+          position: relative;
+          color: #fff !important;
+          background: #2196F3;
+          border: 1px solid #2196F3;
+          transition: background-color .2s,color .2s,border-color .2s,box-shadow .2s;
+          border-radius: 3px;
+      }
+
     </style>
   </head>
 <body>
@@ -47,8 +66,10 @@
     <img src="/_admin/logo.png"/>
     <h1>Surfer</h1>
     <p>
-      <a href="/_admin">Manage your files in your browser</a>, use the <a href="https://www.npmjs.com/package/cloudron-surfer">commandline tool</a> or connect via <a href="/_webdav/">WebDAV</a>.
+      Manage your files in your browser, use the <a href="https://www.npmjs.com/package/cloudron-surfer">commandline tool</a> or connect via <a href="/_webdav/">WebDAV</a>.
     </p>
+    <br/>
+    <a href="/_admin" class="button">Login with Cloudron</a>
   </div>
 
 </body>
