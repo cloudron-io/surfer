@@ -269,3 +269,7 @@
 * Move from LDAP auth to Cloudron OpenID
 * surfer cli now only works with API access tokens created in the admin UI
 * WebDAV access requires an API access token as the password
+
+[6.0.1]
+* Update dependencies
+
