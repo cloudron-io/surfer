@@ -18,7 +18,7 @@
   "healthCheckPath": "/api/healthcheck",
   "configurePath": "/_admin",
   "httpPort": 3000,
-  "minBoxVersion": "7.1.2",
+  "minBoxVersion": "7.5.2",
   "manifestVersion": 2,
   "multiDomain": true,
   "website": "https://git.cloudron.io/cloudron/surfer",
