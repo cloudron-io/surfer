@@ -273,3 +273,6 @@
 [6.0.1]
 * Update dependencies
 
+[6.0.2]
+* Fix minBoxVersion for OpenID support
+
