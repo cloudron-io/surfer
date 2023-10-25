@@ -276,3 +276,6 @@
 [6.0.2]
 * Fix minBoxVersion for OpenID support
 
+[6.1.0]
+* Update base image to 4.2.0
+
