@@ -279,3 +279,7 @@
 [6.1.0]
 * Update base image to 4.2.0
 
+[6.1.1]
+* New logo
+* Update dependencies
+
