@@ -283,3 +283,7 @@
 * New logo
 * Update dependencies
 
+[6.1.2]
+* Fix landingpage logo overflow
+* Update dependencies
+
