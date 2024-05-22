@@ -36,7 +36,7 @@ program.command('put <file|dir...>')
         console.log('    $ surfer put file.txt /                # puts to /file.txt');
         console.log('    $ surfer put file.txt /data            # puts to /data/file.txt');
         console.log('    $ surfer put dir /data                 # puts dir/* as /data/dir/*');
-        console.log('    $ surfer put dir/* /                   # puts dir/* as /app/data/*');
+        console.log('    $ surfer put dir/* /                   # puts dir/* as /*');
         console.log('    $ surfer put dir1 dir2 file1 /         # puts as /dir1/* /dir2/* and /file');
         console.log();
     });
