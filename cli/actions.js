@@ -211,7 +211,10 @@ function del(filePath, options) {
 function put(filePaths, options) {
     checkConfig(options);
 
-    if (filePaths.length < 2) exit('Target directory argument is required'.red);
+    if (filePaths.length < 2) {
+        console.log('Target directory argument is missing. Falling back to /'.yellow);
+        filePaths.push('/');
+    }
 
     let absoluteDestPath = filePaths.pop();
     if (!path.isAbsolute(absoluteDestPath)) exit('Target directory must be absolute, starting with /'.red);
