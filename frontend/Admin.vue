@@ -11,8 +11,8 @@
     <div class="main-container-toolbar">
       <TopBar>
         <template #left>
-          <Button icon="pi pi-chevron-left" tool outline style="margin-right: 20px;" :disabled="breadCrumbs.items.length === 0" @click="onUp"/>
-          <Breadcrumb :home="breadCrumbs.home" :model="breadCrumbs.items"/>
+          <Button icon="pi pi-chevron-left" tool outline style="margin-right: 20px;" :disabled="breadcrumbItems.length === 0" @click="onUp"/>
+          <Breadcrumb :home="breadcrumbHomeItem" :items="breadcrumbItems"/>
         </template>
 
         <template #right>
@@ -174,10 +174,12 @@ export default {
           uploadListCount: 0
         },
         path: '/',
-        breadCrumbs: {
-          home: { icon: 'pi pi-home', url: '#/' },
-          items: []
+        breadcrumbHomeItem: {
+          label: '',
+          icon: 'pi pi-home',
+          route: '#/'
         },
+        breadcrumbItems: [],
         entries: [],
         activeEntry: {},
         accessTokens: [],
@@ -290,42 +292,39 @@ export default {
                 that.refreshAccessTokens();
             });
         },
-        loadDirectory: function (folderPath) {
-            if (!folderPath) return window.location.hash = '/';
+        loadDirectory(folderPath) {
+          if (!folderPath) return window.location.hash = '/';
 
-            var that = this;
+          this.busy = true;
+          this.activeEntry = {};
 
-            that.busy = true;
+          folderPath = folderPath ? sanitize(folderPath) : '/';
 
-            that.activeEntry = {};
+          superagent.get('/api/files/' + encode(folderPath)).query({ access_token: localStorage.accessToken }).end((error, result) => {
+            this.busy = false;
 
-            folderPath = folderPath ? sanitize(folderPath) : '/';
+            if (result && result.statusCode === 401) return this.logout();
+            if (error) return console.error(error);
 
-            superagent.get('/api/files/' + encode(folderPath)).query({ access_token: localStorage.accessToken }).end(function (error, result) {
-                that.busy = false;
-
-                if (result && result.statusCode === 401) return that.logout();
-                if (error) return console.error(error);
-
-                result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
-                that.entries = result.body.entries.map(function (entry) {
-                    entry.previewUrl = getPreviewUrl(entry, folderPath);
-                    entry.extension = getExtension(entry);
-                    entry.rename = false;
-                    entry.filePathNew = entry.fileName;
-                    return entry;
-                });
-                that.path = folderPath;
-                that.breadCrumbs.items = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
-                    return {
-                        label: e,
-                        url: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
-                    };
-                });
-
-                // update in case this was triggered from code
-                window.location.hash = that.path;
+            result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
+            this.entries = result.body.entries.map(function (entry) {
+              entry.previewUrl = getPreviewUrl(entry, folderPath);
+              entry.extension = getExtension(entry);
+              entry.rename = false;
+              entry.filePathNew = entry.fileName;
+              return entry;
             });
+            this.path = folderPath;
+            this.breadcrumbItems = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
+              return {
+                label: e,
+                route: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
+              };
+            });
+
+            // update in case this was triggered from code
+            window.location.hash = this.path;
+          });
         },
         login() {
             const that = this;
