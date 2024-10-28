@@ -91,7 +91,7 @@ function putOne(file, destination, callback) {
     let destinationPath = path.join(destination, file.filePath);
 
     if (file.isFile) {
-        console.log('Uploading %s -> %s', file.filePath.cyan, destinationPath.cyan);
+        console.log('Uploading %s -> %s', file.filePath.cyan, (gServer + path.join(API, destinationPath)).cyan);
 
         superagent.post(gServer + path.join(API, encodeURIComponent(destinationPath))).query(gQuery).attach('file', file.absoluteFilePath).field('mtime', file.mtime).end(function (error, result) {
             if (result && result.statusCode === 403) return callback(new Error('Destination ' + destinationPath + ' not allowed'));
