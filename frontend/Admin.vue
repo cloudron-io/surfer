@@ -263,11 +263,11 @@ export default {
     });
   },
   methods: {
-    error: function (header, message) {
+    error(header, message) {
       window.pankow.notify({ type: 'danger', text: header + message });
       console.error(header, message);
     },
-    initWithToken: function (accessToken) {
+    initWithToken(accessToken) {
       if (!accessToken) return this.login();
 
       superagent.get('/api/profile').query({ access_token: accessToken }).end((error, result) =>{
@@ -346,111 +346,105 @@ export default {
     refresh() {
       this.loadDirectory(this.path);
     },
-    uploadFiles: function (files, targetPath) {
-        var that = this;
+    uploadFiles(files, targetPath) {
+      if (!files || !files.length) return;
 
-        if (!files || !files.length) return;
+      targetPath = targetPath || this.path;
 
-        targetPath = targetPath || this.path;
+      this.uploadStatus.busy = true;
+      this.uploadStatus.count = files.length;
+      this.uploadStatus.size = 0;
+      this.uploadStatus.done = 0;
+      this.uploadStatus.percentDone = 0;
 
-        that.uploadStatus.busy = true;
-        that.uploadStatus.count = files.length;
-        that.uploadStatus.size = 0;
-        that.uploadStatus.done = 0;
-        that.uploadStatus.percentDone = 0;
+      for (var i = 0; i < files.length; ++i) {
+        this.uploadStatus.size += files[i].size;
+      }
 
-        for (var i = 0; i < files.length; ++i) {
-            that.uploadStatus.size += files[i].size;
-        }
+      eachLimit(files, 10, (file, callback) => {
+        const path = encode(sanitize(targetPath + '/' + (file.webkitRelativePath || file.name)));
 
-        eachLimit(files, 10, function (file, callback) {
-            var path = encode(sanitize(targetPath + '/' + (file.webkitRelativePath || file.name)));
+        const formData = new FormData();
+        formData.append('file', file);
 
-            var formData = new FormData();
-            formData.append('file', file);
+        var finishedUploadSize = 0;
 
-            var finishedUploadSize = 0;
+        superagent.post(`/api/files${path}`).query({ access_token: localStorage.accessToken }).send(formData).on('progress', (event) => {
+          // only handle upload events
+          if (!(event.target instanceof XMLHttpRequestUpload)) return;
 
-            superagent.post(`/api/files${path}`)
-              .query({ access_token: localStorage.accessToken })
-              .send(formData)
-              .on('progress', function (event) {
-                // only handle upload events
-                if (!(event.target instanceof XMLHttpRequestUpload)) return;
+          this.uploadStatus.done += event.loaded - finishedUploadSize;
+          // keep track of progress diff not absolute
+          finishedUploadSize = event.loaded;
 
-                that.uploadStatus.done += event.loaded - finishedUploadSize;
-                // keep track of progress diff not absolute
-                finishedUploadSize = event.loaded;
+          const tmp = Math.round(this.uploadStatus.done / this.uploadStatus.size * 100);
+          this.uploadStatus.percentDone = tmp > 100 ? 100 : tmp;
+        }).end((error, result) =>{
+          if (result && result.statusCode === 401) return this.logout();
+          if (result && result.statusCode !== 201) return callback('Error uploading file: ', result.statusCode);
+          if (error) return callback(error);
 
-                var tmp = Math.round(that.uploadStatus.done / that.uploadStatus.size * 100);
-                that.uploadStatus.percentDone = tmp > 100 ? 100 : tmp;
-            }).end(function (error, result) {
-                if (result && result.statusCode === 401) return that.logout();
-                if (result && result.statusCode !== 201) return callback('Error uploading file: ', result.statusCode);
-                if (error) return callback(error);
-
-                callback();
-            });
-        }, function (error) {
-            if (error) console.error(error);
-
-            that.uploadStatus.busy = false;
-            that.uploadStatus.count = 0;
-            that.uploadStatus.size = 0;
-            that.uploadStatus.done = 0;
-            that.uploadStatus.percentDone = 100;
-
-            that.refresh();
+          callback();
         });
+      }, (error) => {
+        if (error) console.error(error);
+
+        this.uploadStatus.busy = false;
+        this.uploadStatus.count = 0;
+        this.uploadStatus.size = 0;
+        this.uploadStatus.done = 0;
+        this.uploadStatus.percentDone = 100;
+
+        this.refresh();
+      });
     },
-    onDrop: function (event, entry) {
-        var that = this;
+    onDrop(event, entry) {
+      if (!event.dataTransfer.items[0]) return;
 
-        if (!event.dataTransfer.items[0]) return;
+      // figure if a folder was dropped on a modern browser, in this case the first would have to be a directory
+      var folderItem;
+      var targetPath = entry ? entry.filePath : null;
+      try {
+        folderItem = event.dataTransfer.items[0].webkitGetAsEntry();
+        if (folderItem.isFile) return this.uploadFiles(event.dataTransfer.files, targetPath);
+      } catch (e) {
+        return this.uploadFiles(event.dataTransfer.files, targetPath);
+      }
 
-        // figure if a folder was dropped on a modern browser, in this case the first would have to be a directory
-        var folderItem;
-        var targetPath = entry ? entry.filePath : null;
-        try {
-            folderItem = event.dataTransfer.items[0].webkitGetAsEntry();
-            if (folderItem.isFile) return that.uploadFiles(event.dataTransfer.files, targetPath);
-        } catch (e) {
-            return that.uploadFiles(event.dataTransfer.files, targetPath);
+      // if we got here we have a folder drop and a modern browser
+      // now traverse the folder tree and create a file list
+      this.uploadStatus.busy = true;
+      this.uploadStatus.uploadListCount = 0;
+
+      var that = this;
+      var fileList = [];
+      function traverseFileTree(item, path, callback) {
+        if (item.isFile) {
+          // Get file
+          item.file(function (file) {
+            fileList.push(file);
+            ++that.uploadStatus.uploadListCount;
+            callback();
+          });
+        } else if (item.isDirectory) {
+          // Get folder contents
+          const dirReader = item.createReader();
+          dirReader.readEntries(function (entries) {
+            each(entries, function (entry, callback) {
+              traverseFileTree(entry, path + item.name + '/', callback);
+            }, callback);
+          });
         }
+      }
 
-        // if we got here we have a folder drop and a modern browser
-        // now traverse the folder tree and create a file list
-        that.uploadStatus.busy = true;
-        that.uploadStatus.uploadListCount = 0;
+      traverseFileTree(folderItem, '', (error) => {
+        this.uploadStatus.busy = false;
+        this.uploadStatus.uploadListCount = 0;
 
-        var fileList = [];
-        function traverseFileTree(item, path, callback) {
-            if (item.isFile) {
-                // Get file
-                item.file(function (file) {
-                    fileList.push(file);
-                    ++that.uploadStatus.uploadListCount;
-                    callback();
-                });
-            } else if (item.isDirectory) {
-                // Get folder contents
-                var dirReader = item.createReader();
-                dirReader.readEntries(function (entries) {
-                    each(entries, function (entry, callback) {
-                        traverseFileTree(entry, path + item.name + '/', callback);
-                    }, callback);
-                });
-            }
-        }
+        if (error) return console.error(error);
 
-        traverseFileTree(folderItem, '', function (error) {
-            that.uploadStatus.busy = false;
-            that.uploadStatus.uploadListCount = 0;
-
-            if (error) return console.error(error);
-
-            that.uploadFiles(fileList, targetPath);
-        });
+        this.uploadFiles(fileList, targetPath);
+      });
     },
     async openNewFolderDialog() {
       const newFolderName = await this.$refs.inputDialog.prompt({
@@ -560,45 +554,39 @@ export default {
       this.$refs.uploadFolder.value = '';
       this.$refs.uploadFolder.click();
     },
-    onDelete: function (entry) {
-        var that = this;
+    onDelete(entry) {
+      const path = encode(sanitize(this.path + '/' + entry.fileName));
 
-          var path = encode(sanitize(that.path + '/' + entry.fileName));
+      superagent.del(`/api/files${path}`).query({ access_token: localStorage.accessToken, recursive: true }).end((error, result) => {
+        if (result && result.statusCode === 401) return this.logout();
+        if (result && result.statusCode !== 200) return this.error('Error deleting file');
+        if (error) return this.error(error.message);
 
-          superagent.del(`/api/files${path}`).query({ access_token: localStorage.accessToken, recursive: true }).end(function (error, result) {
-              if (result && result.statusCode === 401) return that.logout();
-              if (result && result.statusCode !== 200) return that.error('Error deleting file');
-              if (error) return that.error(error.message);
-
-              that.refresh();
-          });
+        this.refresh();
+      });
     },
-    onRename: function (entry, newFileName) {
-        var that = this;
+    onRename(entry, newFileName) {
+      const path = encode(sanitize(this.path + '/' + entry.fileName));
+      const newFilePath = sanitize(this.path + '/' + newFileName);
 
-        var path = encode(sanitize(this.path + '/' + entry.fileName));
-        var newFilePath = sanitize(this.path + '/' + newFileName);
+      superagent.put(`/api/files${path}`).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end((error, result) => {
+        if (result && result.statusCode === 401) return this.logout();
+        if (result && result.statusCode !== 200) return this.error('Error renaming file');
+        if (error) return this.error(error.message);
 
-        superagent.put(`/api/files${path}`).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end(function (error, result) {
-            if (result && result.statusCode === 401) return that.logout();
-            if (result && result.statusCode !== 200) return that.error('Error renaming file');
-            if (error) return that.error(error.message);
-
-            // update in-place to avoid reload
-            entry.fileName = newFileName;
-            // FIXME setting this will correctly update the preview, which on some types might trigger a download on rename!
-            entry.filePath = newFilePath;
-        });
+        // update in-place to avoid reload
+        entry.fileName = newFileName;
+        // FIXME setting this will correctly update the preview, which on some types might trigger a download on rename!
+        entry.filePath = newFilePath;
+      });
     },
-    refreshAccessTokens: function () {
-        var that = this;
+    refreshAccessTokens() {
+      superagent.get('/api/tokens').query({ access_token: localStorage.accessToken }).end((error, result) =>{
+        if (error && !result) return this.error(error.message);
 
-        superagent.get('/api/tokens').query({ access_token: localStorage.accessToken }).end(function (error, result) {
-            if (error && !result) return that.error(error.message);
-
-            // have to create an array of objects for referencing in v-for -> input
-            that.accessTokens = result.body.accessTokens.map(function (t) { return { value: t }; });
-        });
+        // have to create an array of objects for referencing in v-for -> input
+        this.accessTokens = result.body.accessTokens.map(function (t) { return { value: t }; });
+      });
     },
     onCopyToClipboard(value) {
       copyToClipboard(value);

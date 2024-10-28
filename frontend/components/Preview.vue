@@ -99,6 +99,13 @@ export default {
   transition: width 200ms;
   background-color: var(--pankow-color-background);
   padding: 0;
+  border-left: solid 1px #e6e6e6;
+}
+
+@media (prefers-color-scheme: dark) {
+  .container {
+    border-left: none;
+  }
 }
 
 .container.visible {
