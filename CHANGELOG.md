@@ -290,4 +290,5 @@
 [6.1.3]
 * Some logo fixes
 * CLI improvments
+* Update dependencies
 
