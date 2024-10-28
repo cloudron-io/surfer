@@ -59,26 +59,18 @@ describe('Application life cycle test', function () {
         await browser.wait(until.elementIsVisible(browser.findElement(elem)), TEST_TIMEOUT);
     }
 
-    async function login() {
+    async function login(session = true) {
         await browser.manage().deleteAllCookies();
         await browser.get(`https://${app.fqdn}/_admin`);
 
-        // some redirects later
-        await browser.sleep(2000);
+        // let the redirects happen
+        await browser.sleep(5000);
 
-        // OIDC
-        if (await browser.findElements(By.xpath('//button[contains(text(), "Sign in using Cloudron")]')).then(found => !!found.length)) {
-            await browser.findElement(By.xpath('//button[contains(text(), "Sign in using Cloudron")]')).click();
-            await browser.sleep(2000);
-            await browser.findElement(By.xpath('//button[contains(text(), "Continue")]')).click();
-            await browser.sleep(2000);
-        }
-
-        if (await browser.findElements(By.xpath('//input[@name="username"]')).then(found => !!found.length)) {
-            await browser.findElement(By.xpath('//input[@name="username"]')).sendKeys(USERNAME);
-            await browser.findElement(By.xpath('//input[@name="password"]')).sendKeys(PASSWORD);
-            await browser.findElement(By.xpath('//button[@type="submit" and contains(text(), "Sign in")]')).click();
-            await browser.sleep(2000);
+        if (!session) {
+            await waitForElement(By.id('inputUsername'));
+            await browser.findElement(By.id('inputUsername')).sendKeys(USERNAME);
+            await browser.findElement(By.id('inputPassword')).sendKeys(PASSWORD);
+            await browser.findElement(By.id('loginSubmitButton')).click();
         }
 
         await waitForElement(By.id('burgerMenuButton'));
@@ -215,7 +207,7 @@ describe('Application life cycle test', function () {
 
     it('can get app information', getAppInfo);
 
-    it('can login', login);
+    it('can login', login.bind(null, false));
     it('can create api token', createApiToken);
     it('can cli login', cliLogin);
     it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
