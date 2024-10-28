@@ -11,11 +11,13 @@
   },
   "dependencies": {
     "@vitejs/plugin-vue": "^5.1.4",
+    "async": "^3.2.6",
     "eslint": "^9.13.0",
     "eslint-plugin-vue": "^9.30.0",
     "filesize": "^10.1.6",
     "primeicons": "^6.0.1",
     "primevue": "^3.44.0",
+    "superagent": "^8.1.2",
     "vite": "^5.4.10",
     "vue": "^3.5.12"
   }

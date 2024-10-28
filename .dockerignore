@@ -1,5 +1,6 @@
 test/
 node_modules/
+frontend/node_modules/
 files/
 dist/
 .git/
