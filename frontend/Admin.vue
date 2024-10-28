@@ -19,7 +19,7 @@
           <Button icon="pi pi-upload" @click="onUpload">Upload File</Button>
           <Button icon="pi pi-cloud-upload" @click="onUploadFolder">Upload Folder</Button>
           <Button icon="pi pi-plus" success style="margin-left: 20px;" @click="openNewFolderDialog">New Folder</Button>
-          <Button icon="pi pi-ellipsis-h" tool outline style="margin-left: 20px;" :menu="mainMenu" id="burgerMenuButton" @click="toggleMenu"/>
+          <Button icon="pi pi-ellipsis-h" tool outline style="margin-left: 20px;" :menu="mainMenu" id="burgerMenuButton"/>
         </template>
       </TopBar>
     </div>
@@ -39,12 +39,9 @@
   </div>
 
   <!-- Settings Dialog -->
-  <Dialog v-model:visible="settingsDialog.visible" header="Settings" :dismissableMask="true" :modal="true" :closable="true" :style="{width: '50vw'}">
+  <Dialog ref="settingsDialog" title="Settings" :modal="true" reject-label="Cancel" confirm-label="Save" confirm-style="success" :confirm-busy="settingsDialog.busy" @confirm="onSaveSettingsDialog">
     <div>
-      <div class="radio-checkbox-field">
-        <Checkbox inputId="publicFolderListing" v-model="settingsDialog.folderListingEnabled" :binary="true"/>
-        <label for="publicFolderListing" style="font-weight: bold; font-size: 16.38px;">Public Folder Listing</label>
-      </div>
+      <Checkbox v-model="settingsDialog.folderListingEnabled" label="Public Folder Listing"/>
       <p>If this is enabled, all folders and files will be publicly listed. If a folder contains a file with the below set index name, this will be displayed instead.</p>
     </div>
 
@@ -53,24 +50,18 @@
     <div>
       <h3>Display</h3>
       <p>These settings only apply if public folder listing is enabled and no custom index file is present.</p>
-      <div class="p-fluid">
-        <div class="radio-checkbox-field">
-          <Checkbox id="sortShowFoldersFirst" v-model="settingsDialog.sortFoldersFirst" :binary="true"/>
-          <label for="sortShowFoldersFirst">Always show folders first</label>
-        </div>
-        <div>
-          <label for="titleInput">Title</label>
-          <InputText id="titleInput" type="text" placeholder="Surfer" v-model="settingsDialog.title"/>
-        </div>
-        <div>
-          <label>Favicon</label>
-          <br/>
-          <img ref="faviconImage" :src="'/api/favicon?' + Date.now()" width="64" height="64"/>
-        </div>
-        <div>
-          <Button style="width: auto; margin-right: 0.5rem;" class="p-button p-button-sm" label="Upload Favicon" icon="pi pi-upload" @click="onUploadFavicon"/>
-          <Button style="width: auto;" class="p-button p-button-sm p-button-outlined" label="Reset Favicon" icon="pi pi-replay" @click="onResetFavicon"/>
-        </div>
+      <Checkbox id="sortShowFoldersFirst" v-model="settingsDialog.sortFoldersFirst" label="Always show folders first"/>
+      <div>
+        <label for="titleInput">Title</label>
+        <TextInput id="titleInput" type="text" placeholder="Surfer" v-model="settingsDialog.title"/>
+      </div>
+      <div>
+        <label>Favicon</label>
+        <img ref="faviconImage" :src="'/api/favicon?' + Date.now()" width="64" height="64" style="margin-top: 4px;"/>
+      </div>
+      <div>
+        <Button icon="pi pi-upload" @click="onUploadFavicon">Upload Favicon</Button>
+        <Button outline icon="pi pi-replay" @click="onResetFavicon">Reset Favicon</Button>
       </div>
     </div>
 
@@ -80,7 +71,7 @@
       <div class="p-fluid">
         <div>
           <label for="indexInput">Filename</label>
-          <InputText id="indexInput" type="text" placeholder="index.html" v-model="settingsDialog.index"/>
+          <TextInput id="indexInput" type="text" placeholder="index.html" v-model="settingsDialog.index"/>
         </div>
       </div>
     </div>
@@ -88,22 +79,13 @@
     <div>
       <h3>Access</h3>
       <p>This controls how the public folder listing or any served up site can be accessed.</p>
-      <div class="radio-checkbox-field">
-        <RadioButton inputId="accessPublic" value="" v-model="settingsDialog.accessRestriction" />
-        <label for="accessPublic">Public (everyone)</label>
-      </div>
-      <div class="radio-checkbox-field">
-        <RadioButton inputId="accessPassword" value="password" v-model="settingsDialog.accessRestriction" />
-        <label for="accessPassword">Password restricted</label>
-      </div>
-      <div class="p-field" v-show="settingsDialog.accessRestriction === 'password'">
-        <Password :feedback="false" v-model="settingsDialog.accessPassword" :required="settingsDialog.accessRestriction === 'password'" toggleMask/><br/>
+      <Radiobutton v-model="settingsDialog.accessRestriction" value="" label="Public (everyone)" /><br/>
+      <Radiobutton v-model="settingsDialog.accessRestriction" value="password" label="Password restricted"/><br/>
+      <div v-show="settingsDialog.accessRestriction === 'password'">
+        <PasswordInput v-model="settingsDialog.accessPassword" :required="settingsDialog.accessRestriction === 'password'"/>
         <small>Changing the password will require every user to re-login.</small>
       </div>
-      <div class="radio-checkbox-field">
-        <RadioButton inputId="accessUser" value="user" v-model="settingsDialog.accessRestriction" />
-        <label for="accessUser">Private (only logged in users)</label>
-      </div>
+      <Radiobutton v-model="settingsDialog.accessRestriction" value="user" label="Private (only logged in users)"/>
     </div>
 
     <div>
@@ -113,78 +95,50 @@
       <ul>
         <li><b>Windows:</b> Explorer > This PC > Map Network Drive > <code style="cursor: copy;" @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
         <li><b>MacOS:</b> Finder > Go > Connect to Server... > <code style="cursor: copy;" @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
-        <li><b>Gnome:</b> Files > Other Locations > Connect to Server > <code style="cursor: copy;" @click="onCopyToClipboard('davs://' + domain  + '/_webdav/')">davs://{{ domain }}/_webdav/</code></li>
-        <li><b>KDE:</b> Dolphin > Ctrl+L > <code style="cursor: copy;" @click="onCopyToClipboard('webdav://' + domain  + '/_webdav/')">webdav://{{ domain }}/_webdav/</code></li>
+        <li><b>Gnome:</b> Files > Other Locations > Connect to Server > <code style="cursor: copy;" @click="onCopyToClipboard('davs://' + domain + '/_webdav/')">davs://{{ domain }}/_webdav/</code></li>
+        <li><b>KDE:</b> Dolphin > Ctrl+L > <code style="cursor: copy;" @click="onCopyToClipboard('webdav://' + domain + '/_webdav/')">webdav://{{ domain }}/_webdav/</code></li>
       </ul>
     </div>
-
-    <template #footer>
-      <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="settingsDialog.visible = false" :disabled="settingsDialog.busy"/>
-      <Button label="Save" icon="pi pi-check" class="p-button-text p-button-success" @click="onSaveSettingsDialog" :disabled="settingsDialog.busy"/>
-    </template>
   </Dialog>
 
   <!-- Access Token Dialog -->
-  <Dialog v-model:visible="accessTokenDialog.visible" header="Access Tokens" :dismissableMask="true" :modal="true" :closable="true" :style="{width: '50vw'}">
+  <Dialog ref="accessTokenDialog" :show-x="true" title="Access Tokens">
     <p>
-      Access tokens are useful to programmatically deploy assets for example within a CI/CD pipeline.
-      These tokens are also used for WebDAV login as the password.
-      Tokens are shared between all users.
+      Access tokens are useful to programmatically deploy assets for example within a CI/CD pipeline.<br/>
+      These tokens are also used for WebDAV login as the password.<br/>
+      <em>Tokens are shared between all users.</em>
+      <br/>
+      <br/>
       See the <a href="https://cloudron.io/documentation/apps/surfer/" target="_blank">docs</a> for more information on how to use this token.
     </p>
-    <br/>
+    <Button success @click="onCreateAccessToken()">Create Access Token</Button>
     <div>
-      <div v-for="accessToken in accessTokens" :key="accessToken.value" class="p-fluid">
-        <span class="p-inputgroup" style="margin-bottom: 5px;">
-          <InputText type="text" class="p-inputtext-sm" v-model="accessToken.value" @click="onCopyAccessToken" readonly style="cursor: copy !important;" />
-          <Button class="p-button-sm p-button-danger" icon="pi pi-trash" @click="onDeleteAccessToken(accessToken.value)"/>
-        </span>
+      <div v-for="accessToken in accessTokens" :key="accessToken.value">
+        <code @click="onCopyAccessToken(accessToken.value)" style="cursor: copy !important;">{{ accessToken.value }}</code>
+        <Button danger small tool icon="pi pi-trash" @click="onDeleteAccessToken(accessToken.value)"/>
       </div>
     </div>
-    <br/>
-    <Button label="Create Access Token" class="p-button-sm" @click="onCreateAccessToken()"/>
-
-    <template #footer>
-      <Button label="Close" icon="pi pi-times" class="p-button-text" @click="accessTokenDialog.visible = false"/>
-    </template>
-  </Dialog>
-
-  <!-- New Folder Dialog -->
-  <Dialog header="New Foldername" v-model:visible="newFolderDialog.visible" :dismissableMask="true" :closable="true" :style="{width: '350px'}" :modal="true">
-    <form @submit="onSaveNewFolderDialog" @submit.prevent>
-      <div class="p-fluid">
-        <div class="p-field">
-          <InputText type="text" v-model="newFolderDialog.folderName" autofocus required :class="{ 'p-invalid': newFolderDialog.error }"/>
-          <small class="p-invalid" v-show="newFolderDialog.error">{{ newFolderDialog.error }}</small>
-        </div>
-      </div>
-    </form>
-    <template #footer>
-      <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="newFolderDialog.visible = false"/>
-      <Button label="Create" icon="pi pi-check" class="p-button-text p-button-success" @click="onSaveNewFolderDialog" :disabled="!newFolderDialog.folderName"/>
-    </template>
   </Dialog>
 
   <!-- About Dialog -->
-  <Dialog header="About Cloudron Surfer" v-model:visible="aboutDialog.visible" :dismissableMask="true" :closable="true" :style="{width: '450px'}" :modal="true">
+  <Dialog ref="aboutDialog" title="About Cloudron Surfer" :show-x="true" reject-label="Close">
     <div>
       Surfer is a static file server written by <a href="https://cloudron.io" target="_blank">Cloudron</a>.
+      <br/>
+      <br/>
       The source code is licensed under MIT and available <a href="https://git.cloudron.io/cloudron/surfer" target="_blank">here</a>.
       <br/><br/>
     </div>
-    <template #footer>
-      <Button label="Close" icon="pi pi-times" class="p-button-text" @click="aboutDialog.visible = false"/>
-    </template>
   </Dialog>
-
 </template>
 
 <script>
 
-import { Breadcrumb, Button, InputDialog, Notification, TopBar } from 'pankow';
+import { Breadcrumb, Button, Checkbox, Dialog, InputDialog, Notification, PasswordInput, Radiobutton, TextInput, TopBar } from 'pankow';
 import superagent from 'superagent';
 import { eachLimit, each } from 'async';
-import { sanitize, encode, decode, getPreviewUrl, getExtension, copyToClipboard } from './utils.js';
+import { sanitize, encode, decode, getPreviewUrl, getExtension } from './utils.js';
+import { copyToClipboard } from 'pankow/utils.js';
 
 import EntryList from './components/EntryList.vue';
 import Preview from './components/Preview.vue';
@@ -194,84 +148,80 @@ export default {
     components: {
       Breadcrumb,
       Button,
+      Checkbox,
+      Dialog,
       EntryList,
       InputDialog,
       Notification,
+      PasswordInput,
       Preview,
+      Radiobutton,
+      TextInput,
       TopBar,
     },
     data() {
-        return {
-            ready: false,
-            busy: true,
-            origin: window.location.origin,
-            domain: window.location.host,
-            username: '',
-            uploadStatus: {
-                busy: false,
-                count: 0,
-                done: 0,
-                percentDone: 50,
-                uploadListCount: 0
-            },
-            path: '/',
-            breadCrumbs: {
-                home: { icon: 'pi pi-home', url: '#/' },
-                items: []
-            },
-            entries: [],
-            activeEntry: {},
-            accessTokens: [],
-            // holds settings values stored on backend
-            settings: {
-                folderListingEnabled: false,
-                sortFoldersFirst: false,
-                title: '',
-                accessRestriction: ''
-            },
-            settingsDialog: {
-                visible: false,
-                busy: false,
-                // settings copy for modification
-                folderListingEnabled: false,
-                sortFoldersFirst: false,
-                title: '',
-                faviconFile: null,
-                accessRestriction: '',
-                accessPassword: '',
-                index: ''
-            },
-            accessTokenDialog: {
-                visible: false,
-            },
-            newFolderDialog: {
-                visible: false,
-                error: '',
-                folderName: ''
-            },
-            aboutDialog: {
-                visible: false
-            },
-            mainMenu: [{
-              label: 'Settings',
-              icon: 'pi pi-cog',
-              action: this.openSettingsDialog
-            }, {
-              label: 'Access Tokens',
-              icon: 'pi pi-key',
-              action: this.openAccessTokenDialog
-            }, {
-              separator: true
-            }, {
-              label: 'About',
-              icon: 'pi pi-info-circle',
-              action: () => this.aboutDialog.visible = true
-            }, {
-              label: 'Logout',
-              icon: 'pi pi-sign-out',
-              action: this.logout
-            }]
-        };
+      return {
+        ready: false,
+        busy: true,
+        origin: window.location.origin,
+        domain: window.location.host,
+        username: '',
+        uploadStatus: {
+          busy: false,
+          count: 0,
+          done: 0,
+          percentDone: 50,
+          uploadListCount: 0
+        },
+        path: '/',
+        breadCrumbs: {
+          home: { icon: 'pi pi-home', url: '#/' },
+          items: []
+        },
+        entries: [],
+        activeEntry: {},
+        accessTokens: [],
+        // holds settings values stored on backend
+        settings: {
+          folderListingEnabled: false,
+          sortFoldersFirst: false,
+          title: '',
+          accessRestriction: ''
+        },
+        settingsDialog: {
+          visible: false,
+          busy: false,
+          // settings copy for modification
+          folderListingEnabled: false,
+          sortFoldersFirst: false,
+          title: '',
+          faviconFile: null,
+          accessRestriction: '',
+          accessPassword: '',
+          index: ''
+        },
+        accessTokenDialog: {
+        },
+        mainMenu: [{
+          label: 'Settings',
+          icon: 'pi pi-cog',
+          action: this.openSettingsDialog
+        }, {
+          label: 'Access Tokens',
+          icon: 'pi pi-key',
+          action: this.openAccessTokenDialog
+        }, {
+          separator: true
+        }, {
+          label: 'About',
+          icon: 'pi pi-info-circle',
+          action: () => this.$refs.aboutDialog.open()
+        }, {
+          label: 'Logout',
+          icon: 'pi pi-sign-out',
+          action: this.logout
+        }]
+      };
     },
     mounted() {
       superagent.get('/api/settings').end((error, result) => {
@@ -339,9 +289,6 @@ export default {
 
                 that.refreshAccessTokens();
             });
-        },
-        toggleMenu: function (event) {
-            this.$refs.menu.toggle(event);
         },
         loadDirectory: function (folderPath) {
             if (!folderPath) return window.location.hash = '/';
@@ -543,90 +490,89 @@ export default {
             this.refresh();
           });
         },
-        onSaveNewFolderDialog: function () {
+        openAccessTokenDialog() {
+          this.$refs.accessTokenDialog.open();
         },
-        openAccessTokenDialog: function () {
-            this.accessTokenDialog.visible = true;
+        openSettingsDialog() {
+          this.settingsDialog.folderListingEnabled = this.settings.folderListingEnabled;
+          this.settingsDialog.sortFoldersFirst = this.settings.sortFoldersFirst;
+          this.settingsDialog.title = this.settings.title;
+          this.settingsDialog.faviconFile = null;
+          this.settingsDialog.index = this.settings.index;
+          this.settingsDialog.accessRestriction = this.settings.accessRestriction;
+
+          this.$refs.settingsDialog.open();
         },
-        openSettingsDialog: function () {
-            this.settingsDialog.folderListingEnabled = this.settings.folderListingEnabled;
-            this.settingsDialog.sortFoldersFirst = this.settings.sortFoldersFirst;
-            this.settingsDialog.visible = true;
-            this.settingsDialog.title = this.settings.title;
-            this.settingsDialog.faviconFile = null;
-            this.settingsDialog.index = this.settings.index;
-            this.settingsDialog.accessRestriction = this.settings.accessRestriction;
-        },
-        onSaveSettingsDialog: function () {
-            var that = this;
+        onSaveSettingsDialog() {
+          this.settingsDialog.busy = true;
 
-            this.settingsDialog.busy = true;
+          const data = {
+            folderListingEnabled: this.settingsDialog.folderListingEnabled,
+            sortFoldersFirst: this.settingsDialog.sortFoldersFirst,
+            title: this.settingsDialog.title,
+            index: this.settingsDialog.index,
+            accessRestriction: this.settingsDialog.accessRestriction
+          };
 
-            var data = {
-                folderListingEnabled: this.settingsDialog.folderListingEnabled,
-                sortFoldersFirst: this.settingsDialog.sortFoldersFirst,
-                title: this.settingsDialog.title,
-                index: this.settingsDialog.index,
-                accessRestriction: this.settingsDialog.accessRestriction
-            };
+          if (this.settingsDialog.accessPassword) data.accessPassword = this.settingsDialog.accessPassword;
 
-            if (this.settingsDialog.accessPassword) data.accessPassword = this.settingsDialog.accessPassword;
+          const query = {
+            access_token: localStorage.accessToken
+          };
 
-            var query = {
-                access_token: localStorage.accessToken
-            };
+          const that = this;
+          function done(error) {
+            if (error) return console.error(error);
 
-            function done(error) {
-                if (error) return console.error(error);
+            that.settings.folderListingEnabled = data.folderListingEnabled;
+            that.settings.sortFoldersFirst = data.sortFoldersFirst;
+            that.settings.title = data.title;
+            that.settings.index = data.index;
+            that.settings.accessRestriction = data.accessRestriction;
 
-                that.settings.folderListingEnabled = data.folderListingEnabled;
-                that.settings.sortFoldersFirst = data.sortFoldersFirst;
-                that.settings.title = data.title;
-                that.settings.index = data.index;
-                that.settings.accessRestriction = data.accessRestriction;
+            // refresh immedately
+            document.querySelector('link[rel="icon"]').href = '/api/favicon?' + Date.now();
+            window.document.title = that.settings.title;
 
-                // refresh immedately
-                document.querySelector('link[rel="icon"]').href = '/api/favicon?' + Date.now();
-                window.document.title = that.settings.title;
+            that.settingsDialog.busy = false;
 
-                that.settingsDialog.busy = false;
-                that.settingsDialog.visible = false;
+            that.$refs.settingsDialog.close();
+          }
+
+          superagent.put('/api/settings').send(data).query(query).end((error) => {
+            if (error) return console.error(error);
+
+            if (!this.settingsDialog.faviconFile) return done();
+
+            if (this.settingsDialog.faviconFile === 'reset') {
+              superagent.delete('/api/favicon').query(query).end(done);
+            } else {
+              const formData = new FormData();
+              formData.append('file', this.settingsDialog.faviconFile);
+
+              superagent.put('/api/favicon').send(formData).query(query).end(done);
             }
-
-            superagent.put('/api/settings').send(data).query(query).end(function (error) {
-                if (error) return console.error(error);
-
-                if (!that.settingsDialog.faviconFile) return done();
-
-                if (that.settingsDialog.faviconFile === 'reset') {
-                    superagent.delete('/api/favicon').query(query).end(done);
-                } else {
-                    var formData = new FormData();
-                    formData.append('file', that.settingsDialog.faviconFile);
-
-                    superagent.put('/api/favicon').send(formData).query(query).end(done);
-                }
-            });
+          });
         },
-        onUploadFavicon: function () {
-            // reset the form first to make the change handler retrigger even on the same file selected
-            this.$refs.uploadFavicon.value = '';
-            this.$refs.uploadFavicon.click();
+        onUploadFavicon() {
+          // reset the form first to make the change handler retrigger even on the same file selected
+          this.$refs.uploadFavicon.value = '';
+          this.$refs.uploadFavicon.click();
         },
-        onResetFavicon: function () {
-            // magic 'reset' token to indicate removal and reset to default
-            this.settingsDialog.faviconFile = 'reset';
-            this.$refs.faviconImage.src = '/_admin/logo.png';
+        onResetFavicon() {
+          // magic 'reset' token to indicate removal and reset to default
+          this.settingsDialog.faviconFile = 'reset';
+          this.$refs.faviconImage.src = '/_admin/logo.png';
         },
-        onUpload: function () {
-            // reset the form first to make the change handler retrigger even on the same file selected
-            this.$refs.upload.value = '';
-            this.$refs.upload.click();
+        onUpload() {
+          // reset the form first to make the change handler retrigger even on the same file selected
+          this.$refs.upload.value = '';
+          this.$refs.upload.click();
         },
-        onUploadFolder: function () {
-            // reset the form first to make the change handler retrigger even on the same file selected
-            this.$refs.uploadFolder.value = '';
-            this.$refs.uploadFolder.click();
+        onUploadFolder() {
+          // reset the form first to make the change handler retrigger even on the same file selected
+          this.$refs.uploadFolder.value = '';
+          this.$refs.uploadFolder.click();
         },
         onDelete: function (entry) {
             var that = this;
@@ -668,66 +614,57 @@ export default {
                 that.accessTokens = result.body.accessTokens.map(function (t) { return { value: t }; });
             });
         },
-        onCopyToClipboard: function (value) {
+        onCopyToClipboard(value) {
           copyToClipboard(value);
-
           window.pankow.notify({ type:'success', text: 'Copied to Clipboard' });
         },
-        onCopyAccessToken: function () {
-          event.target.select();
-          document.execCommand('copy');
-
+        onCopyAccessToken(value) {
+          copyToClipboard(value);
           window.pankow.notify({ type:'success', text: 'Token copied to Clipboard' });
         },
-        onCreateAccessToken: function () {
-            var that = this;
+        onCreateAccessToken() {
+          superagent.post('/api/tokens').query({ access_token: localStorage.accessToken }).end((error, result) => {
+            if (error && !result) return this.error(error.message);
 
-            superagent.post('/api/tokens').query({ access_token: localStorage.accessToken }).end(function (error, result) {
-                if (error && !result) return that.error(error.message);
-
-                that.refreshAccessTokens();
-            });
+            this.refreshAccessTokens();
+          });
         },
-        onDeleteAccessToken: function (token) {
-          var that = this;
+        async onDeleteAccessToken(token) {
+          const yes = await this.$refs.inputDialog.confirm({
+            message: 'Really delete this access token? Any actions currently using this token will fail.',
+            confirmStyle: 'danger',
+            confirmLabel: 'Yes',
+            rejectLabel: 'No'
+          });
 
-          this.$confirm.require({
-                target: event.target,
-                header: 'Delete Confirmation',
-                message: 'Really delete this access token? Any actions currently using this token will fail.',
-                icon: 'pi pi-exclamation-triangle',
-                acceptClass: 'p-button-danger',
-                accept: () => {
-                    superagent.delete(`/api/tokens/${token}`).query({ access_token: localStorage.accessToken }).end(function (error, result) {
-                        if (error && !result) return that.error(error.message);
+          if (!yes) return;
 
-                        that.refreshAccessTokens();
-                    });
-                },
-                reject: () => {}
-            });
+          superagent.delete(`/api/tokens/${token}`).query({ access_token: localStorage.accessToken }).end((error, result) => {
+            if (error && !result) return this.error(error.message);
+            this.refreshAccessTokens();
+          });
         },
-        onUp: function () {
-            window.location.hash = sanitize(this.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
+        onUp() {
+          window.location.hash = sanitize(this.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
         },
-        onEntryOpen: function (entry) {
-            // ignore item open on row clicks if we are renaming this entry
-            if (entry.rename) return;
+        onEntryOpen(entry) {
+          // ignore item open on row clicks if we are renaming this entry
+          if (entry.rename) return;
 
-            var path = sanitize(this.path + '/' + entry.fileName);
+          const path = sanitize(this.path + '/' + entry.fileName);
 
-            if (entry.isDirectory) {
-                window.location.hash = path;
-                return;
-            }
+          if (entry.isDirectory) {
+            window.location.hash = path;
+            return;
+          }
 
-            this.activeEntry = entry;
+          this.activeEntry = entry;
         },
-        onSelectionChanged: function (selectedEntries) {
-            this.activeEntry = selectedEntries[0];
+        onSelectionChanged(selectedEntries) {
+          this.activeEntry = selectedEntries[0];
         },
-        onPreviewClose: function () {
-            this.activeEntry = {};
+        onPreviewClose() {
+          this.activeEntry = {};
         }
     }
 };
@@ -743,10 +680,6 @@ hr {
 
 label {
     font-weight: bold;
-}
-
-.p-fluid > div {
-    margin-bottom: 10px;
 }
 
 </style>
