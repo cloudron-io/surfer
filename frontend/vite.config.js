@@ -13,7 +13,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        index: resolve(__dirname, './index.html'),
+        admin: resolve(__dirname, './admin.html'),
         public: resolve(__dirname, './public.html'),
         protected: resolve(__dirname, './protected.html')
       }

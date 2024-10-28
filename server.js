@@ -255,7 +255,7 @@ app.use(session({ store: sessionStore, secret: 'surfin surfin', resave: false, s
 app.use(auth.oidcMiddleware);
 app.use(router);
 app.use(webdav.extensions.express('/_webdav', webdavServer));
-app.use('/_admin', express.static(__dirname + '/dist'));
+app.use('/_admin', express.static(__dirname + '/dist', { index: 'admin.html' }));
 app.use('/assets', express.static(__dirname + '/dist/assets'));
 app.use('/', handleProtection);
 app.use('/', function (req, res, next) { staticServMiddleware(req, res, next); });

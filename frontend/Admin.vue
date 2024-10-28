@@ -19,7 +19,7 @@
           <Button icon="pi pi-upload" @click="onUpload">Upload File</Button>
           <Button icon="pi pi-cloud-upload" @click="onUploadFolder">Upload Folder</Button>
           <Button icon="pi pi-plus" success style="margin-left: 20px;" @click="openNewFolderDialog">New Folder</Button>
-          <Button icon="pi pi-ellipsis-h" tool outline style="margin-left: 20px;" :menu="mainMenu" id="burgerMenuButton"/>
+          <Button icon="pi pi-ellipsis-h" tool outline style="margin-left: 20px;" :menu="mainMenu" id="burgerMenuButton" :show-dropdown="false"/>
         </template>
       </TopBar>
     </div>
@@ -34,7 +34,7 @@
         <i class="pi pi-spin pi-spinner"></i> Fetching file information for upload <span class="p-badge">{{ uploadStatus.uploadListCount }}</span>
       </div>
       <div style="margin-right: 10px;" v-show="!uploadStatus.uploadListCount">Uploading {{ uploadStatus.count }} files ({{ Math.round(uploadStatus.done/1000/1000) }}MB / {{ Math.round(uploadStatus.size/1000/1000) }}MB)</div>
-      <ProgressBar :value="uploadStatus.percentDone" v-show="!uploadStatus.uploadListCount">{{uploadStatus.percentDone}}%</ProgressBar>
+      <ProgressBar :value="uploadStatus.percentDone" v-show="!uploadStatus.uploadListCount">{{ uploadStatus.percentDone }}%</ProgressBar>
     </div>
   </div>
 
@@ -144,528 +144,516 @@ import EntryList from './components/EntryList.vue';
 import Preview from './components/Preview.vue';
 
 export default {
-    name: 'AdminView',
-    components: {
-      Breadcrumb,
-      Button,
-      Checkbox,
-      Dialog,
-      EntryList,
-      InputDialog,
-      Notification,
-      PasswordInput,
-      Preview,
-      Radiobutton,
-      TextInput,
-      TopBar,
+  name: 'AdminView',
+  components: {
+    Breadcrumb,
+    Button,
+    Checkbox,
+    Dialog,
+    EntryList,
+    InputDialog,
+    Notification,
+    PasswordInput,
+    Preview,
+    Radiobutton,
+    TextInput,
+    TopBar,
+  },
+  data() {
+    return {
+      ready: false,
+      busy: true,
+      origin: window.location.origin,
+      domain: window.location.host,
+      username: '',
+      uploadStatus: {
+        busy: false,
+        count: 0,
+        done: 0,
+        percentDone: 50,
+        uploadListCount: 0
+      },
+      path: '/',
+      breadcrumbHomeItem: {
+        label: '',
+        icon: 'pi pi-home',
+        route: '#/'
+      },
+      breadcrumbItems: [],
+      entries: [],
+      activeEntry: {},
+      accessTokens: [],
+      // holds settings values stored on backend
+      settings: {
+        folderListingEnabled: false,
+        sortFoldersFirst: false,
+        title: '',
+        accessRestriction: ''
+      },
+      settingsDialog: {
+        busy: false,
+        // settings copy for modification
+        folderListingEnabled: false,
+        sortFoldersFirst: false,
+        title: '',
+        faviconFile: null,
+        accessRestriction: '',
+        accessPassword: '',
+        index: ''
+      },
+      mainMenu: [{
+        label: 'Settings',
+        icon: 'pi pi-cog',
+        action: this.openSettingsDialog
+      }, {
+        label: 'Access Tokens',
+        icon: 'pi pi-key',
+        action: this.openAccessTokenDialog
+      }, {
+        separator: true
+      }, {
+        label: 'About',
+        icon: 'pi pi-info-circle',
+        action: () => this.$refs.aboutDialog.open()
+      }, {
+        label: 'Logout',
+        icon: 'pi pi-sign-out',
+        action: this.logout
+      }]
+    };
+  },
+  mounted() {
+    superagent.get('/api/settings').end((error, result) => {
+      if (error) console.error(error);
+
+      this.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
+      this.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
+      this.settings.title = result.body.title || 'Surfer';
+      this.settings.index = result.body.index || '';
+      this.settings.accessRestriction = result.body.accessRestriction || '';
+      this.settings.accessPassword = result.body.accessPassword || '';
+
+      window.document.title = this.settings.title;
+
+      this.initWithToken(localStorage.accessToken);
+    });
+
+    // global key handler to unset activeEntry
+    window.addEventListener('keyup', () => {
+      // only do this if no modal is active - body classlist would be empty
+      if (event.key === 'Escape' && event.target.classList.length === 0) this.activeEntry = {};
+    });
+
+    window.addEventListener('hashchange', () => {
+      this.loadDirectory(decode(window.location.hash.slice(1)));
+    }, false);
+
+    // upload input event handler
+    this.$refs.upload.addEventListener('change', () => {
+      this.uploadFiles(this.$refs.upload.files || []);
+    });
+
+    this.$refs.uploadFolder.addEventListener('change', () => {
+      this.uploadFiles(this.$refs.uploadFolder.files || []);
+    });
+
+    this.$refs.uploadFavicon.addEventListener('change', () => {
+      this.settingsDialog.faviconFile = this.$refs.uploadFavicon.files[0] || null;
+      if (this.settingsDialog.faviconFile) this.$refs.faviconImage.src = URL.createObjectURL(this.settingsDialog.faviconFile);
+    });
+  },
+  methods: {
+    error: function (header, message) {
+      window.pankow.notify({ type: 'danger', text: header + message });
+      console.error(header, message);
     },
-    data() {
-      return {
-        ready: false,
-        busy: true,
-        origin: window.location.origin,
-        domain: window.location.host,
-        username: '',
-        uploadStatus: {
-          busy: false,
-          count: 0,
-          done: 0,
-          percentDone: 50,
-          uploadListCount: 0
-        },
-        path: '/',
-        breadcrumbHomeItem: {
-          label: '',
-          icon: 'pi pi-home',
-          route: '#/'
-        },
-        breadcrumbItems: [],
-        entries: [],
-        activeEntry: {},
-        accessTokens: [],
-        // holds settings values stored on backend
-        settings: {
-          folderListingEnabled: false,
-          sortFoldersFirst: false,
-          title: '',
-          accessRestriction: ''
-        },
-        settingsDialog: {
-          visible: false,
-          busy: false,
-          // settings copy for modification
-          folderListingEnabled: false,
-          sortFoldersFirst: false,
-          title: '',
-          faviconFile: null,
-          accessRestriction: '',
-          accessPassword: '',
-          index: ''
-        },
-        accessTokenDialog: {
-        },
-        mainMenu: [{
-          label: 'Settings',
-          icon: 'pi pi-cog',
-          action: this.openSettingsDialog
-        }, {
-          label: 'Access Tokens',
-          icon: 'pi pi-key',
-          action: this.openAccessTokenDialog
-        }, {
-          separator: true
-        }, {
-          label: 'About',
-          icon: 'pi pi-info-circle',
-          action: () => this.$refs.aboutDialog.open()
-        }, {
-          label: 'Logout',
-          icon: 'pi pi-sign-out',
-          action: this.logout
-        }]
-      };
-    },
-    mounted() {
-      superagent.get('/api/settings').end((error, result) => {
-        if (error) console.error(error);
+    initWithToken: function (accessToken) {
+      if (!accessToken) return this.login();
 
-        this.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
-        this.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
-        this.settings.title = result.body.title || 'Surfer';
-        this.settings.index = result.body.index || '';
-        this.settings.accessRestriction = result.body.accessRestriction || '';
-        this.settings.accessPassword = result.body.accessPassword || '';
+      superagent.get('/api/profile').query({ access_token: accessToken }).end((error, result) =>{
+        this.ready = true;
 
-        window.document.title = this.settings.title;
+        if (error && !error.response) return console.error(error);
+        if (result.statusCode !== 200) {
+          delete localStorage.accessToken;
+          return this.login();
+        }
 
-        this.initWithToken(localStorage.accessToken);
-      });
+        localStorage.accessToken = accessToken;
+        this.username = result.body.username;
 
-      // global key handler to unset activeEntry
-      window.addEventListener('keyup', () => {
-        // only do this if no modal is active - body classlist would be empty
-        if (event.key === 'Escape' && event.target.classList.length === 0) this.activeEntry = {};
-      });
-
-      window.addEventListener('hashchange', () => {
         this.loadDirectory(decode(window.location.hash.slice(1)));
-      }, false);
 
-      // upload input event handler
-      this.$refs.upload.addEventListener('change', () => {
-        this.uploadFiles(this.$refs.upload.files || []);
-      });
-
-      this.$refs.uploadFolder.addEventListener('change', () => {
-        this.uploadFiles(this.$refs.uploadFolder.files || []);
-      });
-
-      this.$refs.uploadFavicon.addEventListener('change', () => {
-        this.settingsDialog.faviconFile = this.$refs.uploadFavicon.files[0] || null;
-        if (this.settingsDialog.faviconFile) this.$refs.faviconImage.src = URL.createObjectURL(this.settingsDialog.faviconFile);
+        this.refreshAccessTokens();
       });
     },
-    methods: {
-        error: function (header, message) {
-          window.pankow.notify({ type: 'danger', text: header + message });
-          console.error(header, message);
-        },
-        initWithToken: function (accessToken) {
-            var that = this;
+    loadDirectory(folderPath) {
+      if (!folderPath) return window.location.hash = '/';
 
-            if (!accessToken) return this.login();
+      this.busy = true;
+      this.activeEntry = {};
 
-            superagent.get('/api/profile').query({ access_token: accessToken }).end(function (error, result) {
-                that.ready = true;
+      folderPath = folderPath ? sanitize(folderPath) : '/';
 
-                if (error && !error.response) return console.error(error);
-                if (result.statusCode !== 200) {
-                    delete localStorage.accessToken;
-                    return that.login();
-                }
+      superagent.get('/api/files/' + encode(folderPath)).query({ access_token: localStorage.accessToken }).end((error, result) => {
+        this.busy = false;
 
-                localStorage.accessToken = accessToken;
-                that.username = result.body.username;
+        if (result && result.statusCode === 401) return this.logout();
+        if (error) return console.error(error);
 
-                that.loadDirectory(decode(window.location.hash.slice(1)));
+        result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
+        this.entries = result.body.entries.map(function (entry) {
+          entry.previewUrl = getPreviewUrl(entry, folderPath);
+          entry.extension = getExtension(entry);
+          entry.rename = false;
+          entry.filePathNew = entry.fileName;
+          return entry;
+        });
+        this.path = folderPath;
+        this.breadcrumbItems = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
+          return {
+            label: e,
+            route: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
+          };
+        });
 
-                that.refreshAccessTokens();
+        // update in case this was triggered from code
+        window.location.hash = this.path;
+      });
+    },
+    login() {
+      // first try to get a new token if we have a session otherwise redirect to oidc login
+      superagent.get('/api/token').end((error, result) => {
+        if (error) window.location.href = '/api/oidc/login';
+
+        const accessToken = result.body.accessToken;
+        localStorage.accessToken = accessToken;
+
+        this.initWithToken(accessToken);
+      });
+    },
+    logout() {
+      superagent.del('/api/tokens/' + localStorage.accessToken).query({ access_token: localStorage.accessToken }).end((error) => {
+        if (error) console.error('Failed to clear token', error);
+
+        this.username = '';
+
+        delete localStorage.accessToken;
+
+        window.location.href = '/api/oidc/logout';
+      });
+    },
+    refresh() {
+      this.loadDirectory(this.path);
+    },
+    uploadFiles: function (files, targetPath) {
+        var that = this;
+
+        if (!files || !files.length) return;
+
+        targetPath = targetPath || this.path;
+
+        that.uploadStatus.busy = true;
+        that.uploadStatus.count = files.length;
+        that.uploadStatus.size = 0;
+        that.uploadStatus.done = 0;
+        that.uploadStatus.percentDone = 0;
+
+        for (var i = 0; i < files.length; ++i) {
+            that.uploadStatus.size += files[i].size;
+        }
+
+        eachLimit(files, 10, function (file, callback) {
+            var path = encode(sanitize(targetPath + '/' + (file.webkitRelativePath || file.name)));
+
+            var formData = new FormData();
+            formData.append('file', file);
+
+            var finishedUploadSize = 0;
+
+            superagent.post(`/api/files${path}`)
+              .query({ access_token: localStorage.accessToken })
+              .send(formData)
+              .on('progress', function (event) {
+                // only handle upload events
+                if (!(event.target instanceof XMLHttpRequestUpload)) return;
+
+                that.uploadStatus.done += event.loaded - finishedUploadSize;
+                // keep track of progress diff not absolute
+                finishedUploadSize = event.loaded;
+
+                var tmp = Math.round(that.uploadStatus.done / that.uploadStatus.size * 100);
+                that.uploadStatus.percentDone = tmp > 100 ? 100 : tmp;
+            }).end(function (error, result) {
+                if (result && result.statusCode === 401) return that.logout();
+                if (result && result.statusCode !== 201) return callback('Error uploading file: ', result.statusCode);
+                if (error) return callback(error);
+
+                callback();
             });
-        },
-        loadDirectory(folderPath) {
-          if (!folderPath) return window.location.hash = '/';
+        }, function (error) {
+            if (error) console.error(error);
 
-          this.busy = true;
-          this.activeEntry = {};
-
-          folderPath = folderPath ? sanitize(folderPath) : '/';
-
-          superagent.get('/api/files/' + encode(folderPath)).query({ access_token: localStorage.accessToken }).end((error, result) => {
-            this.busy = false;
-
-            if (result && result.statusCode === 401) return this.logout();
-            if (error) return console.error(error);
-
-            result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
-            this.entries = result.body.entries.map(function (entry) {
-              entry.previewUrl = getPreviewUrl(entry, folderPath);
-              entry.extension = getExtension(entry);
-              entry.rename = false;
-              entry.filePathNew = entry.fileName;
-              return entry;
-            });
-            this.path = folderPath;
-            this.breadcrumbItems = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
-              return {
-                label: e,
-                route: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
-              };
-            });
-
-            // update in case this was triggered from code
-            window.location.hash = this.path;
-          });
-        },
-        login() {
-            const that = this;
-
-            // first try to get a new token if we have a session otherwise redirect to oidc login
-            superagent.get('/api/token').end(function (error, result) {
-                if (error) window.location.href = '/api/oidc/login';
-
-                const accessToken = result.body.accessToken;
-                localStorage.accessToken = accessToken;
-
-                that.initWithToken(accessToken);
-            });
-        },
-        logout: function () {
-            var that = this;
-
-            superagent.del('/api/tokens/' + localStorage.accessToken).query({ access_token: localStorage.accessToken }).end(function (error) {
-                if (error) console.error('Failed to clear token', error);
-
-                // close all potential dialogs
-                that.newFolderDialog.visible = false;
-                that.settingsDialog.visible = false;
-                that.accessTokenDialog.visible = false;
-                that.username = '';
-
-                delete localStorage.accessToken;
-
-                window.location.href = '/api/oidc/logout';
-            });
-        },
-        refresh: function () {
-            this.loadDirectory(this.path);
-        },
-        uploadFiles: function (files, targetPath) {
-            var that = this;
-
-            if (!files || !files.length) return;
-
-            targetPath = targetPath || this.path;
-
-            that.uploadStatus.busy = true;
-            that.uploadStatus.count = files.length;
+            that.uploadStatus.busy = false;
+            that.uploadStatus.count = 0;
             that.uploadStatus.size = 0;
             that.uploadStatus.done = 0;
-            that.uploadStatus.percentDone = 0;
+            that.uploadStatus.percentDone = 100;
 
-            for (var i = 0; i < files.length; ++i) {
-                that.uploadStatus.size += files[i].size;
-            }
+            that.refresh();
+        });
+    },
+    onDrop: function (event, entry) {
+        var that = this;
 
-            eachLimit(files, 10, function (file, callback) {
-                var path = encode(sanitize(targetPath + '/' + (file.webkitRelativePath || file.name)));
+        if (!event.dataTransfer.items[0]) return;
 
-                var formData = new FormData();
-                formData.append('file', file);
+        // figure if a folder was dropped on a modern browser, in this case the first would have to be a directory
+        var folderItem;
+        var targetPath = entry ? entry.filePath : null;
+        try {
+            folderItem = event.dataTransfer.items[0].webkitGetAsEntry();
+            if (folderItem.isFile) return that.uploadFiles(event.dataTransfer.files, targetPath);
+        } catch (e) {
+            return that.uploadFiles(event.dataTransfer.files, targetPath);
+        }
 
-                var finishedUploadSize = 0;
+        // if we got here we have a folder drop and a modern browser
+        // now traverse the folder tree and create a file list
+        that.uploadStatus.busy = true;
+        that.uploadStatus.uploadListCount = 0;
 
-                superagent.post(`/api/files${path}`)
-                  .query({ access_token: localStorage.accessToken })
-                  .send(formData)
-                  .on('progress', function (event) {
-                    // only handle upload events
-                    if (!(event.target instanceof XMLHttpRequestUpload)) return;
-
-                    that.uploadStatus.done += event.loaded - finishedUploadSize;
-                    // keep track of progress diff not absolute
-                    finishedUploadSize = event.loaded;
-
-                    var tmp = Math.round(that.uploadStatus.done / that.uploadStatus.size * 100);
-                    that.uploadStatus.percentDone = tmp > 100 ? 100 : tmp;
-                }).end(function (error, result) {
-                    if (result && result.statusCode === 401) return that.logout();
-                    if (result && result.statusCode !== 201) return callback('Error uploading file: ', result.statusCode);
-                    if (error) return callback(error);
-
+        var fileList = [];
+        function traverseFileTree(item, path, callback) {
+            if (item.isFile) {
+                // Get file
+                item.file(function (file) {
+                    fileList.push(file);
+                    ++that.uploadStatus.uploadListCount;
                     callback();
                 });
-            }, function (error) {
-                if (error) console.error(error);
-
-                that.uploadStatus.busy = false;
-                that.uploadStatus.count = 0;
-                that.uploadStatus.size = 0;
-                that.uploadStatus.done = 0;
-                that.uploadStatus.percentDone = 100;
-
-                that.refresh();
-            });
-        },
-        onDrop: function (event, entry) {
-            var that = this;
-
-            if (!event.dataTransfer.items[0]) return;
-
-            // figure if a folder was dropped on a modern browser, in this case the first would have to be a directory
-            var folderItem;
-            var targetPath = entry ? entry.filePath : null;
-            try {
-                folderItem = event.dataTransfer.items[0].webkitGetAsEntry();
-                if (folderItem.isFile) return that.uploadFiles(event.dataTransfer.files, targetPath);
-            } catch (e) {
-                return that.uploadFiles(event.dataTransfer.files, targetPath);
+            } else if (item.isDirectory) {
+                // Get folder contents
+                var dirReader = item.createReader();
+                dirReader.readEntries(function (entries) {
+                    each(entries, function (entry, callback) {
+                        traverseFileTree(entry, path + item.name + '/', callback);
+                    }, callback);
+                });
             }
+        }
 
-            // if we got here we have a folder drop and a modern browser
-            // now traverse the folder tree and create a file list
-            that.uploadStatus.busy = true;
+        traverseFileTree(folderItem, '', function (error) {
+            that.uploadStatus.busy = false;
             that.uploadStatus.uploadListCount = 0;
 
-            var fileList = [];
-            function traverseFileTree(item, path, callback) {
-                if (item.isFile) {
-                    // Get file
-                    item.file(function (file) {
-                        fileList.push(file);
-                        ++that.uploadStatus.uploadListCount;
-                        callback();
-                    });
-                } else if (item.isDirectory) {
-                    // Get folder contents
-                    var dirReader = item.createReader();
-                    dirReader.readEntries(function (entries) {
-                        each(entries, function (entry, callback) {
-                            traverseFileTree(entry, path + item.name + '/', callback);
-                        }, callback);
-                    });
-                }
-            }
-
-            traverseFileTree(folderItem, '', function (error) {
-                that.uploadStatus.busy = false;
-                that.uploadStatus.uploadListCount = 0;
-
-                if (error) return console.error(error);
-
-                that.uploadFiles(fileList, targetPath);
-            });
-        },
-        async openNewFolderDialog() {
-          const newFolderName = await this.$refs.inputDialog.prompt({
-            message: 'New Foldername',
-            modal: false,
-            value: '',
-            confirmStyle: 'success',
-            confirmLabel: 'Create',
-            rejectLabel: 'Cancel'
-          });
-
-          if (!newFolderName) return;
-
-          const path = encode(sanitize(this.path + '/' + newFolderName));
-
-          superagent.post(`/api/files${path}`).query({ access_token: localStorage.accessToken, directory: true }).end((error, result) => {
-            if (result && result.statusCode === 401) return this.logout();
-            if (result && result.statusCode === 403) return window.pankow.notify({ type: 'danger', text: 'Folder name not allowed' });
-            if (result && result.statusCode === 409) return window.pankow.notify({ type: 'danger', text: 'Folder already exists' });
-            if (result && result.statusCode !== 201) return window.pankow.notify({ type: 'danger', text: 'Error creating folder: ' + result.statusCode });
-            if (error) return window.pankow.notify({ type: 'danger', text: error.message });
-
-            this.refresh();
-          });
-        },
-        openAccessTokenDialog() {
-          this.$refs.accessTokenDialog.open();
-        },
-        openSettingsDialog() {
-          this.settingsDialog.folderListingEnabled = this.settings.folderListingEnabled;
-          this.settingsDialog.sortFoldersFirst = this.settings.sortFoldersFirst;
-          this.settingsDialog.title = this.settings.title;
-          this.settingsDialog.faviconFile = null;
-          this.settingsDialog.index = this.settings.index;
-          this.settingsDialog.accessRestriction = this.settings.accessRestriction;
-
-          this.$refs.settingsDialog.open();
-        },
-        onSaveSettingsDialog() {
-          this.settingsDialog.busy = true;
-
-          const data = {
-            folderListingEnabled: this.settingsDialog.folderListingEnabled,
-            sortFoldersFirst: this.settingsDialog.sortFoldersFirst,
-            title: this.settingsDialog.title,
-            index: this.settingsDialog.index,
-            accessRestriction: this.settingsDialog.accessRestriction
-          };
-
-          if (this.settingsDialog.accessPassword) data.accessPassword = this.settingsDialog.accessPassword;
-
-          const query = {
-            access_token: localStorage.accessToken
-          };
-
-          const that = this;
-          function done(error) {
             if (error) return console.error(error);
 
-            that.settings.folderListingEnabled = data.folderListingEnabled;
-            that.settings.sortFoldersFirst = data.sortFoldersFirst;
-            that.settings.title = data.title;
-            that.settings.index = data.index;
-            that.settings.accessRestriction = data.accessRestriction;
+            that.uploadFiles(fileList, targetPath);
+        });
+    },
+    async openNewFolderDialog() {
+      const newFolderName = await this.$refs.inputDialog.prompt({
+        message: 'New Foldername',
+        modal: false,
+        value: '',
+        confirmStyle: 'success',
+        confirmLabel: 'Create',
+        rejectLabel: 'Cancel'
+      });
 
-            // refresh immedately
-            document.querySelector('link[rel="icon"]').href = '/api/favicon?' + Date.now();
-            window.document.title = that.settings.title;
+      if (!newFolderName) return;
 
-            that.settingsDialog.busy = false;
+      const path = encode(sanitize(this.path + '/' + newFolderName));
 
-            that.$refs.settingsDialog.close();
-          }
+      superagent.post(`/api/files${path}`).query({ access_token: localStorage.accessToken, directory: true }).end((error, result) => {
+        if (result && result.statusCode === 401) return this.logout();
+        if (result && result.statusCode === 403) return window.pankow.notify({ type: 'danger', text: 'Folder name not allowed' });
+        if (result && result.statusCode === 409) return window.pankow.notify({ type: 'danger', text: 'Folder already exists' });
+        if (result && result.statusCode !== 201) return window.pankow.notify({ type: 'danger', text: 'Error creating folder: ' + result.statusCode });
+        if (error) return window.pankow.notify({ type: 'danger', text: error.message });
 
-          superagent.put('/api/settings').send(data).query(query).end((error) => {
-            if (error) return console.error(error);
+        this.refresh();
+      });
+    },
+    openAccessTokenDialog() {
+      this.$refs.accessTokenDialog.open();
+    },
+    openSettingsDialog() {
+      this.settingsDialog.folderListingEnabled = this.settings.folderListingEnabled;
+      this.settingsDialog.sortFoldersFirst = this.settings.sortFoldersFirst;
+      this.settingsDialog.title = this.settings.title;
+      this.settingsDialog.faviconFile = null;
+      this.settingsDialog.index = this.settings.index;
+      this.settingsDialog.accessRestriction = this.settings.accessRestriction;
 
-            if (!this.settingsDialog.faviconFile) return done();
+      this.$refs.settingsDialog.open();
+    },
+    onSaveSettingsDialog() {
+      this.settingsDialog.busy = true;
 
-            if (this.settingsDialog.faviconFile === 'reset') {
-              superagent.delete('/api/favicon').query(query).end(done);
-            } else {
-              const formData = new FormData();
-              formData.append('file', this.settingsDialog.faviconFile);
+      const data = {
+        folderListingEnabled: this.settingsDialog.folderListingEnabled,
+        sortFoldersFirst: this.settingsDialog.sortFoldersFirst,
+        title: this.settingsDialog.title,
+        index: this.settingsDialog.index,
+        accessRestriction: this.settingsDialog.accessRestriction
+      };
 
-              superagent.put('/api/favicon').send(formData).query(query).end(done);
-            }
-          });
-        },
-        onUploadFavicon() {
-          // reset the form first to make the change handler retrigger even on the same file selected
-          this.$refs.uploadFavicon.value = '';
-          this.$refs.uploadFavicon.click();
-        },
-        onResetFavicon() {
-          // magic 'reset' token to indicate removal and reset to default
-          this.settingsDialog.faviconFile = 'reset';
-          this.$refs.faviconImage.src = '/_admin/logo.png';
-        },
-        onUpload() {
-          // reset the form first to make the change handler retrigger even on the same file selected
-          this.$refs.upload.value = '';
-          this.$refs.upload.click();
-        },
-        onUploadFolder() {
-          // reset the form first to make the change handler retrigger even on the same file selected
-          this.$refs.uploadFolder.value = '';
-          this.$refs.uploadFolder.click();
-        },
-        onDelete: function (entry) {
-            var that = this;
+      if (this.settingsDialog.accessPassword) data.accessPassword = this.settingsDialog.accessPassword;
 
-              var path = encode(sanitize(that.path + '/' + entry.fileName));
+      const query = {
+        access_token: localStorage.accessToken
+      };
 
-              superagent.del(`/api/files${path}`).query({ access_token: localStorage.accessToken, recursive: true }).end(function (error, result) {
-                  if (result && result.statusCode === 401) return that.logout();
-                  if (result && result.statusCode !== 200) return that.error('Error deleting file');
-                  if (error) return that.error(error.message);
+      const that = this;
+      function done(error) {
+        if (error) return console.error(error);
 
-                  that.refresh();
-              });
-        },
-        onRename: function (entry, newFileName) {
-            var that = this;
+        that.settings.folderListingEnabled = data.folderListingEnabled;
+        that.settings.sortFoldersFirst = data.sortFoldersFirst;
+        that.settings.title = data.title;
+        that.settings.index = data.index;
+        that.settings.accessRestriction = data.accessRestriction;
 
-            var path = encode(sanitize(this.path + '/' + entry.fileName));
-            var newFilePath = sanitize(this.path + '/' + newFileName);
+        // refresh immedately
+        document.querySelector('link[rel="icon"]').href = '/api/favicon?' + Date.now();
+        window.document.title = that.settings.title;
 
-            superagent.put(`/api/files${path}`).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end(function (error, result) {
-                if (result && result.statusCode === 401) return that.logout();
-                if (result && result.statusCode !== 200) return that.error('Error renaming file');
-                if (error) return that.error(error.message);
+        that.settingsDialog.busy = false;
 
-                // update in-place to avoid reload
-                entry.fileName = newFileName;
-                // FIXME setting this will correctly update the preview, which on some types might trigger a download on rename!
-                entry.filePath = newFilePath;
-            });
-        },
-        refreshAccessTokens: function () {
-            var that = this;
+        that.$refs.settingsDialog.close();
+      }
 
-            superagent.get('/api/tokens').query({ access_token: localStorage.accessToken }).end(function (error, result) {
-                if (error && !result) return that.error(error.message);
+      superagent.put('/api/settings').send(data).query(query).end((error) => {
+        if (error) return console.error(error);
 
-                // have to create an array of objects for referencing in v-for -> input
-                that.accessTokens = result.body.accessTokens.map(function (t) { return { value: t }; });
-            });
-        },
-        onCopyToClipboard(value) {
-          copyToClipboard(value);
-          window.pankow.notify({ type:'success', text: 'Copied to Clipboard' });
-        },
-        onCopyAccessToken(value) {
-          copyToClipboard(value);
-          window.pankow.notify({ type:'success', text: 'Token copied to Clipboard' });
-        },
-        onCreateAccessToken() {
-          superagent.post('/api/tokens').query({ access_token: localStorage.accessToken }).end((error, result) => {
-            if (error && !result) return this.error(error.message);
+        if (!this.settingsDialog.faviconFile) return done();
 
-            this.refreshAccessTokens();
-          });
-        },
-        async onDeleteAccessToken(token) {
-          const yes = await this.$refs.inputDialog.confirm({
-            message: 'Really delete this access token? Any actions currently using this token will fail.',
-            confirmStyle: 'danger',
-            confirmLabel: 'Yes',
-            rejectLabel: 'No'
-          });
+        if (this.settingsDialog.faviconFile === 'reset') {
+          superagent.delete('/api/favicon').query(query).end(done);
+        } else {
+          const formData = new FormData();
+          formData.append('file', this.settingsDialog.faviconFile);
 
-          if (!yes) return;
-
-          superagent.delete(`/api/tokens/${token}`).query({ access_token: localStorage.accessToken }).end((error, result) => {
-            if (error && !result) return this.error(error.message);
-            this.refreshAccessTokens();
-          });
-        },
-        onUp() {
-          window.location.hash = sanitize(this.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
-        },
-        onEntryOpen(entry) {
-          // ignore item open on row clicks if we are renaming this entry
-          if (entry.rename) return;
-
-          const path = sanitize(this.path + '/' + entry.fileName);
-
-          if (entry.isDirectory) {
-            window.location.hash = path;
-            return;
-          }
-
-          this.activeEntry = entry;
-        },
-        onSelectionChanged(selectedEntries) {
-          this.activeEntry = selectedEntries[0];
-        },
-        onPreviewClose() {
-          this.activeEntry = {};
+          superagent.put('/api/favicon').send(formData).query(query).end(done);
         }
+      });
+    },
+    onUploadFavicon() {
+      // reset the form first to make the change handler retrigger even on the same file selected
+      this.$refs.uploadFavicon.value = '';
+      this.$refs.uploadFavicon.click();
+    },
+    onResetFavicon() {
+      // magic 'reset' token to indicate removal and reset to default
+      this.settingsDialog.faviconFile = 'reset';
+      this.$refs.faviconImage.src = '/_admin/logo.png';
+    },
+    onUpload() {
+      // reset the form first to make the change handler retrigger even on the same file selected
+      this.$refs.upload.value = '';
+      this.$refs.upload.click();
+    },
+    onUploadFolder() {
+      // reset the form first to make the change handler retrigger even on the same file selected
+      this.$refs.uploadFolder.value = '';
+      this.$refs.uploadFolder.click();
+    },
+    onDelete: function (entry) {
+        var that = this;
+
+          var path = encode(sanitize(that.path + '/' + entry.fileName));
+
+          superagent.del(`/api/files${path}`).query({ access_token: localStorage.accessToken, recursive: true }).end(function (error, result) {
+              if (result && result.statusCode === 401) return that.logout();
+              if (result && result.statusCode !== 200) return that.error('Error deleting file');
+              if (error) return that.error(error.message);
+
+              that.refresh();
+          });
+    },
+    onRename: function (entry, newFileName) {
+        var that = this;
+
+        var path = encode(sanitize(this.path + '/' + entry.fileName));
+        var newFilePath = sanitize(this.path + '/' + newFileName);
+
+        superagent.put(`/api/files${path}`).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end(function (error, result) {
+            if (result && result.statusCode === 401) return that.logout();
+            if (result && result.statusCode !== 200) return that.error('Error renaming file');
+            if (error) return that.error(error.message);
+
+            // update in-place to avoid reload
+            entry.fileName = newFileName;
+            // FIXME setting this will correctly update the preview, which on some types might trigger a download on rename!
+            entry.filePath = newFilePath;
+        });
+    },
+    refreshAccessTokens: function () {
+        var that = this;
+
+        superagent.get('/api/tokens').query({ access_token: localStorage.accessToken }).end(function (error, result) {
+            if (error && !result) return that.error(error.message);
+
+            // have to create an array of objects for referencing in v-for -> input
+            that.accessTokens = result.body.accessTokens.map(function (t) { return { value: t }; });
+        });
+    },
+    onCopyToClipboard(value) {
+      copyToClipboard(value);
+      window.pankow.notify({ type:'success', text: 'Copied to Clipboard' });
+    },
+    onCopyAccessToken(value) {
+      copyToClipboard(value);
+      window.pankow.notify({ type:'success', text: 'Token copied to Clipboard' });
+    },
+    onCreateAccessToken() {
+      superagent.post('/api/tokens').query({ access_token: localStorage.accessToken }).end((error, result) => {
+        if (error && !result) return this.error(error.message);
+
+        this.refreshAccessTokens();
+      });
+    },
+    async onDeleteAccessToken(token) {
+      const yes = await this.$refs.inputDialog.confirm({
+        message: 'Really delete this access token? Any actions currently using this token will fail.',
+        confirmStyle: 'danger',
+        confirmLabel: 'Yes',
+        rejectLabel: 'No',
+        modal: false
+      });
+
+      if (!yes) return;
+
+      superagent.delete(`/api/tokens/${token}`).query({ access_token: localStorage.accessToken }).end((error, result) => {
+        if (error && !result) return this.error(error.message);
+        this.refreshAccessTokens();
+      });
+    },
+    onUp() {
+      window.location.hash = sanitize(this.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
+    },
+    onEntryOpen(entry) {
+      // ignore item open on row clicks if we are renaming this entry
+      if (entry.rename) return;
+
+      const path = sanitize(this.path + '/' + entry.fileName);
+
+      if (entry.isDirectory) {
+        window.location.hash = path;
+        return;
+      }
+
+      this.activeEntry = entry;
+    },
+    onSelectionChanged(selectedEntries) {
+      this.activeEntry = selectedEntries[0];
+    },
+    onPreviewClose() {
+      this.activeEntry = {};
     }
+  }
 };
 
 </script>

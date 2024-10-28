@@ -1,37 +1,13 @@
-[v-cloak] {
-  display: none;
-}
-
-html, body {
-  --text-color: #495057;
-  --text-color-secondary: #6c757d;
-  --primary-color: #2196F3;
-  --primary-color-text: #ffffff;
-  --hover-background-color: #e9ecef;
-  --font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol;
-
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  font-family: var(--font-family);
-  font-weight: 400;
-  color: var(--text-color);
-  overflow: hidden;
-}
-
-a {
-  color: var(--primary-color);
-  text-decoration: none;
-}
-
-a:hover {
-  color: var(--text-color-secondary);
-}
-
 #app {
   height: 100%;
   overflow: hidden;
+}
+
+@media (prefers-color-scheme: dark) {
+  #app {
+    background-color: black;
+    color: var(--pankow-color-light-dark);
+  }
 }
 
 .main-container {
@@ -39,10 +15,6 @@ a:hover {
     flex-direction: column;
     height: 100%;
     overflow: hidden;
-}
-
-.main-container-toolbar {
-    border-bottom: solid 1px #e6e6e6;
 }
 
 .main-container-body {
@@ -64,46 +36,4 @@ a:hover {
     padding: 10px;
     background-color: #f8f9fa;
     justify-content: center;
-}
-
-.p-breadcrumb {
-    padding: 0.5rem;
-    border: none;
-}
-
-.p-toolbar {
-    border: none;
-}
-
-.p-progressbar {
-    flex-grow: 1;
-}
-
-/* show them correctly in dialogs */
-.p-tooltip, .p-confirm-popup {
-    z-index: 1000;
-}
-
-.p-dialog .p-dialog-content {
-    padding: 5px 1.5rem 1.5rem 1.5rem;
-}
-
-.p-menu.p-menu-overlay {
-    margin-top: 5px;
-}
-
-.p-button.p-button-icon-only.p-button-rounded {
-    height: unset;
-}
-
-.radio-checkbox-field {
-    margin-bottom: .4rem;;
-}
-
-.radio-checkbox-field > label {
-    margin-left: .5rem;;
-}
-
-.p-inputtext {
-    margin-top: 0.4rem;
 }
