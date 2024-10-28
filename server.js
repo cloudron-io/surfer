@@ -3,7 +3,6 @@
 'use strict';
 
 var express = require('express'),
-    async = require('async'),
     morgan = require('morgan'),
     path = require('path'),
     session = require('express-session'),
@@ -77,18 +76,12 @@ function setSettings(req, res, next) {
     if (typeof req.body.accessRestriction !== 'string') return next(new HttpError(400, 'missing accessRestriction string'));
     if ('accessPassword' in req.body && typeof req.body.accessPassword !== 'string') return next(new HttpError(400, 'accessPassword must be a string'));
 
-    function clearPassswordProtectionSessions(callback) {
+    function clearPasswordProtectionSessions(callback) {
         callback = callback || function () {};
 
-        sessionStore.all(function (error, sessions) {
-            if (error) return console.error('Failed to get sessions.', error);
-
-            async.each(Object.keys(sessions), function (sid, callback) {
-                sessionStore.destroy(sid, function (error) {
-                    if (error) console.error(`Failed to delete session %sid.`, error);
-                    callback();
-                });
-            }, callback);
+        sessionStore.clear(function (error) {
+            if (error) console.error('Failed to clear sessions.', error);
+            callback();
         });
     }
 
@@ -104,7 +97,7 @@ function setSettings(req, res, next) {
                 config.accessPassword = Buffer.from(derivedKey, 'binary').toString('hex');
                 config.accessPasswordSalt = salt.toString('hex');
 
-                clearPassswordProtectionSessions(callback);
+                clearPasswordProtectionSessions(callback);
             });
         });
     }
@@ -117,7 +110,7 @@ function setSettings(req, res, next) {
     staticServMiddleware = express.static(ROOT_FOLDER, { index: config.index || 'index.html', setHeaders: setServMiddlewareHeaders });
 
     // if changed invalidate sessions
-    if (config.accessRestriction !== req.body.accessRestriction) clearPassswordProtectionSessions();
+    if (config.accessRestriction !== req.body.accessRestriction) clearPasswordProtectionSessions();
 
     config.accessRestriction = req.body.accessRestriction;
 
