@@ -4,27 +4,24 @@
   <input type="file" ref="uploadFavicon" style="display: none"/>
 
   <!-- This is re-used and thus global -->
-  <ConfirmDialog></ConfirmDialog>
-  <Toast position="top-left"/>
+  <InputDialog ref="inputDialog" />
+  <Notification/>
 
   <div class="main-container" v-show="ready">
     <div class="main-container-toolbar">
-      <Toolbar>
-        <template #start>
-          <Button icon="pi pi-chevron-left" class="p-button-sm" style="margin-right: 20px;" :disabled="breadCrumbs.items.length === 0" @click="onUp"/>
+      <TopBar>
+        <template #left>
+          <Button icon="pi pi-chevron-left" tool outline style="margin-right: 20px;" :disabled="breadCrumbs.items.length === 0" @click="onUp"/>
           <Breadcrumb :home="breadCrumbs.home" :model="breadCrumbs.items"/>
         </template>
 
-        <template #end>
-          <span class="p-buttonset">
-            <Button class="p-button-sm" label="Upload File" icon="pi pi-upload" @click="onUpload"/>
-            <Button class="p-button-sm" label="Upload Folder" icon="pi pi-cloud-upload" @click="onUploadFolder"/>
-            <Button class="p-button-sm" label="New Folder" icon="pi pi-plus" @click="openNewFolderDialog"/>
-          </span>
-          <Button icon="pi pi-ellipsis-h" class="p-button-sm p-button-outlined" style="margin-left: 20px;" id="burgerMenuButton" @click="toggleMenu"/>
-          <Menu ref="menu" :model="mainMenu" :popup="true"/>
+        <template #right>
+          <Button icon="pi pi-upload" @click="onUpload">Upload File</Button>
+          <Button icon="pi pi-cloud-upload" @click="onUploadFolder">Upload Folder</Button>
+          <Button icon="pi pi-plus" success style="margin-left: 20px;" @click="openNewFolderDialog">New Folder</Button>
+          <Button icon="pi pi-ellipsis-h" tool outline style="margin-left: 20px;" :menu="mainMenu" id="burgerMenuButton" @click="toggleMenu"/>
         </template>
-      </Toolbar>
+      </TopBar>
     </div>
     <div class="main-container-body">
       <div class="main-container-content">
@@ -184,12 +181,25 @@
 
 <script>
 
+import { Breadcrumb, Button, InputDialog, Notification, TopBar } from 'pankow';
 import superagent from 'superagent';
 import { eachLimit, each } from 'async';
 import { sanitize, encode, decode, getPreviewUrl, getExtension, copyToClipboard } from './utils.js';
 
+import EntryList from './components/EntryList.vue';
+import Preview from './components/Preview.vue';
+
 export default {
     name: 'AdminView',
+    components: {
+      Breadcrumb,
+      Button,
+      EntryList,
+      InputDialog,
+      Notification,
+      Preview,
+      TopBar,
+    },
     data() {
         return {
             ready: false,
@@ -243,45 +253,70 @@ export default {
                 visible: false
             },
             mainMenu: [{
-                label: 'Upload File',
-                icon: 'pi pi-upload',
-                command: this.onUpload,
-                class: 'p-d-md-none'
+              label: 'Settings',
+              icon: 'pi pi-cog',
+              action: this.openSettingsDialog
             }, {
-                label: 'Upload Folder',
-                icon: 'pi pi-cloud-upload',
-                command: this.onUploadFolder,
-                class: 'p-d-md-none'
+              label: 'Access Tokens',
+              icon: 'pi pi-key',
+              action: this.openAccessTokenDialog
             }, {
-                label: 'New Folder',
-                icon: 'pi pi-plus',
-                command: this.openNewFolderDialog,
-                class: 'p-d-md-none'
+              separator: true
             }, {
-                label: 'Settings',
-                icon: 'pi pi-cog',
-                command: this.openSettingsDialog
+              label: 'About',
+              icon: 'pi pi-info-circle',
+              action: () => this.aboutDialog.visible = true
             }, {
-                label: 'Access Tokens',
-                icon: 'pi pi-key',
-                command: this.openAccessTokenDialog
-            }, {
-                separator: true
-            }, {
-                label: 'About',
-                icon: 'pi pi-info-circle',
-                command: () => this.aboutDialog.visible = true
-            }, {
-                label: 'Logout',
-                icon: 'pi pi-sign-out',
-                command: this.logout
+              label: 'Logout',
+              icon: 'pi pi-sign-out',
+              action: this.logout
             }]
         };
     },
+    mounted() {
+      superagent.get('/api/settings').end((error, result) => {
+        if (error) console.error(error);
+
+        this.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
+        this.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
+        this.settings.title = result.body.title || 'Surfer';
+        this.settings.index = result.body.index || '';
+        this.settings.accessRestriction = result.body.accessRestriction || '';
+        this.settings.accessPassword = result.body.accessPassword || '';
+
+        window.document.title = this.settings.title;
+
+        this.initWithToken(localStorage.accessToken);
+      });
+
+      // global key handler to unset activeEntry
+      window.addEventListener('keyup', () => {
+        // only do this if no modal is active - body classlist would be empty
+        if (event.key === 'Escape' && event.target.classList.length === 0) this.activeEntry = {};
+      });
+
+      window.addEventListener('hashchange', () => {
+        this.loadDirectory(decode(window.location.hash.slice(1)));
+      }, false);
+
+      // upload input event handler
+      this.$refs.upload.addEventListener('change', () => {
+        this.uploadFiles(this.$refs.upload.files || []);
+      });
+
+      this.$refs.uploadFolder.addEventListener('change', () => {
+        this.uploadFiles(this.$refs.uploadFolder.files || []);
+      });
+
+      this.$refs.uploadFavicon.addEventListener('change', () => {
+        this.settingsDialog.faviconFile = this.$refs.uploadFavicon.files[0] || null;
+        if (this.settingsDialog.faviconFile) this.$refs.faviconImage.src = URL.createObjectURL(this.settingsDialog.faviconFile);
+      });
+    },
     methods: {
         error: function (header, message) {
-            this.$toast.add({ severity: 'error', summary: header, detail: message, life: 4000 });
-            console.error(header, message);
+          window.pankow.notify({ type: 'danger', text: header + message });
+          console.error(header, message);
         },
         initWithToken: function (accessToken) {
             var that = this;
@@ -484,27 +519,31 @@ export default {
                 that.uploadFiles(fileList, targetPath);
             });
         },
-        openNewFolderDialog: function () {
-            this.newFolderDialog.error = '';
-            this.newFolderDialog.folderName = '';
-            this.newFolderDialog.visible = true;
+        async openNewFolderDialog() {
+          const newFolderName = await this.$refs.inputDialog.prompt({
+            message: 'New Foldername',
+            modal: false,
+            value: '',
+            confirmStyle: 'success',
+            confirmLabel: 'Create',
+            rejectLabel: 'Cancel'
+          });
+
+          if (!newFolderName) return;
+
+          const path = encode(sanitize(this.path + '/' + newFolderName));
+
+          superagent.post(`/api/files${path}`).query({ access_token: localStorage.accessToken, directory: true }).end((error, result) => {
+            if (result && result.statusCode === 401) return this.logout();
+            if (result && result.statusCode === 403) return window.pankow.notify({ type: 'danger', text: 'Folder name not allowed' });
+            if (result && result.statusCode === 409) return window.pankow.notify({ type: 'danger', text: 'Folder already exists' });
+            if (result && result.statusCode !== 201) return window.pankow.notify({ type: 'danger', text: 'Error creating folder: ' + result.statusCode });
+            if (error) return window.pankow.notify({ type: 'danger', text: error.message });
+
+            this.refresh();
+          });
         },
         onSaveNewFolderDialog: function () {
-            var that = this;
-
-            var path = encode(sanitize(this.path + '/' + this.newFolderDialog.folderName));
-
-            superagent.post(`/api/files${path}`).query({ access_token: localStorage.accessToken, directory: true }).end(function (error, result) {
-                if (result && result.statusCode === 401) return that.logout();
-                if (result && result.statusCode === 403) return that.newFolderDialog.error = 'Folder name not allowed';
-                if (result && result.statusCode === 409) return that.newFolderDialog.error = 'Folder already exists';
-                if (result && result.statusCode !== 201) return that.newFolderDialog.error = 'Error creating folder: ' + result.statusCode;
-                if (error) return console.error(error.message);
-
-                that.refresh();
-
-                that.newFolderDialog.visible = false;
-            });
         },
         openAccessTokenDialog: function () {
             this.accessTokenDialog.visible = true;
@@ -630,15 +669,15 @@ export default {
             });
         },
         onCopyToClipboard: function (value) {
-            copyToClipboard(value);
+          copyToClipboard(value);
 
-            this.$toast.add({ severity:'success', summary: 'Copied to Clipboard', life: 1500 });
+          window.pankow.notify({ type:'success', text: 'Copied to Clipboard' });
         },
         onCopyAccessToken: function () {
-            event.target.select();
-            document.execCommand('copy');
+          event.target.select();
+          document.execCommand('copy');
 
-            this.$toast.add({ severity:'success', summary: 'Token copied to Clipboard', life: 1500 });
+          window.pankow.notify({ type:'success', text: 'Token copied to Clipboard' });
         },
         onCreateAccessToken: function () {
             var that = this;
@@ -690,48 +729,6 @@ export default {
         onPreviewClose: function () {
             this.activeEntry = {};
         }
-    },
-    mounted() {
-        var that = this;
-
-        superagent.get('/api/settings').end(function (error, result) {
-            if (error) console.error(error);
-
-            that.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
-            that.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
-            that.settings.title = result.body.title || 'Surfer';
-            that.settings.index = result.body.index || '';
-            that.settings.accessRestriction = result.body.accessRestriction || '';
-            that.settings.accessPassword = result.body.accessPassword || '';
-
-            window.document.title = that.settings.title;
-
-            that.initWithToken(localStorage.accessToken);
-        });
-
-        // global key handler to unset activeEntry
-        window.addEventListener('keyup', function () {
-            // only do this if no modal is active - body classlist would be empty
-            if (event.key === 'Escape' && event.target.classList.length === 0) that.activeEntry = {};
-        });
-
-        window.addEventListener('hashchange', function () {
-            that.loadDirectory(decode(window.location.hash.slice(1)));
-        }, false);
-
-        // upload input event handler
-        this.$refs.upload.addEventListener('change', function () {
-            that.uploadFiles(that.$refs.upload.files || []);
-        });
-
-        this.$refs.uploadFolder.addEventListener('change', function () {
-            that.uploadFiles(that.$refs.uploadFolder.files || []);
-        });
-
-        this.$refs.uploadFavicon.addEventListener('change', function () {
-            that.settingsDialog.faviconFile = that.$refs.uploadFavicon.files[0] || null;
-            if (that.settingsDialog.faviconFile) that.$refs.faviconImage.src = URL.createObjectURL(that.settingsDialog.faviconFile);
-        });
     }
 };
 
@@ -746,10 +743,6 @@ hr {
 
 label {
     font-weight: bold;
-}
-
-.p-toast {
-    z-index: 2000 !important;
 }
 
 .p-fluid > div {
