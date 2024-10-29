@@ -11,7 +11,6 @@
     <div class="main-container-toolbar">
       <TopBar>
         <template #left>
-          <Button icon="pi pi-chevron-left" tool outline style="margin-right: 20px;" :disabled="breadcrumbItems.length === 0" @click="onUp"/>
           <Breadcrumb :home="breadcrumbHomeItem" :items="breadcrumbItems"/>
         </template>
 
@@ -621,9 +620,6 @@ export default {
         if (error && !result) return this.error(error.message);
         this.refreshAccessTokens();
       });
-    },
-    onUp() {
-      window.location.hash = sanitize(this.path.split('/').slice(0, -1).filter(function (p) { return !!p; }).join('/'));
     },
     onEntryOpen(entry) {
       // ignore item open on row clicks if we are renaming this entry
