@@ -8,7 +8,7 @@
       <div class="td hand" style="flex-grow: 2;" @click="onSort('fileName')">Name <i class="pi" :class="{'pi-sort-alpha-down': sort.desc, 'pi-sort-alpha-up-alt': !sort.desc }" v-show="sort.prop === 'fileName'"></i></div>
       <div class="td hand" style="max-width: 100px;" @click="onSort('size')">Size <i class="pi" :class="{'pi-sort-numeric-down': sort.desc, 'pi-sort-numeric-up-alt': !sort.desc }" v-show="sort.prop === 'size'"></i></div>
       <div class="td hand" style="max-width: 150px;" @click="onSort('mtime')">Last Modified <i class="pi" :class="{'pi-sort-numeric-down': sort.desc, 'pi-sort-numeric-up-alt': !sort.desc }" v-show="sort.prop === 'mtime'"></i></div>
-      <div class="td" style="max-width: 170px; justify-content: flex-end;"></div>
+      <div class="td" style="max-width: 200px; justify-content: flex-end;"></div>
     </div>
     <div class="tbody">
       <div class="tr-placeholder" v-show="entries.length === 0">Folder is empty</div>
