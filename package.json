@@ -12,7 +12,6 @@
   "main": "server.js",
   "dependencies": {
     "async": "^3.2.6",
-    "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.3",
     "colors": "1.4.0",
     "commander": "^11.1.0",
@@ -34,11 +33,7 @@
     "webdav-server": "^2.6.2"
   },
   "devDependencies": {
-    "chromedriver": "^130.0.1",
-    "eslint": "^9.13.0",
-    "expect.js": "^0.3.1",
-    "mocha": "^10.7.3",
-    "selenium-webdriver": "^4.25.0"
+    "eslint": "^9.13.0"
   },
   "bin": {
     "surfer": "./cli/surfer.js"
