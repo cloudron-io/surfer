@@ -14,7 +14,7 @@
       <div class="tr-placeholder" v-show="entries.length === 0">Folder is empty</div>
       <div class="tr-placeholder" v-show="entries.length !== 0 && filteredAndSortedEntries.length === 0">Nothing found</div>
       <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @dblclick="onEntryOpen(entry, false)" @click="onEntrySelect(entry)" @drop.stop.prevent="drop(entry)" @dragover.stop.prevent="dragOver(entry)" :class="{ 'selected': selected.includes(entry.filePath), 'active': entry === active,  'drag-active': entry === dragActive }">
-        <div class="td" style="max-width: 50px;"><img :src="entry.previewUrl" style="width: 32px; height: 32px; vertical-align: middle;"/></div>
+        <div class="td" style="max-width: 50px;"><img :src="entry.previewUrl" style="width: 32px; height: 32px; vertical-align: middle; object-fit: cover;"/></div>
         <div class="td" style="flex-grow: 2;">
           <TextInput @click.stop @keyup.enter="onRenameSubmit(entry)" @keyup.esc="onRenameEnd(entry)" @blur="onRenameEnd(entry)" v-model="entry.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="entry.rename" class="rename-input"/>
           <a v-show="!entry.rename" :href="entry.filePath" @click.stop.prevent="onEntryOpen(entry, true)">{{ entry.fileName }}</a>
@@ -102,11 +102,11 @@ export default {
   },
   mounted() {
     // global key handler for up/down selection
-    window.addEventListener('keydown', () => {
+    window.addEventListener('keydown', (event) => {
       if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
         if (this.selected.length === 0) return;
 
-        var index = this.filteredAndSortedEntries.findIndex(function (entry) { return entry.filePath === this.selected[0]; });
+        var index = this.filteredAndSortedEntries.findIndex((entry) =>  entry.filePath === this.selected[0]);
         if (index === -1) return;
 
         if (event.key === 'ArrowUp') {

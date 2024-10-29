@@ -54,7 +54,7 @@ export default {
   },
   mounted() {
     // this injects some styling for the preview once the document is loaded
-    this.$refs.iframe.addEventListener('load', function (e) {
+    this.$refs.iframe.addEventListener('load', (e) => {
       if (!e.target.contentWindow.document.body) return;
 
       e.target.contentWindow.document.body.style.margin = 0;
@@ -73,14 +73,14 @@ export default {
   },
   methods: {
     encode,
-    onDownload: function (entry) {
+    onDownload(entry) {
       download(entry);
     },
-    onCopyLink: function (entry) {
+    onCopyLink(entry) {
       copyToClipboard(location.origin + encode(entry.filePath));
       window.pankow.notify({ type:'success', text: 'Link copied to Clipboard' });
     },
-    onClose: function () {
+    onClose() {
       this.$emit('close');
     }
   }
