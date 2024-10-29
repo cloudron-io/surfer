@@ -273,10 +273,9 @@ app.use('/', function (req, res, next) {
     files.getFolderListing(filePath, function (error, result) {
         if (error) return next(error);
 
-        var html = ejs.render(PUBLIC_NOSCRIPT_EJS, result, {});
-
-        var out = PUBLIC_HTML;
-        out = out.replace('<noscript></noscript>', `<noscript>${html}</noscript>`);
+        // use cached PUBLIC_NOSCRIPT_EJS when deployed otherwise reread from disk for development
+        var out = process.env.CLOUDRON ? PUBLIC_HTML : fs.readFileSync(__dirname + '/dist/public.html', 'utf8');;
+        out = out.replace('<noscript></noscript>', `<noscript>${ejs.render(PUBLIC_NOSCRIPT_EJS, result, {})}</noscript>`);
         out = out.replace('<withscript></withscript>', `<script>window.surfer = { entries: ${JSON.stringify(result.entries)}, stat: ${JSON.stringify(result.stat)} };</script>`);
 
         res.status(200).send(out);

@@ -1,20 +1,15 @@
 <template>
-  <!-- This is re-used and thus global -->
-  <ConfirmDialog></ConfirmDialog>
-  <Toast position="top-center" />
-
   <div class="main-container" v-show="ready">
     <div class="main-container-toolbar">
-      <Toolbar>
-        <template #start>
-          <Button icon="pi pi-chevron-left" class="p-button-sm" style="margin-right: 20px;" :disabled="breadCrumbs.items.length === 0" @click="onUp"/>
-          <Breadcrumb :home="breadCrumbs.home" :model="breadCrumbs.items"/>
+      <TopBar>
+        <template #left>
+          <Breadcrumb :home="breadcrumbHomeItem" :items="breadcrumbItems"/>
         </template>
 
-        <template #end>
-          <a href="/_admin"><Button class="p-button-sm" label="Login" icon="pi pi-sign-in"/></a>
+        <template #right>
+          <Button href="/_admin" icon="pi pi-sign-in">Login</Button>
         </template>
-      </Toolbar>
+      </TopBar>
     </div>
     <div class="main-container-body">
       <div class="main-container-content">
@@ -27,113 +22,116 @@
 
 <script>
 
+import { Breadcrumb, Button, TopBar } from 'pankow';
 import superagent from 'superagent';
 import { sanitize, encode, decode, getPreviewUrl, getExtension } from './utils.js';
+
+import EntryList from './components/EntryList.vue';
+import Preview from './components/Preview.vue';
 
 const ORIGIN = window.location.origin;
 
 export default {
-    name: 'PublicView',
-    data() {
-        return {
-            ready: false,
-            busy: false,
-            origin: ORIGIN,
-            domain: window.location.host,
-            path: '/',
-            breadCrumbs: {
-                home: { icon: 'pi pi-home', url: '/' },
-                items: []
-            },
-            entries: [],
-            // holds settings values stored on backend
-            settings: {
-                folderListingEnabled: false,
-                sortFoldersFirst: false,
-                title: false
-            },
-            activeEntry: {}
-        };
-    },
+  name: 'PublicView',
+  components: {
+    Breadcrumb,
+    Button,
+    EntryList,
+    Preview,
+    TopBar
+  },
+  data() {
+    return {
+      ready: false,
+      busy: false,
+      origin: ORIGIN,
+      domain: window.location.host,
+      path: '/',
+      breadcrumbHomeItem: {
+        label: '',
+        icon: 'pi pi-home',
+        route: '/'
+      },
+      breadcrumbItems: [],
+      entries: [],
+      // holds settings values stored on backend
+      settings: {
+        folderListingEnabled: false,
+        sortFoldersFirst: false,
+        title: false
+      },
+      activeEntry: {}
+    };
+  },
+  mounted() {
+    // global key handler to unset activeEntry
+    window.addEventListener('keyup', () => {
+      // only do this if no modal is active - body classlist would be empty
+      if (event.key === 'Escape' && event.target.classList.length === 0) this.clearSelection();
+    });
+
+    superagent.get(`${this.origin}/api/settings`).end((error, result) => {
+      if (error) console.error(error);
+
+      this.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
+      this.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
+      this.settings.title =  result.body.title;
+
+      window.document.title = this.settings.title;
+
+      this.loadDirectory(decode(window.location.pathname));
+
+      this.ready = true;
+    });
+  },
     methods: {
-        loadDirectory: function (folderPath) {
-            var that = this;
+      loadDirectory(folderPath) {
+        this.activeEntry = {};
 
-            that.activeEntry = {};
+        folderPath = folderPath ? sanitize(folderPath) : '/';
 
-            folderPath = folderPath ? sanitize(folderPath) : '/';
+        // this is injected via ejs in server.js
+        const entries = window.surfer.entries;
 
-            // this is injected via ejs in server.js
-            var entries = window.surfer.entries;
+        entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
 
-            entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
-            that.entries = entries.map(function (entry) {
-                entry.previewUrl = getPreviewUrl(entry, folderPath);
-                entry.extension = getExtension(entry);
-                entry.rename = false;
-                entry.filePathNew = entry.fileName;
-                return entry;
-            });
-            that.path = folderPath;
-            that.breadCrumbs.items = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
-                return {
-                    label: e,
-                    url: sanitize('/' + a.slice(0, i).join('/') + '/' + e)
-                };
-            });
-        },
-        onDownload: function (entry) {
-            if (entry.isDirectory) return;
-            window.location.href = encode('/api/files/' + sanitize(this.path + '/' + entry.fileName)) + '?access_token=' + localStorage.accessToken;
-        },
-        onUp: function () {
-            // we slice of last 2 as public paths always end with /
-            window.location.href = sanitize(this.path.split('/').slice(0, -2).filter(function (p) { return !!p; }).join('/'));
-        },
-        onEntryOpen: function (entry) {
-            // ignore item open on row clicks if we are renaming this entry
-            if (entry.rename) return;
-
-            if (entry.isDirectory) {
-                window.location.pathname = sanitize(this.path + '/' + entry.fileName);
-                return;
-            }
-
-            // TODO open file viewer
-            console.error('To be implemented');
-        },
-        onSelectionChanged: function (selectedEntries) {
-            this.activeEntry = selectedEntries[0];
-        },
-        onPreviewClose: function () {
-            this.activeEntry = {};
-        },
-        clearSelection: function () {
-            this.activeEntry = {};
+        this.entries = entries.map(function (entry) {
+          entry.previewUrl = getPreviewUrl(entry, folderPath);
+          entry.extension = getExtension(entry);
+          entry.rename = false;
+          entry.filePathNew = entry.fileName;
+          return entry;
+        });
+        this.path = folderPath;
+        this.breadcrumbItems = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
+          return {
+            label: e,
+            route: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
+          };
+        });
+      },
+      onDownload(entry) {
+        if (entry.isDirectory) return;
+        window.location.href = encode('/api/files/' + sanitize(this.path + '/' + entry.fileName)) + '?access_token=' + localStorage.accessToken;
+      },
+      onEntryOpen: function (entry) {
+        if (entry.isDirectory) {
+          window.location.pathname = sanitize(this.path + '/' + entry.fileName);
+          return;
         }
-    },
-    mounted() {
-        var that = this;
 
-        // global key handler to unset activeEntry
-        window.addEventListener('keyup', function () {
-            // only do this if no modal is active - body classlist would be empty
-            if (event.key === 'Escape' && event.target.classList.length === 0) that.clearSelection();
-        });
-
-        superagent.get(`${that.origin}/api/settings`).end(function (error, result) {
-            if (error) console.error(error);
-
-            that.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
-            that.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
-            that.settings.title =  result.body.title;
-
-            window.document.title = that.settings.title;
-
-            that.loadDirectory(decode(window.location.pathname));
-
-            that.ready = true;
-        });
+        // TODO open file viewer
+        console.error('To be implemented');
+      },
+      onSelectionChanged(selectedEntries) {
+        this.activeEntry = selectedEntries[0];
+      },
+      onPreviewClose() {
+        this.activeEntry = {};
+      },
+      clearSelection() {
+        this.activeEntry = {};
+      }
     }
 };
 
