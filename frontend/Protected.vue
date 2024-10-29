@@ -9,7 +9,9 @@
       </div>
       <Button @click="onLogin" id="loginButton" :loading="busy" :disabled="busy || !password">Login</Button>
     </form>
-    <Button :href="'/api/oidc/login?returnTo=' + returnTo" v-show="settings.accessRestriction !== 'password'" icon="pi pi-sign-in">Login with Cloudron</Button>
+    <div>
+      <Button :href="'/api/oidc/login?returnTo=' + returnTo" v-show="settings.accessRestriction !== 'password'" icon="pi pi-sign-in">Login with Cloudron</Button>
+    </div>
   </div>
 </template>
 
@@ -87,7 +89,7 @@ export default {
   flex-direction: column;
   justify-content: center;
   max-width: 480px;
-  height: 100%;
+  height: 60%;
   margin: auto;
   padding: 20px;
 }
