@@ -671,4 +671,9 @@ label {
   }
 }
 
+.pankow-breadcrumb {
+  overflow: auto;
+  white-space: nowrap;
+}
+
 </style>
