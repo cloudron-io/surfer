@@ -16,10 +16,10 @@
         </template>
 
         <template #right>
-          <Button icon="pi pi-upload" @click="onUpload">Upload File</Button>
-          <Button icon="pi pi-cloud-upload" @click="onUploadFolder">Upload Folder</Button>
-          <Button icon="pi pi-plus" success style="margin-left: 20px;" @click="openNewFolderDialog">New Folder</Button>
-          <Button icon="pi pi-ellipsis-h" tool outline style="margin-left: 20px;" :menu="mainMenu" id="burgerMenuButton" :show-dropdown="false"/>
+          <Button tool icon="pi pi-upload" @click="onUpload"><span class="pankow-no-mobile">Upload </span>File</Button>
+          <Button tool icon="pi pi-cloud-upload" @click="onUploadFolder"><span class="pankow-no-mobile">Upload </span>Folder</Button>
+          <Button tool icon="pi pi-plus" success @click="openNewFolderDialog"><span class="pankow-no-mobile">New </span>Folder</Button>
+          <Button icon="pi pi-ellipsis-h" tool outline :menu="mainMenu" id="burgerMenuButton" :show-dropdown="false"/>
         </template>
       </TopBar>
     </div>
