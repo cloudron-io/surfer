@@ -31,10 +31,10 @@
     </div>
     <div class="main-container-footer" v-show="uploadStatus.busy">
       <div v-show="uploadStatus.uploadListCount">
-        <i class="pi pi-spin pi-spinner"></i> Fetching file information for upload <span class="p-badge">{{ uploadStatus.uploadListCount }}</span>
+        <Spinner/> Fetching file information for upload <span class="p-badge">{{ uploadStatus.uploadListCount }}</span>
       </div>
       <div style="margin-right: 10px;" v-show="!uploadStatus.uploadListCount">Uploading {{ uploadStatus.count }} files ({{ Math.round(uploadStatus.done/1000/1000) }}MB / {{ Math.round(uploadStatus.size/1000/1000) }}MB)</div>
-      <ProgressBar :value="uploadStatus.percentDone" v-show="!uploadStatus.uploadListCount">{{ uploadStatus.percentDone }}%</ProgressBar>
+      <ProgressBar :value="uploadStatus.percentDone" style="flex-grow: 1;" v-show="!uploadStatus.uploadListCount">{{ uploadStatus.percentDone }}%</ProgressBar>
     </div>
   </div>
 
@@ -134,7 +134,7 @@
 
 <script>
 
-import { Breadcrumb, Button, Checkbox, Dialog, InputDialog, Notification, PasswordInput, Radiobutton, TextInput, TopBar } from 'pankow';
+import { Breadcrumb, Button, Checkbox, Dialog, InputDialog, Notification, PasswordInput, ProgressBar, Radiobutton, Spinner, TextInput, TopBar } from 'pankow';
 import superagent from 'superagent';
 import { eachLimit, each } from 'async';
 import { sanitize, encode, decode, getPreviewUrl, getExtension } from './utils.js';
@@ -155,7 +155,9 @@ export default {
     Notification,
     PasswordInput,
     Preview,
+    ProgressBar,
     Radiobutton,
+    Spinner,
     TextInput,
     TopBar,
   },
@@ -170,7 +172,8 @@ export default {
         busy: false,
         count: 0,
         done: 0,
-        percentDone: 50,
+        size: 0,
+        percentDone: 0,
         uploadListCount: 0
       },
       path: '/',
@@ -655,6 +658,17 @@ hr {
 
 label {
     font-weight: bold;
+}
+
+.main-container-footer {
+  display: flex;
+  align-items: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  .main-container-footer {
+    background-color: var(--pankow-color-background);
+  }
 }
 
 </style>
