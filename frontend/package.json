@@ -17,7 +17,6 @@
     "filesize": "^10.1.6",
     "pankow": "^2.3.2",
     "primeicons": "^6.0.1",
-    "primevue": "^3.44.0",
     "superagent": "^8.1.2",
     "vite": "^5.4.10",
     "vue": "^3.5.12"
