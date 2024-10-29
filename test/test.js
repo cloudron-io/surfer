@@ -85,8 +85,8 @@ describe('Application life cycle test', function () {
         // wait for open animation
         await browser.sleep(1000);
 
-        await waitForElement(By.xpath('//span[text() = "Logout"]'));
-        await browser.findElement(By.xpath('//span[text() = "Logout"]')).click();
+        await waitForElement(By.xpath('//div[@class="pankow-menu-item"][text() = "Logout"]'));
+        await browser.findElement(By.xpath('//div[@class="pankow-menu-item"][text() = "Logout"]')).click();
 
         // let it happen
         await browser.sleep(2000);
@@ -161,14 +161,15 @@ describe('Application life cycle test', function () {
         // wait for open animation
         await browser.sleep(1000);
 
-        await waitForElement(By.xpath('//span[text() = "Access Tokens"]'));
-        await browser.findElement(By.xpath('//span[text() = "Access Tokens"]')).click();
+        await waitForElement(By.xpath('//div[@class="pankow-menu-item"][text() = "Access Tokens"]'));
+        await browser.findElement(By.xpath('//div[@class="pankow-menu-item"][text() = "Access Tokens"]')).click();
 
-        await waitForElement(By.xpath('//span[text() = "Create Access Token"]'));
-        await browser.findElement(By.xpath('//span[text() = "Create Access Token"]')).click();
+        await waitForElement(By.xpath('//a[text() = "Create New Access Token"]'));
+        await browser.findElement(By.xpath('//a[text() = "Create New Access Token"]')).click();
 
-        await waitForElement(By.xpath('//div[@class="p-dialog-content"]//input[@type="text"]'));
-        gApiToken = await browser.findElement(By.xpath('//div[@class="p-dialog-content"]//input[@type="text"]')).getAttribute("value");
+        // will easily break
+        await waitForElement(By.xpath('//div[@class = "pankow-dialog-body"]/div/div/span'));
+        gApiToken = await browser.findElement(By.xpath('//div[@class = "pankow-dialog-body"]/div/div/span')).getText();
 
         expect(gApiToken).to.be.a('string');
         expect(gApiToken).to.not.be.empty();
