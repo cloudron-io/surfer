@@ -83,9 +83,13 @@ export default {
 <style>
 
 .login-container {
-    max-width: 480px;
-    margin: auto;
-    padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 480px;
+  height: 100%;
+  margin: auto;
+  padding: 20px;
 }
 
 </style>

@@ -41,7 +41,7 @@
   <Dialog ref="settingsDialog" title="Settings" :modal="true" reject-label="Cancel" confirm-label="Save" confirm-style="success" :confirm-busy="settingsDialog.busy" @confirm="onSaveSettingsDialog">
     <div>
       <Checkbox v-model="settingsDialog.folderListingEnabled" label="Public Folder Listing"/>
-      <p>If this is enabled, all folders and files will be publicly listed. If a folder contains a file with the below set index name, this will be displayed instead.</p>
+      <p>If enabled, all folders and files will be publicly listed. If a folder contains a file with an Index Document (see below), this will be displayed instead.</p>
     </div>
 
     <hr/>
@@ -103,18 +103,19 @@
   <!-- Access Token Dialog -->
   <Dialog ref="accessTokenDialog" :show-x="true" title="Access Tokens">
     <p>
-      Access tokens are useful to programmatically deploy assets for example within a CI/CD pipeline.<br/>
-      These tokens are also used for WebDAV login as the password.<br/>
-      <em>Tokens are shared between all users.</em>
+      These tokens are useful to programmatically deploy assets for example within a CI/CD pipeline. They are also used for WebDAV login as the password.<br/>
       <br/>
-      <br/>
-      See the <a href="https://cloudron.io/documentation/apps/surfer/" target="_blank">docs</a> for more information on how to use this token.
+      <em>Tokens are shared between <b>all</b> users.</em>
     </p>
-    <Button success @click="onCreateAccessToken()">Create Access Token</Button>
     <div>
+      <h3 style="display: flex; justify-content: space-between; align-items: center;">
+        <span v-show="accessTokens.length">Issued Tokens:</span>
+        <Button success @click="onCreateAccessToken()">Create New Access Token</Button>
+      </h3>
       <div v-for="accessToken in accessTokens" :key="accessToken.value">
-        <code @click="onCopyAccessToken(accessToken.value)" style="cursor: copy !important;">{{ accessToken.value }}</code>
-        <Button danger small tool icon="pi pi-trash" @click="onDeleteAccessToken(accessToken.value)"/>
+        <span @click="onCopyAccessToken(accessToken.value)" style="cursor: copy; font-family: monospace;">{{ accessToken.value }}</span>
+        <Button primary tool plain icon="pi pi-copy" v-tooltip="'Copy Token to Clipboard'" @click="onCopyAccessToken(accessToken.value)"/>
+        <Button danger tool plain icon="pi pi-trash" v-tooltip="'Revoke Token'" @click="onDeleteAccessToken(accessToken.value)"/>
       </div>
     </div>
   </Dialog>
@@ -326,7 +327,7 @@ export default {
     login() {
       // first try to get a new token if we have a session otherwise redirect to oidc login
       superagent.get('/api/token').end((error, result) => {
-        if (error) window.location.href = '/api/oidc/login';
+        if (error) window.location.replace('/api/oidc/login');  // we replace to avoid back button loop
 
         const accessToken = result.body.accessToken;
         localStorage.accessToken = accessToken;
@@ -607,7 +608,7 @@ export default {
     },
     async onDeleteAccessToken(token) {
       const yes = await this.$refs.inputDialog.confirm({
-        message: 'Really delete this access token? Any actions currently using this token will fail.',
+        message: 'Really revoke this access token? Any actions currently using this token will fail.',
         confirmStyle: 'danger',
         confirmLabel: 'Yes',
         rejectLabel: 'No',
@@ -648,12 +649,8 @@ export default {
 <style>
 
 hr {
-    border: none;
-    border-top: 1px solid #d0d0d0;
-}
-
-label {
-    font-weight: bold;
+  border: none;
+  border-top: 1px solid #d0d0d0;
 }
 
 .main-container-footer {
@@ -665,11 +662,6 @@ label {
   .main-container-footer {
     background-color: var(--pankow-color-background);
   }
-}
-
-.pankow-breadcrumb {
-  overflow: auto;
-  white-space: nowrap;
 }
 
 </style>
