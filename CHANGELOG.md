@@ -292,3 +292,8 @@
 * CLI improvments
 * Update dependencies
 
+[6.2.0]
+* Port UI to Pankow toolkit
+* Add dark mode
+* Small CLI fixes
+
