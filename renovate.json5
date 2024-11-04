@@ -1,1 +1,4 @@
-{"$$schema": "https://docs.renovatebot.com/renovate-schema.json", "extends": ["local>devops/renovator//default.renovate.json5"] }
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": ["local>devops/renovator//default.renovate.json5"]
+}
