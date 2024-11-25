@@ -15,7 +15,7 @@
     "body-parser": "^1.20.3",
     "colors": "1.4.0",
     "commander": "^11.1.0",
-    "compression": "^1.7.4",
+    "compression": "^1.7.5",
     "connect-lastmile": "^2.2.0",
     "content-disposition": "^0.5.4",
     "debug": "^4.3.7",
@@ -33,7 +33,7 @@
     "webdav-server": "^2.6.2"
   },
   "devDependencies": {
-    "eslint": "^9.13.0"
+    "eslint": "^9.15.0"
   },
   "bin": {
     "surfer": "./cli/surfer.js"
