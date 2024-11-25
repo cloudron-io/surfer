@@ -5,7 +5,7 @@
       <div>
         <label for="passwordInput">Password</label>
         <PasswordInput id="passwordInput" :feedback="false" v-model="password" :class="{ 'has-error': error }"/>
-        <small v-show="error" :class="{ 'has-error': error }">Wrong username or password.</small>
+        <small v-show="error" :class="{ 'has-error': error }">Wrong password</small>
       </div>
       <Button @click="onLogin" id="loginButton" :loading="busy" :disabled="busy || !password">Login</Button>
     </form>
@@ -17,8 +17,7 @@
 
 <script>
 
-import { Button, PasswordInput } from 'pankow';
-import superagent from 'superagent';
+import { Button, PasswordInput, fetcher } from 'pankow';
 
 const ORIGIN = window.location.origin;
 
@@ -42,40 +41,39 @@ export default {
       }
     };
   },
-  mounted() {
+  async mounted() {
     // ensure we end up in the target destination after oidc login
     this.returnTo = window.location.pathname || '/';
 
-    superagent.get(`${this.origin}/api/settings`).end((error, result) => {
-      if (error) console.error(error);
-
-      this.settings.title =  result.body.title;
+    try {
+      const result = await fetcher.get(`${this.origin}/api/settings`);
       this.settings.accessRestriction =  result.body.accessRestriction;
+      this.settings.title =  result.body.title;
+    } catch (error) {
+      console.error(error);
+    }
 
-      window.document.title = this.settings.title;
+    window.document.title = this.settings.title;
 
-      this.ready = true;
+    this.ready = true;
 
-      this.$nextTick(() => document.getElementById('passwordInput').focus());
-    });
+    this.$nextTick(() => document.getElementById('passwordInput').focus());
   },
   methods: {
-    onLogin() {
+    async onLogin() {
       this.busy = true;
       this.error = false;
 
-      superagent.post(`${this.origin}/api/protectedLogin`).send({ password: this.password }).end((error, result) => {
-        this.busy = false;
+      try {
+        const result = await fetcher.post(`${this.origin}/api/protectedLogin`, { password: this.password });
+        if (result.status === 200) return window.location.reload();
+      } catch (error) {
+        console.error(error);
+      }
 
-        if (error || result.statusCode !== 200) {
-          console.error(error);
-          this.password = '';
-          this.error = true;
-          return;
-        }
-
-        window.location.reload();
-      });
+      this.password = '';
+      this.busy = false;
+      this.error = true;
     }
   }
 };
