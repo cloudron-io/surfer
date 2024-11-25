@@ -175,9 +175,9 @@ describe('Application life cycle test', function () {
         expect(gApiToken).to.not.be.empty();
     }
 
-    function uploadFile(name) {
+    function uploadFile(name, target = '/') {
         // File upload can't be tested with selenium, since the file input is not visible and thus can't be interacted with :-(
-        execSync(`${CLI} put ${path.join(__dirname, name)} /`,  { stdio: 'inherit' } );
+        execSync(`${CLI} put ${path.join(__dirname, name)} ${target}`,  { stdio: 'inherit' } );
     }
 
     function uploadFileWithToken(name) {
@@ -194,7 +194,7 @@ describe('Application life cycle test', function () {
         result = execSync(`${CLI} get`).toString();
         expect(result.indexOf('test/')).to.not.equal(-1);
         result = execSync(`${CLI} get test/`).toString();
-        expect(result.indexOf('test.txt')).to.not.equal(-1);
+        expect(result.indexOf('04 - Wormlust - Sex Augu, Tólf Stjörnur.flac')).to.not.equal(-1);
     }
 
     function checkFolderIsGone() {
@@ -226,7 +226,7 @@ describe('Application life cycle test', function () {
         execSync(`${CLI} del ${TEST_FILE_NAME_1}`,  { stdio: 'inherit' });
     });
     it('second file is gone', checkFileIsGone.bind(null, TEST_FILE_NAME_1));
-    it('can upload folder', uploadFile.bind(null, '.'));
+    it('can upload folder', uploadFile.bind(null, 'testfiles/*', '/test/'));
     it('folder exists', checkFolderExists);
 
     it('can logout', logout);
