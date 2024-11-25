@@ -1,8 +1,0 @@
-{
-	"node": true,
-	"browser": true,
-	"unused": true,
-	"es2022": true,
-	"globalstrict": false,
-	"predef": [ "angular", "$", "describe", "it", "before", "after" ]
-}
