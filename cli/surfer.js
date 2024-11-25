@@ -2,7 +2,7 @@
 
 'use strict';
 
-var program = require('commander'),
+var program = require('commander').program,
     actions = require('./actions');
 
 program.version(require('../package.json').version);
