@@ -10,15 +10,15 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "@vitejs/plugin-vue": "^5.1.4",
+    "@vitejs/plugin-vue": "^5.2.0",
     "async": "^3.2.6",
-    "eslint": "^9.13.0",
-    "eslint-plugin-vue": "^9.30.0",
+    "eslint": "^9.15.0",
+    "eslint-plugin-vue": "^9.31.0",
     "filesize": "^10.1.6",
-    "pankow": "^2.3.2",
-    "primeicons": "^6.0.1",
-    "superagent": "^8.1.2",
-    "vite": "^5.4.10",
-    "vue": "^3.5.12"
+    "pankow": "^2.3.5",
+    "primeicons": "^7.0.0",
+    "superagent": "^10.1.1",
+    "vite": "^5.4.11",
+    "vue": "^3.5.13"
   }
 }
