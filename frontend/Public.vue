@@ -22,8 +22,7 @@
 
 <script>
 
-import { Breadcrumb, Button, TopBar } from 'pankow';
-import superagent from 'superagent';
+import { Breadcrumb, Button, TopBar, fetcher } from 'pankow';
 import { sanitize, encode, decode, getPreviewUrl, getExtension } from './utils.js';
 
 import EntryList from './components/EntryList.vue';
@@ -63,26 +62,27 @@ export default {
       activeEntry: {}
     };
   },
-  mounted() {
+  async mounted() {
     // global key handler to unset activeEntry
     window.addEventListener('keyup', () => {
       // only do this if no modal is active - body classlist would be empty
       if (event.key === 'Escape' && event.target.classList.length === 0) this.clearSelection();
     });
 
-    superagent.get(`${this.origin}/api/settings`).end((error, result) => {
-      if (error) console.error(error);
-
+    try {
+      const result = await fetcher.get(`${this.origin}/api/settings`);
       this.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
       this.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
       this.settings.title =  result.body.title;
+    } catch (error) {
+      console.error(error);
+    }
 
-      window.document.title = this.settings.title;
+    window.document.title = this.settings.title;
 
-      this.loadDirectory(decode(window.location.pathname));
+    this.loadDirectory(decode(window.location.pathname));
 
-      this.ready = true;
-    });
+    this.ready = true;
   },
     methods: {
       loadDirectory(folderPath) {
