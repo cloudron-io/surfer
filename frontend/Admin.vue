@@ -135,7 +135,6 @@
 <script>
 
 import { Breadcrumb, Button, Checkbox, Dialog, InputDialog, Notification, PasswordInput, ProgressBar, Radiobutton, Spinner, TextInput, TopBar, fetcher } from 'pankow';
-import superagent from 'superagent';
 import { eachLimit, each } from 'async';
 import { sanitize, encode, decode, getPreviewUrl, getExtension } from './utils.js';
 import { copyToClipboard } from 'pankow/utils.js';
@@ -373,31 +372,51 @@ export default {
         this.uploadStatus.size += files[i].size;
       }
 
-      eachLimit(files, 10, (file, callback) => {
+      eachLimit(files, 10, async (file) => {
         const path = encode(sanitize(targetPath + '/' + (file.webkitRelativePath || file.name)));
 
         const formData = new FormData();
         formData.append('file', file);
 
-        var finishedUploadSize = 0;
+        let finishedUploadSize = 0;
 
-        superagent.post(`/api/files${path}`).query({ access_token: localStorage.accessToken }).send(formData).on('progress', (event) => {
-          // only handle upload events
-          if (!(event.target instanceof XMLHttpRequestUpload)) return;
+        const req = new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.withCredentials = true;
 
-          this.uploadStatus.done += event.loaded - finishedUploadSize;
-          // keep track of progress diff not absolute
-          finishedUploadSize = event.loaded;
+          xhr.addEventListener('load', () => {
+            resolve({
+              status: xhr.status,
+              statusText: xhr.statusText
+            });
+          });
 
-          const tmp = Math.round(this.uploadStatus.done / this.uploadStatus.size * 100);
-          this.uploadStatus.percentDone = tmp > 100 ? 100 : tmp;
-        }).end((error, result) =>{
-          if (result && result.statusCode === 401) return this.logout();
-          if (result && result.statusCode !== 201) return callback('Error uploading file: ', result.statusCode);
-          if (error) return callback(error);
+          xhr.addEventListener('error', () => {
+            reject({
+              status: xhr.status,
+              statusText: xhr.statusText
+            });
+          });
 
-          callback();
+          xhr.upload.addEventListener('progress', (event) => {
+            // only handle upload events
+            if (!(event.target instanceof XMLHttpRequestUpload)) return;
+
+            this.uploadStatus.done += event.loaded - finishedUploadSize;
+            // keep track of progress diff not absolute
+            finishedUploadSize = event.loaded;
+
+            const tmp = Math.round(this.uploadStatus.done / this.uploadStatus.size * 100);
+            this.uploadStatus.percentDone = tmp > 100 ? 100 : tmp;
+          });
+
+          xhr.open('POST', `/api/files${path}?access_token=${localStorage.accessToken}`);
+          xhr.send(formData);
         });
+
+        const result = await req;
+        if (result.status === 401) return this.logout();
+        if (result.status !== 201) throw('Error uploading file: ' + result.status);
       }, async (error) => {
         if (error) console.error(error);
 
