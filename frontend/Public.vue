@@ -1,4 +1,6 @@
 <template>
+  <Notification/>
+
   <div class="main-container" v-show="ready">
     <div class="main-container-toolbar">
       <TopBar>
@@ -22,7 +24,7 @@
 
 <script>
 
-import { Breadcrumb, Button, TopBar, fetcher } from 'pankow';
+import { Breadcrumb, Button, Notification, TopBar, fetcher } from 'pankow';
 import { sanitize, encode, decode, getPreviewUrl, getExtension } from './utils.js';
 
 import EntryList from './components/EntryList.vue';
@@ -36,6 +38,7 @@ export default {
     Breadcrumb,
     Button,
     EntryList,
+    Notification,
     Preview,
     TopBar
   },

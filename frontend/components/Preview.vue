@@ -1,6 +1,4 @@
 <template>
-  <Notification/>
-
   <div class="container" :class="{ 'visible': entry.filePath }">
     <div style="display: flex; padding-bottom: 10px;">
       <div class="header-filename">
@@ -21,7 +19,7 @@
 
 <script>
 
-import { Button, Notification, Icon } from 'pankow';
+import { Button, Icon } from 'pankow';
 import { download, encode, hasViewer } from '../utils.js';
 import { copyToClipboard } from 'pankow/utils';
 
@@ -29,7 +27,6 @@ export default {
   name: 'Preview',
   components: {
     Button,
-    Notification,
     Icon
   },
   props: {

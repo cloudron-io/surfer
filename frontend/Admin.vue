@@ -134,7 +134,7 @@
 
 <script>
 
-import { Breadcrumb, Button, Checkbox, Dialog, InputDialog, Notification, PasswordInput, ProgressBar, Radiobutton, Spinner, TextInput, TopBar } from 'pankow';
+import { Breadcrumb, Button, Checkbox, Dialog, InputDialog, Notification, PasswordInput, ProgressBar, Radiobutton, Spinner, TextInput, TopBar, fetcher } from 'pankow';
 import superagent from 'superagent';
 import { eachLimit, each } from 'async';
 import { sanitize, encode, decode, getPreviewUrl, getExtension } from './utils.js';
@@ -190,8 +190,10 @@ export default {
       settings: {
         folderListingEnabled: false,
         sortFoldersFirst: false,
-        title: '',
-        accessRestriction: ''
+        title: 'Surfer',
+        accessRestriction: '',
+        accessPassword: '',
+        index: ''
       },
       settingsDialog: {
         busy: false,
@@ -225,21 +227,26 @@ export default {
       }]
     };
   },
-  mounted() {
-    superagent.get('/api/settings').end((error, result) => {
-      if (error) console.error(error);
+  async mounted() {
+    try {
+      const result = await fetcher.get('/api/settings');
+      if (result.status !== 200) {
+        console.error('Failed to fetch settings', result.status);
+      } else {
+        this.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
+        this.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
+        this.settings.title = result.body.title;
+        this.settings.index = result.body.index;
+        this.settings.accessRestriction = result.body.accessRestriction;
+        this.settings.accessPassword = result.body.accessPassword;
+      }
+    } catch (error) {
+      console.error(error);
+    }
 
-      this.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
-      this.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
-      this.settings.title = result.body.title || 'Surfer';
-      this.settings.index = result.body.index || '';
-      this.settings.accessRestriction = result.body.accessRestriction || '';
-      this.settings.accessPassword = result.body.accessPassword || '';
+    window.document.title = this.settings.title;
 
-      window.document.title = this.settings.title;
-
-      this.initWithToken(localStorage.accessToken);
-    });
+    await this.initWithToken(localStorage.accessToken);
 
     // global key handler to unset activeEntry
     window.addEventListener('keyup', () => {
@@ -270,27 +277,30 @@ export default {
       window.pankow.notify({ type: 'danger', text: header + message });
       console.error(header, message);
     },
-    initWithToken(accessToken) {
+    async initWithToken(accessToken) {
       if (!accessToken) return this.login();
 
-      superagent.get('/api/profile').query({ access_token: accessToken }).end((error, result) =>{
-        this.ready = true;
-
-        if (error && !error.response) return console.error(error);
-        if (result.statusCode !== 200) {
+      try {
+        const result = await fetcher.get('/api/profile', { access_token: accessToken });
+        if (result.status !== 200) {
           delete localStorage.accessToken;
           return this.login();
         }
 
-        localStorage.accessToken = accessToken;
         this.username = result.body.username;
+      } catch (error) {
+        return console.error(error);
+      }
 
-        this.loadDirectory(decode(window.location.hash.slice(1)));
+      this.ready = true;
 
-        this.refreshAccessTokens();
-      });
+      localStorage.accessToken = accessToken;
+
+      this.loadDirectory(decode(window.location.hash.slice(1)));
+
+      this.refreshAccessTokens();
     },
-    loadDirectory(folderPath) {
+    async loadDirectory(folderPath) {
       if (!folderPath) return window.location.hash = '/';
 
       this.busy = true;
@@ -298,11 +308,11 @@ export default {
 
       folderPath = folderPath ? sanitize(folderPath) : '/';
 
-      superagent.get('/api/files/' + encode(folderPath)).query({ access_token: localStorage.accessToken }).end((error, result) => {
-        this.busy = false;
+      try {
+        const result = await fetcher.get('/api/files/' + encode(folderPath), { access_token: localStorage.accessToken });
+        if (result.status === 401) return this.logout();
 
-        if (result && result.statusCode === 401) return this.logout();
-        if (error) return console.error(error);
+        this.busy = false;
 
         result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
         this.entries = result.body.entries.map(function (entry) {
@@ -312,42 +322,41 @@ export default {
           entry.filePathNew = entry.fileName;
           return entry;
         });
-        this.path = folderPath;
-        this.breadcrumbItems = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
-          return {
-            label: e,
-            route: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
-          };
-        });
+      } catch (error) {
+        return console.error(error);
+      }
 
-        // update in case this was triggered from code
-        window.location.hash = this.path;
+      this.path = folderPath;
+      this.breadcrumbItems = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
+        return {
+          label: e,
+          route: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
+        };
       });
+
+      // update in case this was triggered from code
+      window.location.hash = this.path;
     },
-    login() {
+    async login() {
       // first try to get a new token if we have a session otherwise redirect to oidc login
-      superagent.get('/api/token').end((error, result) => {
-        if (error) window.location.replace('/api/oidc/login');  // we replace to avoid back button loop
+      try {
+        const result = await fetcher.get('/api/token');
+        if (result.status !== 201) return window.location.replace('/api/oidc/login');  // we replace to avoid back button loop
+        localStorage.accessToken = result.body.accessToken;
+      } catch (error) {
+        return window.location.replace('/api/oidc/login');  // we replace to avoid back button loop
+      }
 
-        const accessToken = result.body.accessToken;
-        localStorage.accessToken = accessToken;
-
-        this.initWithToken(accessToken);
-      });
+      await this.initWithToken(localStorage.accessToken);
     },
-    logout() {
-      superagent.del('/api/tokens/' + localStorage.accessToken).query({ access_token: localStorage.accessToken }).end((error) => {
-        if (error) console.error('Failed to clear token', error);
-
-        this.username = '';
-
-        delete localStorage.accessToken;
-
-        window.location.href = '/api/oidc/logout';
-      });
+    async logout() {
+      await fetcher.del('/api/tokens/' + localStorage.accessToken, { access_token: localStorage.accessToken });
+      this.username = '';
+      delete localStorage.accessToken;
+      window.location.href = '/api/oidc/logout';
     },
-    refresh() {
-      this.loadDirectory(this.path);
+    async refresh() {
+      await this.loadDirectory(this.path);
     },
     uploadFiles(files, targetPath) {
       if (!files || !files.length) return;
@@ -389,7 +398,7 @@ export default {
 
           callback();
         });
-      }, (error) => {
+      }, async (error) => {
         if (error) console.error(error);
 
         this.uploadStatus.busy = false;
@@ -398,7 +407,7 @@ export default {
         this.uploadStatus.done = 0;
         this.uploadStatus.percentDone = 100;
 
-        this.refresh();
+        await this.refresh();
       });
     },
     onDrop(event, entry) {
@@ -463,15 +472,17 @@ export default {
 
       const path = encode(sanitize(this.path + '/' + newFolderName));
 
-      superagent.post(`/api/files${path}`).query({ access_token: localStorage.accessToken, directory: true }).end((error, result) => {
-        if (result && result.statusCode === 401) return this.logout();
-        if (result && result.statusCode === 403) return window.pankow.notify({ type: 'danger', text: 'Folder name not allowed' });
-        if (result && result.statusCode === 409) return window.pankow.notify({ type: 'danger', text: 'Folder already exists' });
-        if (result && result.statusCode !== 201) return window.pankow.notify({ type: 'danger', text: 'Error creating folder: ' + result.statusCode });
-        if (error) return window.pankow.notify({ type: 'danger', text: error.message });
+      try {
+        const result = await fetcher.post(`/api/files${path}`, {}, { access_token: localStorage.accessToken, directory: true });
+        if (result.status === 401) return this.logout();
+        if (result.status === 403) return window.pankow.notify({ type: 'danger', text: 'Folder name not allowed' });
+        if (result.status === 409) return window.pankow.notify({ type: 'danger', text: 'Folder already exists' });
+        if (result.status !== 201) return window.pankow.notify({ type: 'danger', text: 'Error creating folder: ' + result.status });
+      } catch (error) {
+        return window.pankow.notify({ type: 'danger', text: error.message });
+      }
 
-        this.refresh();
-      });
+      await this.refresh();
     },
     openAccessTokenDialog() {
       this.$refs.accessTokenDialog.open();
@@ -486,7 +497,7 @@ export default {
 
       this.$refs.settingsDialog.open();
     },
-    onSaveSettingsDialog() {
+    async onSaveSettingsDialog() {
       this.settingsDialog.busy = true;
 
       const data = {
@@ -503,39 +514,29 @@ export default {
         access_token: localStorage.accessToken
       };
 
-      const that = this;
-      function done(error) {
-        if (error) return console.error(error);
+      await fetcher.put('/api/settings', data, query);
 
-        that.settings.folderListingEnabled = data.folderListingEnabled;
-        that.settings.sortFoldersFirst = data.sortFoldersFirst;
-        that.settings.title = data.title;
-        that.settings.index = data.index;
-        that.settings.accessRestriction = data.accessRestriction;
-
-        // refresh immedately
-        document.querySelector('link[rel="icon"]').href = '/api/favicon?' + Date.now();
-        window.document.title = that.settings.title;
-
-        that.settingsDialog.busy = false;
-
-        that.$refs.settingsDialog.close();
+      if (this.settingsDialog.faviconFile === 'reset') {
+        await fetcher.delete('/api/favicon', query);
+      } else if (this.settingsDialog.faviconFile) {
+        const formData = new FormData();
+        formData.append('file', this.settingsDialog.faviconFile);
+        await fetcher.put('/api/favicon', formData, query);
       }
 
-      superagent.put('/api/settings').send(data).query(query).end((error) => {
-        if (error) return console.error(error);
+      this.settings.folderListingEnabled = data.folderListingEnabled;
+      this.settings.sortFoldersFirst = data.sortFoldersFirst;
+      this.settings.title = data.title;
+      this.settings.index = data.index;
+      this.settings.accessRestriction = data.accessRestriction;
 
-        if (!this.settingsDialog.faviconFile) return done();
+      // refresh immedately
+      document.querySelector('link[rel="icon"]').href = '/api/favicon?' + Date.now();
+      window.document.title = this.settings.title;
 
-        if (this.settingsDialog.faviconFile === 'reset') {
-          superagent.delete('/api/favicon').query(query).end(done);
-        } else {
-          const formData = new FormData();
-          formData.append('file', this.settingsDialog.faviconFile);
+      this.settingsDialog.busy = false;
 
-          superagent.put('/api/favicon').send(formData).query(query).end(done);
-        }
-      });
+      this.$refs.settingsDialog.close();
     },
     onUploadFavicon() {
       // reset the form first to make the change handler retrigger even on the same file selected
@@ -557,39 +558,45 @@ export default {
       this.$refs.uploadFolder.value = '';
       this.$refs.uploadFolder.click();
     },
-    onDelete(entry) {
+    async onDelete(entry) {
       const path = encode(sanitize(this.path + '/' + entry.fileName));
 
-      superagent.del(`/api/files${path}`).query({ access_token: localStorage.accessToken, recursive: true }).end((error, result) => {
-        if (result && result.statusCode === 401) return this.logout();
-        if (result && result.statusCode !== 200) return this.error('Error deleting file');
-        if (error) return this.error(error.message);
+      try {
+        const result = await fetcher.del(`/api/files${path}`, { access_token: localStorage.accessToken, recursive: true });
+        if (result.status === 401) return this.logout();
+        if (result.status !== 200) return this.error('Error deleting file');
+      } catch (error) {
+        return this.error(error.message);
+      }
 
-        this.refresh();
-      });
+      await this.refresh();
     },
-    onRename(entry, newFileName) {
+    async onRename(entry, newFileName) {
       const path = encode(sanitize(this.path + '/' + entry.fileName));
       const newFilePath = sanitize(this.path + '/' + newFileName);
 
-      superagent.put(`/api/files${path}`).query({ access_token: localStorage.accessToken }).send({ newFilePath: newFilePath }).end((error, result) => {
-        if (result && result.statusCode === 401) return this.logout();
-        if (result && result.statusCode !== 200) return this.error('Error renaming file');
-        if (error) return this.error(error.message);
+      try {
+        const result = await fetcher.put(`/api/files${path}`, { newFilePath: newFilePath }, { access_token: localStorage.accessToken });
+        if (result.status === 401) return this.logout();
+        if (result.status !== 200) return this.error('Error renaming file');
+      } catch (error) {
+        return this.error(error.message);
+      }
 
-        // update in-place to avoid reload
-        entry.fileName = newFileName;
-        // FIXME setting this will correctly update the preview, which on some types might trigger a download on rename!
-        entry.filePath = newFilePath;
-      });
+      // update in-place to avoid reload
+      entry.fileName = newFileName;
+      // FIXME setting this will correctly update the preview, which on some types might trigger a download on rename!
+      entry.filePath = newFilePath;
     },
-    refreshAccessTokens() {
-      superagent.get('/api/tokens').query({ access_token: localStorage.accessToken }).end((error, result) =>{
-        if (error && !result) return this.error(error.message);
+    async refreshAccessTokens() {
+      try {
+        const result = await fetcher.get('/api/tokens', { access_token: localStorage.accessToken });
 
         // have to create an array of objects for referencing in v-for -> input
         this.accessTokens = result.body.accessTokens.map(function (t) { return { value: t }; });
-      });
+      } catch (error) {
+        this.error(error.message);
+      }
     },
     onCopyToClipboard(value) {
       copyToClipboard(value);
@@ -599,12 +606,14 @@ export default {
       copyToClipboard(value);
       window.pankow.notify({ type:'success', text: 'Token copied to Clipboard' });
     },
-    onCreateAccessToken() {
-      superagent.post('/api/tokens').query({ access_token: localStorage.accessToken }).end((error, result) => {
-        if (error && !result) return this.error(error.message);
+    async onCreateAccessToken() {
+      try {
+        await fetcher.post('/api/tokens', {}, { access_token: localStorage.accessToken });
+      } catch (error) {
+        return this.error(error.message);
+      }
 
-        this.refreshAccessTokens();
-      });
+      await this.refreshAccessTokens();
     },
     async onDeleteAccessToken(token) {
       const yes = await this.$refs.inputDialog.confirm({
@@ -617,10 +626,13 @@ export default {
 
       if (!yes) return;
 
-      superagent.delete(`/api/tokens/${token}`).query({ access_token: localStorage.accessToken }).end((error, result) => {
-        if (error && !result) return this.error(error.message);
-        this.refreshAccessTokens();
-      });
+      try {
+        await fetcher.delete(`/api/tokens/${token}`, { access_token: localStorage.accessToken });
+      } catch (error) {
+        return this.error(error.message);
+      }
+
+      await this.refreshAccessTokens();
     },
     onEntryOpen(entry) {
       // ignore item open on row clicks if we are renaming this entry
