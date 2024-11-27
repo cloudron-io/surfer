@@ -2,7 +2,6 @@
 
 var fs = require('fs'),
     fsPromises = require('node:fs/promises'),
-    copyFile = require('./copyFile.js'),
     util = require('util'),
     path = require('path'),
     safe = require('safetydance'),
@@ -190,7 +189,7 @@ function post(req, res, next) {
                 next(new HttpSuccess(201, {}));
             });
         } else if (!result || result.isFile()) {
-            return copyFile(req.files.file.path, absoluteFilePath, function (error) {
+            return fs.copyFile(req.files.file.path, absoluteFilePath, function (error) {
                 if (error) return next(new HttpError(500, error));
 
                 if (!mtime) return next(new HttpSuccess(201, {}));

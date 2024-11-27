@@ -10,7 +10,6 @@ var express = require('express'),
     fs = require('fs'),
     crypto = require('crypto'),
     cors = require('./src/cors.js'),
-    copyFile = require('./src/copyFile.js'),
     compression = require('compression'),
     contentDisposition = require('content-disposition'),
     bodyParser = require('body-parser'),
@@ -133,7 +132,7 @@ function getFavicon(req, res) {
 function setFavicon(req, res, next) {
     if (!req.files || !req.files.file) return next(new HttpError(400, 'missing file'));
 
-    copyFile(req.files.file.path, FAVICON_FILE, function (error) {
+    fs.copyFile(req.files.file.path, FAVICON_FILE, function (error) {
         if (error) {
             console.error('Failed to save favicon.', error);
             return next(new HttpError(500, 'Failed to save favicon'));
