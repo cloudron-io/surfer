@@ -12,7 +12,6 @@ var express = require('express'),
     cors = require('./src/cors.js'),
     compression = require('compression'),
     contentDisposition = require('content-disposition'),
-    bodyParser = require('body-parser'),
     lastMile = require('connect-lastmile'),
     HttpError = require('connect-lastmile').HttpError,
     HttpSuccess = require('connect-lastmile').HttpSuccess,
@@ -248,8 +247,8 @@ app.use('/api/healthcheck', function (req, res) { res.status(200).send(); });
 app.use(morgan('dev'));
 app.use(compression());
 app.use(cors({ origins: [ '*' ], allowCredentials: false }));
-app.use('/api', bodyParser.json());
-app.use('/api', bodyParser.urlencoded({ extended: false, limit: '100mb' }));
+app.use('/api', express.json());
+app.use('/api', express.urlencoded({ extended: false, limit: '100mb' }));
 app.use(session({ store: sessionStore, secret: 'surfin surfin', resave: false, saveUninitialized: true, cookie: { secure: !!process.env.CLOUDRON, sameSite: 'strict' } }));
 app.use(auth.oidcMiddleware);
 app.use(router);

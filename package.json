@@ -12,7 +12,6 @@
   "main": "server.js",
   "dependencies": {
     "async": "^3.2.6",
-    "body-parser": "^1.20.3",
     "colors": "1.4.0",
     "commander": "^12.1.0",
     "compression": "^1.7.5",
