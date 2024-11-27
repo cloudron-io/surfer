@@ -162,14 +162,14 @@ function handleProtection(req, res, next) {
 
 function protectedLogin(req, res, next) {
     if (config.accessRestriction === 'password') {
-        let saltBinary = Buffer.from(config.accessPasswordSalt, 'hex');
+        const saltBinary = Buffer.from(config.accessPasswordSalt, 'hex');
         crypto.pbkdf2(req.body.password, saltBinary, CRYPTO_ITERATIONS, CRYPTO_KEY_LENGTH, CRYPTO_DIGEST, function (error, derivedKey) {
             if (error) {
                 console.log('Failed to derive key.', error);
                 return next(new HttpError(500, 'internal error'));
             }
 
-            let derivedKeyHex = Buffer.from(derivedKey, 'binary').toString('hex');
+            const derivedKeyHex = Buffer.from(derivedKey, 'binary').toString('hex');
             if (derivedKeyHex !== config.accessPassword) return next(new HttpError(403, 'forbidden'));
 
             req.session.isValid = true;
