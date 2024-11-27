@@ -1,6 +1,6 @@
 {
   "name": "cloudron-surfer",
-  "version": "6.2.0",
+  "version": "6.2.1",
   "description": "Simple file server cli",
   "author": {
     "name": "Johannes Zellner",

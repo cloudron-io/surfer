@@ -297,3 +297,8 @@
 * Add dark mode
 * Small CLI fixes
 
+[6.2.1]
+* Move UI away from superagent to pankow
+* Replace various old code with nodejs built-ins
+* Update dependencies
+
