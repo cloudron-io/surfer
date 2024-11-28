@@ -1,11 +1,11 @@
 'use strict';
 
-var fs = require('fs');
+import fs from 'fs';
 
-var GLOBS2_FILE = '/usr/share/mime/globs2';
+const GLOBS2_FILE = '/usr/share/mime/globs2';
 
 // to override OTHER text types to text/plain
-var COMMON_TEXT_TYPES = [
+const COMMON_TEXT_TYPES = [
     'text/calendar',
     'text/comma',
     'text/css',
@@ -17,11 +17,11 @@ var COMMON_TEXT_TYPES = [
     'text/xml'
 ];
 
-exports = module.exports = function (express) {
+export default function (express) {
     console.log(`Loading rich mime-types from ${GLOBS2_FILE}`);
 
-    var glob2;
-    var types = {};
+    let glob2;
+    const types = {};
 
     try {
         glob2 = fs.readFileSync(GLOBS2_FILE, 'utf8');
@@ -34,10 +34,10 @@ exports = module.exports = function (express) {
     glob2.split('\n').reverse().forEach(function (line) {
         if (line.startsWith('#')) return;
 
-        var f = line.split(':');
+        const f = line.split(':');
         if (f.length <= 1) return;
 
-        var type = f[1];
+        let type = f[1];
 
         if (type.startsWith('text/') && COMMON_TEXT_TYPES.indexOf(type) === -1) type = 'text/plain';
 
@@ -46,7 +46,7 @@ exports = module.exports = function (express) {
     });
 
     Object.keys(types).forEach(function (type) {
-        var obj = {};
+        const obj = {};
         obj[type] = types[type];
 
         express.static.mime.define(obj);

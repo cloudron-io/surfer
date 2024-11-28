@@ -2,29 +2,28 @@
 
 'use strict';
 
-var express = require('express'),
-    morgan = require('morgan'),
-    path = require('path'),
-    session = require('express-session'),
-    ejs = require('ejs'),
-    fs = require('fs'),
-    crypto = require('crypto'),
-    cors = require('./src/cors.js'),
-    compression = require('compression'),
-    contentDisposition = require('content-disposition'),
-    lastMile = require('connect-lastmile'),
-    HttpError = require('connect-lastmile').HttpError,
-    HttpSuccess = require('connect-lastmile').HttpSuccess,
-    multipart = require('./src/multipart'),
-    auth = require('./src/auth.js'),
-    mime = require('./src/mime.js'),
-    webdav = require('webdav-server').v2,
-    files = require('./src/files.js')(path.resolve(__dirname, process.argv[2] || 'files'));
+import express from 'express';
+import morgan from 'morgan';
+import path from 'path';
+import session from 'express-session';
+import ejs from 'ejs';
+import fs from 'fs';
+import crypto from 'crypto';
+import cors from './src/cors.js';
+import compression from 'compression';
+import contentDisposition from 'content-disposition';
+import lastMile from 'connect-lastmile';
+import { HttpError, HttpSuccess } from 'connect-lastmile';
+import multipart from './src/multipart.js';
+import auth from './src/auth.js';
+import mime from './src/mime.js';
+import webdav from 'webdav-server';
+import files from './src/files.js';
 
-const ROOT_FOLDER = path.resolve(__dirname, process.argv[2] || 'files');
-const CONFIG_FILE = path.resolve(__dirname, process.argv[3] || '.config.json');
-const FAVICON_FILE = path.resolve(__dirname, process.argv[4] || 'favicon.png');
-const FAVICON_FALLBACK_FILE = path.resolve(__dirname, 'dist', 'logo.png');
+const ROOT_FOLDER = path.resolve(import.meta.dirname, process.argv[2] || 'files');
+const CONFIG_FILE = path.resolve(import.meta.dirname, process.argv[3] || '.config.json');
+const FAVICON_FILE = path.resolve(import.meta.dirname, process.argv[4] || 'favicon.png');
+const FAVICON_FALLBACK_FILE = path.resolve(import.meta.dirname, 'dist', 'logo.png');
 
 const PASSWORD_PLACEHOLDER = '__PLACEHOLDER__';
 
@@ -157,7 +156,7 @@ function handleProtection(req, res, next) {
     if (req.session.isValid) return next();         // password protection
     if (req.oidc.isAuthenticated()) return next();  // openid user protection
 
-    res.status(401).sendFile(path.join(__dirname, '/dist/protected.html'));
+    res.status(401).sendFile(path.join(import.meta.dirname, '/dist/protected.html'));
 }
 
 function protectedLogin(req, res, next) {
@@ -186,13 +185,13 @@ function send404(res) {
     if (fs.existsSync(path.join(ROOT_FOLDER, '404.html'))) return res.status(404).sendFile(path.join(ROOT_FOLDER, '404.html'));
     if (fs.existsSync(path.join(ROOT_FOLDER, '404.htm' ))) return res.status(404).sendFile(path.join(ROOT_FOLDER, '404.htm'));
 
-    res.status(404).sendFile(__dirname + '/dist/404.html');
+    res.status(404).sendFile(import.meta.dirname + '/dist/404.html');
 }
 
 // Load the config file
 try {
     console.log(`Using config file at: ${CONFIG_FILE}`);
-    config = require(CONFIG_FILE);
+    config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
 } catch (e) {
     if (e.code === 'MODULE_NOT_FOUND') console.log(`Config file ${CONFIG_FILE} not found`);
     else console.log(`Cannot load config file ${CONFIG_FILE}`, e);
@@ -214,17 +213,17 @@ var router = new express.Router();
 // needed for secure cookies
 app.enable('trust proxy');
 
-var webdavServer = new webdav.WebDAVServer({
+var webdavServer = new webdav.v2.WebDAVServer({
     requireAuthentification: true,
-    httpAuthentication: new webdav.HTTPBasicAuthentication(new auth.WebdavUserManager(), 'Cloudron Surfer')
+    httpAuthentication: new webdav.v2.HTTPBasicAuthentication(new auth.WebdavUserManager(), 'Cloudron Surfer')
 });
 
-webdavServer.setFileSystem('/', new webdav.PhysicalFileSystem(ROOT_FOLDER), function (success) {
+webdavServer.setFileSystem('/', new webdav.v2.PhysicalFileSystem(ROOT_FOLDER), function (success) {
     if (!success) console.error('Failed to setup webdav server!');
 });
 
-const PUBLIC_HTML = fs.readFileSync(__dirname + '/dist/public.html', 'utf8');
-const PUBLIC_NOSCRIPT_EJS = fs.readFileSync(__dirname + '/src/public.noscript.ejs', 'utf8');
+const PUBLIC_HTML = fs.readFileSync(import.meta.dirname + '/dist/public.html', 'utf8');
+const PUBLIC_NOSCRIPT_EJS = fs.readFileSync(import.meta.dirname + '/src/public.noscript.ejs', 'utf8');
 
 router.post  ('/api/protectedLogin', protectedLogin);
 router.get   ('/api/oidc/login', auth.oidcLogin);
@@ -252,14 +251,14 @@ app.use('/api', express.urlencoded({ extended: false, limit: '100mb' }));
 app.use(session({ store: sessionStore, secret: 'surfin surfin', resave: false, saveUninitialized: true, cookie: { secure: !!process.env.CLOUDRON, sameSite: 'strict' } }));
 app.use(auth.oidcMiddleware);
 app.use(router);
-app.use(webdav.extensions.express('/_webdav', webdavServer));
-app.use('/_admin', express.static(__dirname + '/dist', { index: 'admin.html' }));
-app.use('/assets', express.static(__dirname + '/dist/assets'));
+app.use(webdav.v2.extensions.express('/_webdav', webdavServer));
+app.use('/_admin', express.static(import.meta.dirname + '/dist', { index: 'admin.html' }));
+app.use('/assets', express.static(import.meta.dirname + '/dist/assets'));
 app.use('/', handleProtection);
 app.use('/', function (req, res, next) { staticServMiddleware(req, res, next); });
 app.use('/', function welcomePage(req, res, next) {
     if (config.folderListingEnabled || req.path !== '/') return next();
-    res.status(200).sendFile(path.join(__dirname, '/dist/welcome.html'));
+    res.status(200).sendFile(path.join(import.meta.dirname, '/dist/welcome.html'));
 });
 app.use('/', function (req, res, next) {
     if (!config.folderListingEnabled) return send404(res);
@@ -272,7 +271,7 @@ app.use('/', function (req, res, next) {
         if (error) return next(error);
 
         // use cached PUBLIC_NOSCRIPT_EJS when deployed otherwise reread from disk for development
-        var out = process.env.CLOUDRON ? PUBLIC_HTML : fs.readFileSync(__dirname + '/dist/public.html', 'utf8');;
+        var out = process.env.CLOUDRON ? PUBLIC_HTML : fs.readFileSync(import.meta.dirname + '/dist/public.html', 'utf8');;
         out = out.replace('<noscript></noscript>', `<noscript>${ejs.render(PUBLIC_NOSCRIPT_EJS, result, {})}</noscript>`);
         out = out.replace('<withscript></withscript>', `<script>window.surfer = { entries: ${JSON.stringify(result.entries)}, stat: ${JSON.stringify(result.stat)} };</script>`);
 

@@ -1,27 +1,24 @@
 'use strict';
 
-var fs = require('fs'),
-    fsPromises = require('node:fs/promises'),
-    util = require('util'),
-    path = require('path'),
-    safe = require('safetydance'),
-    debug = require('debug')('files'),
-    HttpError = require('connect-lastmile').HttpError,
-    HttpSuccess = require('connect-lastmile').HttpSuccess;
+import fs from 'fs';
+import fsPromises from 'node:fs/promises';
+import util from 'util';
+import path from 'path';
+import safe from 'safetydance';
+import Debug from 'debug';
+import { HttpSuccess, HttpError } from 'connect-lastmile';
 
-var gBasePath;
+const debug = Debug('files');
 
-exports = module.exports = function (basePath) {
-    gBasePath = basePath;
+const gBasePath = path.resolve(import.meta.dirname, '..', process.argv[2] || 'files');
 
-    return {
-        getFolderListing: getFolderListing,
+export default {
+    getFolderListing,
 
-        get: get,
-        put: put,
-        post: post,
-        del: del
-    };
+    get,
+    put,
+    post,
+    del
 };
 
 function boolLike(arg) {

@@ -1,15 +1,13 @@
-/* jshint node:true */
-
 'use strict';
 
-var url = require('url');
+import url from 'url';
 
 /*
  * CORS middleware
  *
  * options can contains a list of origins
  */
-module.exports = function cors(options) {
+export default function cors(options) {
     options = options || { };
     var maxAge = options.maxAge || 60 * 60 * 25 * 5; // 5 days
     var origins = options.origins || [ '*' ];

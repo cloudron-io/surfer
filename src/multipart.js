@@ -1,19 +1,17 @@
-/* jshint node:true */
-
 'use strict';
 
-var multiparty = require('multiparty');
+import multiparty from 'multiparty';
 
 function _mime(req) {
-  var str = req.headers['content-type'] || '';
+  const str = req.headers['content-type'] || '';
   return str.split(';')[0];
 }
 
-module.exports = function multipart(options) {
+export default function multipart(options) {
     return function (req, res, next) {
         if (_mime(req) !== 'multipart/form-data') return next(null);
 
-        var form = new multiparty.Form({
+        const form = new multiparty.Form({
             uploadDir: '/tmp',
             keepExtensions: true,
             maxFieldsSize: options.maxFieldsSize || (2 * 1024), // only field size, not files

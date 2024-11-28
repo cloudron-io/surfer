@@ -2,6 +2,7 @@
   "name": "cloudron-surfer",
   "version": "6.2.1",
   "description": "Simple file server cli",
+  "type": "module",
   "author": {
     "name": "Johannes Zellner",
     "email": "johannes@nebulon.de"

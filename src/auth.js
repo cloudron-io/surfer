@@ -1,12 +1,13 @@
 'use strict';
 
-var path = require('path'),
-    fs = require('fs'),
-    crypto = require('crypto'),
-    oidc = require('express-openid-connect'),
-    HttpError = require('connect-lastmile').HttpError,
-    HttpSuccess = require('connect-lastmile').HttpSuccess,
-    webdavErrors = require('webdav-server').v2.Errors;
+import path from 'path';
+import fs from 'fs';
+import crypto from 'crypto';
+import oidc from 'express-openid-connect';
+import { HttpSuccess, HttpError } from 'connect-lastmile';
+import webdavServer from 'webdav-server';
+
+const webdavErrors = webdavServer.v2.Errors;
 
 const TOKENSTORE_FILE = path.resolve(process.env.TOKENSTORE_FILE || './.tokens.json');
 const LOGIN_TOKEN_PREFIX = 'login-';
@@ -47,11 +48,11 @@ try {
     // start with empty token store
 }
 
-function hat (bits) {
+function hat(bits) {
     return crypto.randomBytes(bits / 8).toString('hex');
 }
 
-exports.oidcMiddleware = oidc.auth({
+const oidcMiddleware = oidc.auth({
     issuerBaseURL: process.env.CLOUDRON_OIDC_ISSUER,
     baseURL: process.env.CLOUDRON_APP_ORIGIN,
     clientID: process.env.CLOUDRON_OIDC_CLIENT_ID,
@@ -69,18 +70,18 @@ exports.oidcMiddleware = oidc.auth({
     }
 });
 
-exports.oidcLogin = function (req, res) {
+function oidcLogin(req, res) {
     res.oidc.login({
         returnTo: req.query.returnTo || '/_admin',
         authorizationParams: {
             redirect_uri: process.env.CLOUDRON_APP_ORIGIN + '/api/oidc/callback',
         },
     });
-};
+}
 
-exports.oidcAuth = oidc.requiresAuth();
+const oidcAuth = oidc.requiresAuth();
 
-exports.verifyToken = function (req, res, next) {
+function verifyToken(req, res, next) {
     var accessToken = req.query.access_token || req.body.accessToken;
 
     tokenStore.get(accessToken, function (error, user) {
@@ -90,13 +91,13 @@ exports.verifyToken = function (req, res, next) {
 
         next();
     });
-};
+}
 
-exports.getProfile = function (req, res, next) {
+function getProfile(req, res, next) {
     next(new HttpSuccess(200, { username: req.user.username }));
-};
+}
 
-exports.createOidcToken = function (req, res, next) {
+function createOidcToken(req, res, next) {
     const accessToken = LOGIN_TOKEN_PREFIX + hat(128);
 
     tokenStore.set(accessToken, { username: req.oidc.user.sub }, function (error) {
@@ -104,17 +105,17 @@ exports.createOidcToken = function (req, res, next) {
 
         next(new HttpSuccess(201, { accessToken }));
     });
-};
+}
 
-exports.getTokens = function (req, res, next) {
+function getTokens(req, res, next) {
     tokenStore.getApiTokens(function (error, result) {
         if (error) return next(new HttpError(500, error));
 
         next(new HttpSuccess(200, { accessTokens: result }));
     });
-};
+}
 
-exports.createToken = function (req, res, next) {
+function createToken(req, res, next) {
     const accessToken = API_TOKEN_PREFIX + hat(128);
 
     tokenStore.set(accessToken, req.user, function (error) {
@@ -122,18 +123,15 @@ exports.createToken = function (req, res, next) {
 
         next(new HttpSuccess(201, { accessToken: accessToken }));
     });
-};
+}
 
-exports.delToken = function (req, res, next) {
+function delToken(req, res, next) {
     tokenStore.del(req.params.token, function (error) {
         if (error) console.error(error);
 
         next(new HttpSuccess(200, {}));
     });
 };
-
-// webdav usermanager
-exports.WebdavUserManager = WebdavUserManager;
 
 // This implements the required interface only for the Basic Authentication for webdav-server
 function WebdavUserManager() {
@@ -180,4 +178,17 @@ WebdavUserManager.prototype.getUserByNamePassword = function (username, password
 
         callback(null, user);
     });
+};
+
+export default {
+    getProfile,
+    verifyToken,
+    oidcAuth,
+    oidcLogin,
+    oidcMiddleware,
+    createOidcToken,
+    getTokens,
+    createToken,
+    delToken,
+    WebdavUserManager,
 };
