@@ -1,21 +1,19 @@
-/* jshint node:true */
-
 'use strict';
 
-var fs = require('fs'),
-    path = require('path'),
-    safe = require('safetydance'),
-    _ = require('underscore');
+import fs from 'fs';
+import path from 'path';
+import safe from 'safetydance';
+import _ from 'underscore';
 
 const HOME = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
 const CONFIG_FILE_PATH = path.join(HOME, '.surfer.json');
 
-exports = module.exports = {
-    clear: clear,
-    set: set,
-    get: get,
-    unset: unset,
-    has: has,
+export default {
+    clear,
+    set,
+    get,
+    unset,
+    has,
 
     filePath: CONFIG_FILE_PATH,
 

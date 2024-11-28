@@ -2,10 +2,13 @@
 
 'use strict';
 
-var program = require('commander').program,
-    actions = require('./actions');
+import { Command } from 'commander';
+import actions from './actions.js';
+import fs from 'fs';
 
-program.version(require('../package.json').version);
+const program = new Command();
+
+program.version(JSON.parse(fs.readFileSync(import.meta.dirname + '/../package.json', 'utf8')).version);
 
 program.command('login')
     .description('Unsupported')

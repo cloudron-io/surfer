@@ -1,23 +1,24 @@
 'use strict';
 
-exports.login = login;
-exports.logout = logout;
-exports.config = configure;
-exports.put = put;
-exports.get = get;
-exports.del = del;
+export default {
+    login,
+    logout,
+    config,
+    put,
+    get,
+    del,
+};
 
-var superagent = require('superagent'),
-    config = require('./config.js'),
-    readlineSync = require('readline-sync'),
-    safe = require('safetydance'),
-    async = require('async'),
-    fs = require('fs'),
-    request = require('request'),
-    url = require('url'),
-    path = require('path');
-
-require('colors');
+import superagent from 'superagent';
+import config from './config.js';
+import readlineSync from 'readline-sync';
+import safe from 'safetydance';
+import async from 'async';
+import fs from 'fs';
+import request from 'request';
+import url from 'url';
+import path from 'path';
+import 'colors';
 
 const API = '/api/files/';
 
