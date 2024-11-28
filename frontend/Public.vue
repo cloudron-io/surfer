@@ -9,7 +9,7 @@
         </template>
 
         <template #right>
-          <Button href="/_admin" icon="pi pi-sign-in">Login</Button>
+          <Button href="/_admin" icon="fa-solid fa-arrow-right-to-bracket">Login</Button>
         </template>
       </TopBar>
     </div>
@@ -51,7 +51,7 @@ export default {
       path: '/',
       breadcrumbHomeItem: {
         label: '',
-        icon: 'pi pi-home',
+        icon: 'fa-solid fa-house',
         route: '/'
       },
       breadcrumbItems: [],

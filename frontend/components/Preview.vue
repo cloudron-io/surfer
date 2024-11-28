@@ -10,9 +10,9 @@
     </div>
     <iframe id="previewIframe" ref="iframe" :src="iFrameSource" style="width: 100%; height: 100%; border: none;"></iframe>
     <div class="actions">
-      <Button outline v-show="entry.isFile" icon="pi pi-download" @click="onDownload(entry)">Download</Button>
-      <Button outline icon="pi pi-external-link" :href="encode(entry.filePath)" target="_blank">Open</Button>
-      <Button outline icon="pi pi-copy" @click="onCopyLink(entry)">Copy Link</Button>
+      <Button outline v-show="entry.isFile" icon="fa-solid fa-download" @click="onDownload(entry)">Download</Button>
+      <Button outline icon="fa-solid fa-arrow-up-right-from-square" :href="encode(entry.filePath)" target="_blank">Open</Button>
+      <Button outline icon="fa-regular fa-copy" @click="onCopyLink(entry)">Copy Link</Button>
     </div>
   </div>
 </template>

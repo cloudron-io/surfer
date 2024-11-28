@@ -15,10 +15,10 @@
         </template>
 
         <template #right>
-          <Button tool icon="pi pi-upload" @click="onUpload"><span class="pankow-no-mobile">Upload </span>File</Button>
-          <Button tool icon="pi pi-cloud-upload" @click="onUploadFolder"><span class="pankow-no-mobile">Upload </span>Folder</Button>
-          <Button tool icon="pi pi-plus" success @click="openNewFolderDialog"><span class="pankow-no-mobile">New </span>Folder</Button>
-          <Button icon="pi pi-ellipsis-h" tool outline :menu="mainMenu" id="burgerMenuButton" :show-dropdown="false"/>
+          <Button tool icon="fa-solid fa-file-arrow-up" @click="onUpload"><span class="pankow-no-mobile">Upload </span>File</Button>
+          <Button tool icon="fa-solid fa-upload" @click="onUploadFolder"><span class="pankow-no-mobile">Upload </span>Folder</Button>
+          <Button tool icon="fa-solid fa-plus" success @click="openNewFolderDialog"><span class="pankow-no-mobile">New </span>Folder</Button>
+          <Button icon="fa-solid fa-ellipsis" tool outline :menu="mainMenu" id="burgerMenuButton" :show-dropdown="false"/>
         </template>
       </TopBar>
     </div>
@@ -59,8 +59,8 @@
         <img ref="faviconImage" :src="'/api/favicon?' + Date.now()" width="64" height="64" style="margin-top: 4px;"/>
       </div>
       <div>
-        <Button icon="pi pi-upload" @click="onUploadFavicon">Upload Favicon</Button>
-        <Button outline icon="pi pi-replay" @click="onResetFavicon">Reset Favicon</Button>
+        <Button icon="fa-solid fa-upload" @click="onUploadFavicon">Upload Favicon</Button>
+        <Button outline icon="fa-solid fa-rotate-left" @click="onResetFavicon">Reset Favicon</Button>
       </div>
     </div>
 
@@ -114,8 +114,8 @@
       </h3>
       <div v-for="accessToken in accessTokens" :key="accessToken.value">
         <span @click="onCopyAccessToken(accessToken.value)" style="cursor: copy; font-family: monospace;">{{ accessToken.value }}</span>
-        <Button primary tool plain icon="pi pi-copy" v-tooltip="'Copy Token to Clipboard'" @click="onCopyAccessToken(accessToken.value)"/>
-        <Button danger tool plain icon="pi pi-trash" v-tooltip="'Revoke Token'" @click="onDeleteAccessToken(accessToken.value)"/>
+        <Button primary tool plain icon="fa-regular fa-copy" v-tooltip="'Copy Token to Clipboard'" @click="onCopyAccessToken(accessToken.value)"/>
+        <Button danger tool plain icon="fa-solid fa-trash" v-tooltip="'Revoke Token'" @click="onDeleteAccessToken(accessToken.value)"/>
       </div>
     </div>
   </Dialog>
@@ -178,7 +178,7 @@ export default {
       path: '/',
       breadcrumbHomeItem: {
         label: '',
-        icon: 'pi pi-home',
+        icon: 'fa-solid fa-house',
         route: '#/'
       },
       breadcrumbItems: [],
@@ -207,21 +207,21 @@ export default {
       },
       mainMenu: [{
         label: 'Settings',
-        icon: 'pi pi-cog',
+        icon: 'fa-solid fa-gear',
         action: this.openSettingsDialog
       }, {
         label: 'Access Tokens',
-        icon: 'pi pi-key',
+        icon: 'fa-solid fa-key',
         action: this.openAccessTokenDialog
       }, {
         separator: true
       }, {
         label: 'About',
-        icon: 'pi pi-info-circle',
+        icon: 'fa-solid fa-circle-info',
         action: () => this.$refs.aboutDialog.open()
       }, {
         label: 'Logout',
-        icon: 'pi pi-sign-out',
+        icon: 'fa-solid fa-arrow-right-from-bracket',
         action: this.logout
       }]
     };

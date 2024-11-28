@@ -5,9 +5,9 @@
   <div class="table" v-show="!$parent.busy" @drop.stop.prevent="drop(null)" @dragover.stop.prevent="dragOver(null)" @dragexit="dragExit" :class="{ 'drag-active': dragActive === 'table' }" v-cloak>
     <div class="th" style="display: flex;">
       <div class="td" style="max-width: 50px;"></div>
-      <div class="td hand" style="flex-grow: 2;" @click="onSort('fileName')">Name <i class="pi" :class="{'pi-sort-alpha-down': sort.desc, 'pi-sort-alpha-up-alt': !sort.desc }" v-show="sort.prop === 'fileName'"></i></div>
-      <div class="td hand" style="max-width: 100px;" @click="onSort('size')">Size <i class="pi" :class="{'pi-sort-numeric-down': sort.desc, 'pi-sort-numeric-up-alt': !sort.desc }" v-show="sort.prop === 'size'"></i></div>
-      <div class="td hand" style="max-width: 150px;" @click="onSort('mtime')">Last Modified <i class="pi" :class="{'pi-sort-numeric-down': sort.desc, 'pi-sort-numeric-up-alt': !sort.desc }" v-show="sort.prop === 'mtime'"></i></div>
+      <div class="td hand" style="flex-grow: 2;" @click="onSort('fileName')">Name <i class="fa-solid" :class="{'fa-arrow-down-a-z': sort.desc, 'fa-arrow-up-z-a': !sort.desc }" v-show="sort.prop === 'fileName'"></i></div>
+      <div class="td hand" style="max-width: 100px;" @click="onSort('size')">Size <i class="fa-solid" :class="{'fa-arrow-down': sort.desc, 'fa-arrow-up': !sort.desc }" v-show="sort.prop === 'size'"></i></div>
+      <div class="td hand" style="max-width: 150px;" @click="onSort('mtime')">Last Modified <i class="pi" :class="{'fa-arrow-down': sort.desc, 'fa-arrow-up': !sort.desc }" v-show="sort.prop === 'mtime'"></i></div>
       <div class="td" style="max-width: 200px; justify-content: flex-end;"></div>
     </div>
     <div class="tbody">
@@ -18,16 +18,16 @@
         <div class="td" style="flex-grow: 2;">
           <TextInput @click.stop @keyup.enter="onRenameSubmit(entry)" @keyup.esc="onRenameEnd(entry)" @blur="onRenameEnd(entry)" v-model="entry.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="entry.rename" class="rename-input"/>
           <a v-show="!entry.rename" :href="entry.filePath" @click.stop.prevent="onEntryOpen(entry, true)">{{ entry.fileName }}</a>
-          <div class="rename-action" v-show="editable && !entry.rename" @click.stop="onRename(entry)" v-tooltip.right="'Rename'"><Icon icon="pi pi-pencil"/></div>
+          <div class="rename-action" v-show="editable && !entry.rename" @click.stop="onRename(entry)" v-tooltip.right="'Rename'"><Icon icon="fa-solid fa-pencil"/></div>
         </div>
         <div class="td" style="display: flex; max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
         <div class="td" style="display: flex; max-width: 150px;"><span v-tooltip.top="prettyLongDate(entry.mtime)">{{ prettyDate(entry.mtime) }}</span></div>
         <div class="td" style="max-width: 200px; white-space: nowrap; justify-content: flex-end;">
           <span class="action-buttons">
-            <Button tool outline icon="pi pi-download" v-tooltip.top="'Download'" v-show="!entry.rename && entry.isFile" @click.stop="onDownload(entry)"/>
-            <Button tool outline icon="pi pi-copy" v-tooltip.top="'Copy Link'" v-show="!entry.rename && entry.isFile" @click.stop="onCopyLink(entry)"/>
-            <Button tool outline icon="pi pi-external-link" v-tooltip.top="'Open'" :href="encode(entry.filePath)" v-show="!entry.rename" target="_blank"/>
-            <Button tool danger outline icon="pi pi-trash" v-tooltip.top="'Delete'" v-show="editable && !entry.rename" @click.stop="onDelete(entry)"/>
+            <Button tool outline icon="fa-solid fa-download" v-tooltip.top="'Download'" v-show="!entry.rename && entry.isFile" @click.stop="onDownload(entry)"/>
+            <Button tool outline icon="fa-regular fa-copy" v-tooltip.top="'Copy Link'" v-show="!entry.rename && entry.isFile" @click.stop="onCopyLink(entry)"/>
+            <Button tool outline icon="fa-solid fa-arrow-up-right-from-square" v-tooltip.top="'Open'" :href="encode(entry.filePath)" v-show="!entry.rename" target="_blank"/>
+            <Button tool danger outline icon="fa-solid fa-trash" v-tooltip.top="'Delete'" v-show="editable && !entry.rename" @click.stop="onDelete(entry)"/>
           </span>
         </div>
       </div>
