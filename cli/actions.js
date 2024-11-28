@@ -1,14 +1,5 @@
 'use strict';
 
-export default {
-    login,
-    logout,
-    config,
-    put,
-    get,
-    del,
-};
-
 import superagent from 'superagent';
 import config from './config.js';
 import readlineSync from 'readline-sync';
@@ -22,8 +13,8 @@ import 'colors';
 
 const API = '/api/files/';
 
-var gServer = '';
-var gQuery = {};
+let gServer = '';
+let gQuery = {};
 
 function exit(errorArgs) {
     if (errorArgs) {
@@ -38,7 +29,7 @@ function checkConfig(options) {
     if ((!options.server && !config.server()) || (!options.token && !config.accessToken())) exit('Run %s first, or provide %s', 'surfer config'.bold, '--server <domain>'.bold, '--token <access token>'.bold);
 
     if (options.server) {
-        var tmp = url.parse(options.server);
+        let tmp = url.parse(options.server);
         if (!tmp.slashes) tmp = url.parse('https://' + options.server);
         gServer = tmp.protocol + '//' + tmp.host;
     } else {
@@ -51,16 +42,16 @@ function checkConfig(options) {
 }
 
 function collectFiles(filePath, basePath, options) {
-    var tmp = [];
+    let tmp = [];
 
-    var absoluteFilePath = path.resolve(basePath, filePath);
+    const absoluteFilePath = path.resolve(basePath, filePath);
 
-    var fileName = path.basename(absoluteFilePath);
+    const fileName = path.basename(absoluteFilePath);
     if (!options.all && fileName[0] === '.' && fileName.length > 1) return [];
 
-    var stat = fs.statSync(absoluteFilePath);
+    const stat = fs.statSync(absoluteFilePath);
 
-    var file = {
+    const file = {
         isDirectory: stat.isDirectory(),
         isFile: stat.isFile(),
         atime: stat.atime.toISOString(),
@@ -89,7 +80,7 @@ function collectFiles(filePath, basePath, options) {
 }
 
 function putOne(file, destination, callback) {
-    let destinationPath = path.join(destination, file.filePath);
+    const destinationPath = path.join(destination, file.filePath);
 
     if (file.isFile) {
         console.log('Uploading %s -> %s', file.filePath.cyan, (gServer + destinationPath).cyan);
@@ -104,7 +95,7 @@ function putOne(file, destination, callback) {
     } else if (file.isDirectory) {
         console.log('Creating directory %s', destinationPath.cyan);
 
-        var query = safe.JSON.parse(safe.JSON.stringify(gQuery));
+        const query = safe.JSON.parse(safe.JSON.stringify(gQuery));
         query.directory = true;
 
         superagent.post(gServer + path.join(API, encodeURIComponent(destinationPath))).query(query).end(function (error, result) {
@@ -121,7 +112,7 @@ function putOne(file, destination, callback) {
 }
 
 function delOne(file, callback) {
-    var query = safe.JSON.parse(safe.JSON.stringify(gQuery));
+    const query = safe.JSON.parse(safe.JSON.stringify(gQuery));
     if (file.isDirectory) query.recursive = true;
 
     superagent.del(gServer + path.join(API, encodeURIComponent(file.filePath))).query(query).end(function (error, result) {
@@ -141,7 +132,7 @@ function configure(options) {
         if (error && error.code === 'ENOTFOUND') exit('Server %s not found.'.red, gServer.bold);
         if (error && error.code) exit('Failed to connect to server %s'.red, gServer.bold, error.code);
         if (result.status !== 200) {
-            console.log(result.status, gQuery)
+            console.log(result.status, gQuery);
             console.log('Access failed. Provide an api access token with --token\n'.red);
             process.exit(1);
         }
@@ -174,7 +165,7 @@ function get(filePath, options) {
 
         // 222 indicates directory listing
         if (result.statusCode === 222) {
-            var files = safe.JSON.parse(body);
+            const files = safe.JSON.parse(body);
             if (!files || files.entries.length === 0) {
                 console.log('Empty directory. Use %s to upload some.', 'surfer put <file>'.yellow);
             } else {
@@ -193,7 +184,7 @@ function del(filePath, options) {
     checkConfig(options);
 
     // construct a virtual file for further use
-    var file = {
+    const file = {
         filePath: filePath,
         isDirectory: !!options.recursive
     };
@@ -221,17 +212,17 @@ function put(filePaths, options) {
     if (!path.isAbsolute(absoluteDestPath)) exit('Target directory must be absolute, starting with /'.red);
     if (!absoluteDestPath.endsWith('/')) absoluteDestPath += '/';
 
-    var localFiles = [];
+    let localFiles = [];
     filePaths.forEach(function (filePath) {
-        var absoluteFilePath = path.resolve(process.cwd(), filePath);
-        var baseFilePath = path.dirname(absoluteFilePath);
+        const absoluteFilePath = path.resolve(process.cwd(), filePath);
+        const baseFilePath = path.dirname(absoluteFilePath);
 
         localFiles = localFiles.concat(collectFiles(absoluteFilePath, baseFilePath, options));
     });
 
-    var remoteFiles = [];
+    let remoteFiles = [];
 
-    var query = safe.JSON.parse(safe.JSON.stringify(gQuery));
+    const query = safe.JSON.parse(safe.JSON.stringify(gQuery));
     query.recursive = true;
 
     superagent.get(gServer + path.join(API, absoluteDestPath)).query(query).end(function (error, result) {
@@ -248,8 +239,8 @@ function put(filePaths, options) {
         }
 
         // we need to find below two lists of files for syncing
-        var newLocalFiles = [];
-        var remoteFilesNotLocalAnymore = [];
+        let newLocalFiles = [];
+        let remoteFilesNotLocalAnymore = [];
 
         // find new local files
         newLocalFiles = localFiles.filter(function (local) {
@@ -275,7 +266,7 @@ function put(filePaths, options) {
         async.eachLimit(remoteFilesNotLocalAnymore, 10, function (remoteFile, callback) {
             console.log(`Removing ${remoteFile.filePath.cyan}`);
 
-            var file = remoteFiles.find(function (f) { return f.filePath === remoteFile.filePath; });
+            const file = remoteFiles.find(function (f) { return f.filePath === remoteFile.filePath; });
             if (!file) return callback(`File not found ${remoteFile.filePath}`);
 
             delOne(file, callback);
@@ -284,7 +275,7 @@ function put(filePaths, options) {
 
             // now upload new files
             async.eachLimit(newLocalFiles, 10, function (filePath, callback) {
-                var file = localFiles.find(function (f) { return path.join(absoluteDestPath, f.filePath) === filePath; });
+                const file = localFiles.find(function (f) { return path.join(absoluteDestPath, f.filePath) === filePath; });
                 if (!file) return callback(`File not found ${filePath}`);
 
                 putOne(file, absoluteDestPath, callback);
@@ -296,3 +287,12 @@ function put(filePaths, options) {
         });
     });
 }
+
+export default {
+    login,
+    logout,
+    config: configure,
+    put,
+    get,
+    del,
+};
