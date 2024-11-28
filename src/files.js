@@ -2,7 +2,6 @@
 
 import fs from 'fs';
 import fsPromises from 'node:fs/promises';
-import util from 'util';
 import path from 'path';
 import safe from 'safetydance';
 import Debug from 'debug';
@@ -23,8 +22,8 @@ export default {
 
 function boolLike(arg) {
     if (!arg) return false;
-    if (util.isNumber(arg)) return !!arg;
-    if (util.isString(arg) && arg.toLowerCase() === 'false') return false;
+    if (typeof arg === 'number') return !!arg;
+    if (typeof arg === 'string' && arg.toLowerCase() === 'false') return false;
 
     return true;
 }

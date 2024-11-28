@@ -38,7 +38,7 @@ const sessionStore = new session.MemoryStore();
 // Ensure the root folder exists
 fs.mkdirSync(ROOT_FOLDER, { recursive: true });
 
-var config = {
+let config = {
     folderListingEnabled: false,
     sortFoldersFirst: true,
     title: '',
@@ -52,7 +52,7 @@ function setServMiddlewareHeaders (res, path) {
 }
 
 // we will regenerate this if settings change
-var staticServMiddleware = express.static(ROOT_FOLDER, { index: 'index.html', setHeaders: setServMiddlewareHeaders });
+let staticServMiddleware = express.static(ROOT_FOLDER, { index: 'index.html', setHeaders: setServMiddlewareHeaders });
 
 function getSettings(req, res) {
     res.send({
@@ -193,7 +193,7 @@ try {
     console.log(`Using config file at: ${CONFIG_FILE}`);
     config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
 } catch (e) {
-    if (e.code === 'MODULE_NOT_FOUND') console.log(`Config file ${CONFIG_FILE} not found`);
+    if (e.code === 'ENOENT') console.log(`Config file ${CONFIG_FILE} not found`);
     else console.log(`Cannot load config file ${CONFIG_FILE}`, e);
 }
 
@@ -207,13 +207,13 @@ if (typeof config.accessPassword !== 'string') config.accessPassword = '';
 mime(express);
 
 // Setup the express server and routes
-var app = express();
-var router = new express.Router();
+const app = express();
+const router = new express.Router();
 
 // needed for secure cookies
 app.enable('trust proxy');
 
-var webdavServer = new webdav.v2.WebDAVServer({
+const webdavServer = new webdav.v2.WebDAVServer({
     requireAuthentification: true,
     httpAuthentication: new webdav.v2.HTTPBasicAuthentication(new auth.WebdavUserManager(), 'Cloudron Surfer')
 });
@@ -271,7 +271,7 @@ app.use('/', function (req, res, next) {
         if (error) return next(error);
 
         // use cached PUBLIC_NOSCRIPT_EJS when deployed otherwise reread from disk for development
-        var out = process.env.CLOUDRON ? PUBLIC_HTML : fs.readFileSync(import.meta.dirname + '/dist/public.html', 'utf8');;
+        let out = process.env.CLOUDRON ? PUBLIC_HTML : fs.readFileSync(import.meta.dirname + '/dist/public.html', 'utf8');;
         out = out.replace('<noscript></noscript>', `<noscript>${ejs.render(PUBLIC_NOSCRIPT_EJS, result, {})}</noscript>`);
         out = out.replace('<withscript></withscript>', `<script>window.surfer = { entries: ${JSON.stringify(result.entries)}, stat: ${JSON.stringify(result.stat)} };</script>`);
 
@@ -280,9 +280,9 @@ app.use('/', function (req, res, next) {
 });
 app.use(lastMile());
 
-var server = app.listen(3000, function () {
-    var host = server.address().address;
-    var port = server.address().port;
+const server = app.listen(3000, function () {
+    const host = server.address().address;
+    const port = server.address().port;
 
     console.log(`Base path: ${ROOT_FOLDER}`);
     console.log();
