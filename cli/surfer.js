@@ -5,10 +5,13 @@
 import { Command } from 'commander';
 import actions from './actions.js';
 import fs from 'fs';
+import path from 'path';
+import url from 'url';
 
 const program = new Command();
 
-program.version(JSON.parse(fs.readFileSync(import.meta.dirname + '/../package.json', 'utf8')).version);
+// `path.dirname(url.fileURLToPath(import.meta.url))` can be replaced with `import.meta.dirname` to only support node > 20
+program.version(JSON.parse(fs.readFileSync(path.dirname(url.fileURLToPath(import.meta.url)) + '/../package.json', 'utf8')).version);
 
 program.command('login')
     .description('Unsupported')
