@@ -185,6 +185,13 @@ function post(req, res, next) {
                 next(new HttpSuccess(201, {}));
             });
         } else if (!result || result.isFile()) {
+            // ensure directory
+            try {
+                fs.mkdirSync(path.dirname(absoluteFilePath), { recursive: true });
+            } catch (error) {
+                return next(new HttpError(500, error));
+            }
+
             return fs.copyFile(req.files.file.path, absoluteFilePath, function (error) {
                 if (error) return next(new HttpError(500, error));
 
