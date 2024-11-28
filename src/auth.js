@@ -44,6 +44,7 @@ const tokenStore = {
 try {
     console.log(`Using tokenstore file at: ${TOKENSTORE_FILE}`);
     tokenStore.data = JSON.parse(fs.readFileSync(TOKENSTORE_FILE, 'utf-8'));
+// eslint-disable-next-line no-unused-vars
 } catch (e) {
     // start with empty token store
 }
@@ -82,7 +83,7 @@ function oidcLogin(req, res) {
 const oidcAuth = oidc.requiresAuth();
 
 function verifyToken(req, res, next) {
-    var accessToken = req.query.access_token || req.body.accessToken;
+    const accessToken = req.query.access_token || req.body.accessToken;
 
     tokenStore.get(accessToken, function (error, user) {
         if (error) return next(new HttpError(401, 'Invalid Access Token'));
@@ -142,7 +143,7 @@ function WebdavUserManager() {
 
 WebdavUserManager.prototype.getDefaultUser = function (callback) {
     // this is only a dummy user, since we always require authentication
-    var user = {
+    const user = {
         username: 'DefaultUser',
         password: null,
         isAdministrator: false,

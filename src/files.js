@@ -40,7 +40,7 @@ function isProtected(targetPath) {
 }
 
 function getAbsolutePath(filePath) {
-    var absoluteFilePath = path.resolve(path.join(gBasePath, filePath));
+    const absoluteFilePath = path.resolve(path.join(gBasePath, filePath));
 
     if (absoluteFilePath.indexOf(gBasePath) !== 0) return null;
     return absoluteFilePath;
@@ -56,11 +56,11 @@ function collectFiles(folderPath, recursive, callback) {
     fs.readdir(folderPath, function (error, list) {
         if (error) return callback(error);
 
-        var pending = list.length;
+        let pending = list.length;
         if (!pending) return callback(null, results);
 
         list.forEach(function (file) {
-            var filePath = path.resolve(folderPath, file);
+            const filePath = path.resolve(folderPath, file);
 
             fs.stat(filePath, function (error, stat) {
                 if (error) return callback(error);
@@ -94,7 +94,7 @@ function collectFiles(folderPath, recursive, callback) {
 
 // TODO maybe unify getFolderListing() and get()
 function getFolderListing(filePath, callback) {
-    var absoluteFilePath = getAbsolutePath(filePath);
+    const absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath) return callback(new HttpError(403, 'Path not allowed'));
 
     fs.stat(absoluteFilePath, function (error, stat) {
@@ -107,7 +107,7 @@ function getFolderListing(filePath, callback) {
         collectFiles(absoluteFilePath, false /* recursive */, function (error, results) {
             if (error) return callback(new HttpError(500, error));
 
-            var tmp = {
+            const tmp = {
                 isDirectory: true,
                 isFile: false,
                 atime: stat.atime,
@@ -142,7 +142,7 @@ function get(req, res, next) {
         collectFiles(absoluteFilePath, recursive, function (error, results) {
             if (error) return next(new HttpError(500, error));
 
-            var tmp = {
+            const tmp = {
                 isDirectory: true,
                 isFile: false,
                 atime: stat.atime,

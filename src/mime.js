@@ -26,7 +26,7 @@ export default function (express) {
     try {
         glob2 = fs.readFileSync(GLOBS2_FILE, 'utf8');
     } catch (e) {
-        console.log('Failed to load globs2 file. Using built-in media-types.');
+        console.log('Failed to load globs2 file. Using built-in media-types.', e);
         return;
     }
 

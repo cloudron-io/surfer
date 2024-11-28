@@ -22,6 +22,7 @@ export default function multipart(options) {
         req.fields = { };
         req.files = { };
 
+        // eslint-disable-next-line no-unused-vars
         form.parse(req, function (err, fields, files) {
             if (err) {
                 if (!res.headersSent) res.status(400).send('Error parsing request');
