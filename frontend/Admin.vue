@@ -4,7 +4,7 @@
   <input type="file" ref="uploadFavicon" style="display: none"/>
 
   <!-- This is re-used and thus global -->
-  <InputDialog ref="inputDialog" />
+  <InputDialog ref="inputDialog"/>
   <Notification/>
 
   <div class="main-container" v-show="ready">

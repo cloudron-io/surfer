@@ -8,7 +8,9 @@
     "email": "johannes@nebulon.de"
   },
   "scripts": {
-    "test": "./node_modules/mocha/bin/_mocha --bail -R spec ./test/test.js"
+    "test": "./node_modules/mocha/bin/_mocha --bail -R spec ./test/test.js",
+    "build": "cd frontend && ../node_modules/.bin/vite build",
+    "watch": "cd frontend && ../node_modules/.bin/vite watch"
   },
   "main": "server.js",
   "dependencies": {
@@ -34,7 +36,12 @@
     "webdav-server": "^2.6.2"
   },
   "devDependencies": {
-    "eslint": "^9.15.0"
+    "@vitejs/plugin-vue": "^5.2.1",
+    "eslint": "^9.15.0",
+    "eslint-plugin-vue": "^9.31.0",
+    "filesize": "^10.1.6",
+    "vite": "^6.0.1",
+    "vue": "^3.5.13"
   },
   "bin": {
     "surfer": "./cli/surfer.js"
@@ -44,7 +51,6 @@
     "server"
   ],
   "license": "MIT",
-  "readme": "ERROR: No README data found!",
   "repository": {
     "type": "git",
     "url": "https://git.cloudron.io/cloudron/surfer.git"
