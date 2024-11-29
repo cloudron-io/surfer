@@ -302,3 +302,8 @@
 * Replace various old code with nodejs built-ins
 * Update dependencies
 
+[6.2.2]
+* Ensure folders if they don't exist on file upload
+* Refactor code to use esm modules
+* Update nodejs
+
