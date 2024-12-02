@@ -307,3 +307,6 @@
 * Refactor code to use esm modules
 * Update nodejs
 
+[6.2.3]
+* Ensure we load the configuration as early as possible to know the custom index document
+

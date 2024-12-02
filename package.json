@@ -1,6 +1,6 @@
 {
   "name": "cloudron-surfer",
-  "version": "6.2.2",
+  "version": "6.2.3",
   "description": "Simple file server cli",
   "type": "module",
   "author": {
