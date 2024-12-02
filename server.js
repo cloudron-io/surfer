@@ -38,13 +38,23 @@ const sessionStore = new session.MemoryStore();
 // Ensure the root folder exists
 fs.mkdirSync(ROOT_FOLDER, { recursive: true });
 
-let config = {
-    folderListingEnabled: false,
-    sortFoldersFirst: true,
-    title: '',
-    accessRestriction: '',
-    accessPassword: ''
-};
+// Load the config file
+let config = {};
+
+try {
+    console.log(`Using config file at: ${CONFIG_FILE}`);
+    config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+} catch (e) {
+    if (e.code === 'ENOENT') console.log(`Config file ${CONFIG_FILE} not found`);
+    else console.log(`Cannot load config file ${CONFIG_FILE}`, e);
+}
+
+if (typeof config.folderListingEnabled !== 'boolean') config.folderListingEnabled = false;
+if (typeof config.sortFoldersFirst !== 'boolean') config.sortFoldersFirst = true;
+if (typeof config.title !== 'string') config.title = 'Surfer';
+if (typeof config.accessRestriction !== 'string') config.accessRestriction = '';
+if (typeof config.accessPassword !== 'string') config.accessPassword = '';
+if (typeof config.index !== 'string') config.index = '';
 
 function setServMiddlewareHeaders (res, path) {
     // handle ?download in query
@@ -52,7 +62,7 @@ function setServMiddlewareHeaders (res, path) {
 }
 
 // we will regenerate this if settings change
-let staticServMiddleware = express.static(ROOT_FOLDER, { index: 'index.html', setHeaders: setServMiddlewareHeaders });
+let staticServMiddleware = express.static(ROOT_FOLDER, { index: config.index || 'index.html', setHeaders: setServMiddlewareHeaders });
 
 function getSettings(req, res) {
     res.send({
@@ -187,21 +197,6 @@ function send404(res) {
 
     res.status(404).sendFile(import.meta.dirname + '/dist/404.html');
 }
-
-// Load the config file
-try {
-    console.log(`Using config file at: ${CONFIG_FILE}`);
-    config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-} catch (e) {
-    if (e.code === 'ENOENT') console.log(`Config file ${CONFIG_FILE} not found`);
-    else console.log(`Cannot load config file ${CONFIG_FILE}`, e);
-}
-
-if (typeof config.folderListingEnabled !== 'boolean') config.folderListingEnabled = false;
-if (typeof config.sortFoldersFirst !== 'boolean') config.sortFoldersFirst = true;
-if (typeof config.title !== 'string') config.title = 'Surfer';
-if (typeof config.accessRestriction !== 'string') config.accessRestriction = '';
-if (typeof config.accessPassword !== 'string') config.accessPassword = '';
 
 // Setup mime-type handling
 mime(express);
