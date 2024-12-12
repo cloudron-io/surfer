@@ -6,10 +6,10 @@ import readlineSync from 'readline-sync';
 import safe from 'safetydance';
 import async from 'async';
 import fs from 'fs';
-import request from 'request';
 import url from 'url';
 import path from 'path';
 import 'colors';
+import { Readable } from 'node:stream';
 
 const API = '/api/files/';
 
@@ -38,7 +38,7 @@ function checkConfig(options) {
 
     gQuery = { access_token: options.token || config.accessToken() };
 
-    console.log('Using server %s', gServer.cyan);
+    console.error('Using server %s'.white, gServer.cyan);
 }
 
 function collectFiles(filePath, basePath, options) {
@@ -152,20 +152,21 @@ function logout() {
     exit('Unsupported.'.red + ` Delete the config file at ${config.filePath.bold} instead.`);
 }
 
-function get(filePath, options) {
+async function get(filePath, options) {
     checkConfig(options);
 
     // if no argument provided, fetch root
     filePath = filePath || '/';
 
-    request.get(gServer + path.join(API, encodeURIComponent(filePath)), { qs: gQuery }, function (error, result, body) {
-        if (result && result.statusCode === 401) exit('Invalid token');
-        if (result && result.statusCode === 404) exit('No such file or directory %s', filePath.yellow);
-        if (error) exit(error.message);
+    const url = new URL(gServer + path.join(API, encodeURIComponent(filePath)));
+    url.search = new URLSearchParams(gQuery).toString();
+
+    try {
+        const response = await fetch(url, {});
 
         // 222 indicates directory listing
-        if (result.statusCode === 222) {
-            const files = safe.JSON.parse(body);
+        if (response.status === 222) {
+            const files = await response.json();
             if (!files || files.entries.length === 0) {
                 console.log('Empty directory. Use %s to upload some.', 'surfer put <file>'.yellow);
             } else {
@@ -174,10 +175,16 @@ function get(filePath, options) {
                     console.log('\t %s', entry.isDirectory ? entry.filePath + '/' : entry.filePath);
                 });
             }
+        } else if (response.status === 401) {
+            exit('Invalid token');
+        } else if (response.status === 404) {
+            exit('No such file or directory %s', filePath.yellow);
         } else {
-            process.stdout.write(body);
+            Readable.fromWeb(response.body).pipe(process.stdout);
         }
-    });
+    } catch (error) {
+        exit(error.message);
+    }
 }
 
 function del(filePath, options) {

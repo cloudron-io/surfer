@@ -29,7 +29,6 @@
     "multiparty": "^4.2.3",
     "pankow": "^2.4.0",
     "readline-sync": "^1.4.10",
-    "request": "^2.88.2",
     "safetydance": "^2.4.0",
     "superagent": "^10.1.1",
     "underscore": "^1.13.7",
