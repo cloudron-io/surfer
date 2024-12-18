@@ -12,7 +12,7 @@ ARG SURFER_VERSION=6.2.3
 
 # for release
 RUN curl -L https://git.cloudron.io/apps/surfer/-/archive/v${SURFER_VERSION}/cubby-v${SURFER_VERSION}.tar.gz | tar -xz --strip-components 1 -f - -C . && \
-    npm install
+    npm install && \
     npm run build
 
 COPY start.sh /app/code/
