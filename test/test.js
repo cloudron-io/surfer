@@ -42,7 +42,7 @@ describe('Application life cycle test', function () {
 
     before(function () {
         browser = new Builder().forBrowser('chrome').setChromeOptions(new Options().windowSize({ width: 1280, height: 1024 })).build();
-        execSync('npm install -g cloudron-surfer');
+        execSync('npm install -g cloudron-surfer', { stdio: 'inherit' });
         const prefix = execSync('npm config get prefix', { encoding: 'utf8' });
         CLI = `${prefix}/bin/surfer`;
     });
