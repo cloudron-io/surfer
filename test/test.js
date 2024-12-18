@@ -32,7 +32,7 @@ describe('Application life cycle test', function () {
     const TEST_FILE_NAME_1 = 'test.txt';
     const SPECIAL_FOLDER_NAME_0 = 'Tâm Tình Với Bạn';
     const SPECIAL_FOLDER_NAME_1 = '? ! + #';
-    const CLI = path.join(__dirname, '/../cli/surfer.js');
+    let CLI;
     const USERNAME = process.env.USERNAME;
     const PASSWORD = process.env.PASSWORD;
 
@@ -42,6 +42,9 @@ describe('Application life cycle test', function () {
 
     before(function () {
         browser = new Builder().forBrowser('chrome').setChromeOptions(new Options().windowSize({ width: 1280, height: 1024 })).build();
+        execSync('npm install -g cloudron-surfer');
+        const prefix = execSync('npm config get prefix', { encoding: 'utf8' });
+        CLI = `${prefix}/bin/surfer`;
     });
 
     after(function () {
