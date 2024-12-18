@@ -19,7 +19,7 @@ export OIDC_ISSUER="https://my.nebulon.space"
 export APP_ORIGIN="http://localhost:3000"
 export OIDC_CLIENT_ID="surfer"
 export OIDC_CLIENT_SECRET="secret"
-export OIDC_CALLBACK_PATH="/api/oidc/callback'
+export OIDC_CALLBACK_PATH="/api/oidc/callback"
 export OIDC_LOGOUT_PATH="/api/oidc/logout"
 
 node ./server.js /path/to/staticfolder /path/to/config.json /path/to/favicon.png
