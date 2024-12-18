@@ -54,10 +54,10 @@ function hat(bits) {
 }
 
 const oidcMiddleware = oidc.auth({
-    issuerBaseURL: process.env.CLOUDRON_OIDC_ISSUER,
-    baseURL: process.env.CLOUDRON_APP_ORIGIN,
-    clientID: process.env.CLOUDRON_OIDC_CLIENT_ID,
-    clientSecret: process.env.CLOUDRON_OIDC_CLIENT_SECRET,
+    issuerBaseURL: process.env.OIDC_ISSUER,
+    baseURL: process.env.APP_ORIGIN,
+    clientID: process.env.OIDC_CLIENT_ID,
+    clientSecret: process.env.OIDC_CLIENT_SECRET,
     secret: 'cookie secret',
     authorizationParams: {
         response_type: 'code',
@@ -65,9 +65,9 @@ const oidcMiddleware = oidc.auth({
     },
     authRequired: false,
     routes: {
-        callback: '/api/oidc/callback',
+        callback: process.env.OIDC_CALLBACK_PATH || '/api/oidc/callback',
         login: false,
-        logout: '/api/oidc/logout'
+        logout: process.env.OIDC_LOGOUT_PATH || '/api/oidc/logout'
     }
 });
 
@@ -75,7 +75,7 @@ function oidcLogin(req, res) {
     res.oidc.login({
         returnTo: req.query.returnTo || '/_admin',
         authorizationParams: {
-            redirect_uri: process.env.CLOUDRON_APP_ORIGIN + '/api/oidc/callback',
+            redirect_uri: process.env.APP_ORIGIN + '/api/oidc/callback',
         },
     });
 }
