@@ -44,7 +44,7 @@ describe('Application life cycle test', function () {
         if (!fs.existsSync('./screenshots')) fs.mkdirSync('./screenshots');
 
         execSync('npm install -g cloudron-surfer', { stdio: 'inherit' });
-        const prefix = execSync('npm config get prefix', { encoding: 'utf8' });
+        const prefix = execSync('npm config get prefix', { encoding: 'utf8' }).trim();
         CLI = `${prefix}/bin/surfer`;
         console.log('surfer cli is probably at', CLI);
 
