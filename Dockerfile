@@ -7,12 +7,14 @@ ARG NODE_VERSION=22.11.0
 RUN mkdir -p /usr/local/node-${NODE_VERSION} && curl -L https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz | tar zxf - --strip-components 1 -C /usr/local/node-${NODE_VERSION}
 ENV PATH /usr/local/node-${NODE_VERSION}/bin:$PATH
 
-COPY frontend/ /app/code/frontend/
-COPY src/ /app/code/src/
-COPY server.js package.json package-lock.json /app/code/
+# renovate: datasource=gitlab-tags depName=apps/surfer versioning=semver extractVersion=^v(?<version>.+)$ registryUrl=https://git.cloudron.io
+ARG SURFER_VERSION=6.2.3
 
-RUN npm install
-RUN npm run build
+# for release
+RUN curl -L https://git.cloudron.io/apps/surfer/-/archive/v${SURFER_VERSION}/cubby-v${SURFER_VERSION}.tar.gz | tar -xz --strip-components 1 -f - -C . && \
+    npm install
+    npm run build
 
-ADD start.sh /app/code/
+COPY start.sh /app/code/
+
 CMD [ "/app/code/start.sh" ]
