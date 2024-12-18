@@ -1,17 +1,14 @@
 #!/usr/bin/env node
 
-/* jshint esversion: 8 */
-/* global describe */
-/* global before */
-/* global after */
-/* global it */
+/* global it, xit, describe, before, after, afterEach */
 
 'use strict';
 
 require('chromedriver');
 
-var execSync = require('child_process').execSync,
+const execSync = require('child_process').execSync,
     expect = require('expect.js'),
+    fs = require('fs'),
     path = require('path'),
     superagent = require('superagent'),
     { Builder, By, until } = require('selenium-webdriver'),
@@ -26,7 +23,7 @@ describe('Application life cycle test', function () {
     this.timeout(0);
 
     const EXEC_ARGS = { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' };
-    const LOCATION = 'test';
+    const LOCATION = process.env.LOCATION || 'test';
     const TEST_TIMEOUT = 10000;
     const TEST_FILE_NAME_0 = 'index.html';
     const TEST_FILE_NAME_1 = 'test.txt';
@@ -41,15 +38,31 @@ describe('Application life cycle test', function () {
     var gApiToken;
 
     before(function () {
-        browser = new Builder().forBrowser('chrome').setChromeOptions(new Options().windowSize({ width: 1280, height: 1024 })).build();
+        const chromeOptions = new Options().windowSize({ width: 1280, height: 1024 });
+        if (process.env.CI) chromeOptions.addArguments('no-sandbox', 'disable-dev-shm-usage', 'headless');
+        browser = new Builder().forBrowser('chrome').setChromeOptions(chromeOptions).build();
+        if (!fs.existsSync('./screenshots')) fs.mkdirSync('./screenshots');
+
         execSync('npm install -g cloudron-surfer', { stdio: 'inherit' });
         const prefix = execSync('npm config get prefix', { encoding: 'utf8' });
         CLI = `${prefix}/bin/surfer`;
         console.log('surfer cli is probably at', CLI);
+
     });
 
     after(function () {
         browser.quit();
+    });
+
+    afterEach(async function () {
+        if (!process.env.CI || !app) return;
+
+        const currentUrl = await browser.getCurrentUrl();
+        if (!currentUrl.includes(app.domain)) return;
+        expect(this.currentTest.title).to.be.a('string');
+
+        const screenshotData = await browser.takeScreenshot();
+        fs.writeFileSync(`./screenshots/${new Date().getTime()}-${this.currentTest.title.replaceAll(' ', '_')}.png`, screenshotData, 'base64');
     });
 
     function getAppInfo() {
