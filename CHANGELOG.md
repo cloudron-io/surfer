@@ -310,3 +310,6 @@
 [6.2.3]
 * Ensure we load the configuration as early as possible to know the custom index document
 
+[6.3.0]
+* Packaging code is now split off into a separate repo at https://git.cloudron/packages/surfer-app
+
