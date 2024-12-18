@@ -310,3 +310,6 @@
 [6.2.3]
 * Ensure we load the configuration as early as possible to know the custom index document
 
+[6.3.0]
+* Update surfer to 6.3.0
+
