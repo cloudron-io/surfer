@@ -14,7 +14,7 @@ ARG SURFER_VERSION=6.2.3
 RUN curl -L https://git.cloudron.io/apps/surfer/-/archive/v${SURFER_VERSION}/surfer-v${SURFER_VERSION}.tar.gz | tar -xz --strip-components 1 -f - -C . && \
     npm install && \
     npm run build && \
-    npm cache clean
+    npm cache clean --force
 
 COPY start.sh /app/code/
 
