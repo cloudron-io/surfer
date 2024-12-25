@@ -6,6 +6,7 @@ export NODE_ENV=production
 export TOKENSTORE_FILE=/app/data/tokens.json
 
 # Configure OIDC
+# CLOUDRON_OIDC_PROVIDER_NAME is not supported
 export OIDC_ISSUER=$CLOUDRON_OIDC_ISSUER
 export APP_ORIGIN=$CLOUDRON_APP_ORIGIN
 export OIDC_CLIENT_ID=$CLOUDRON_OIDC_CLIENT_ID
