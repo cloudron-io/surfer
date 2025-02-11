@@ -313,3 +313,7 @@
 [6.3.0]
 * Update surfer to 6.3.0
 
+[6.3.1]
+* Update surfer to 6.3.1
+* Enable admin login on alias domains
+
