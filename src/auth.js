@@ -53,9 +53,11 @@ function hat(bits) {
     return crypto.randomBytes(bits / 8).toString('hex');
 }
 
-const oidcMiddleware = oidc.auth({
+
+
+const config = {
     issuerBaseURL: process.env.OIDC_ISSUER,
-    baseURL: process.env.APP_ORIGIN,
+    // baseURL: process.env.APP_ORIGIN,
     clientID: process.env.OIDC_CLIENT_ID,
     clientSecret: process.env.OIDC_CLIENT_SECRET,
     secret: 'cookie secret',
@@ -69,13 +71,41 @@ const oidcMiddleware = oidc.auth({
         login: false,
         logout: process.env.OIDC_LOGOUT_PATH || '/api/oidc/logout'
     }
-});
+};
+
+// dynamic config to be able to login on alias domains
+const oidcMiddleware = function (req, res, next) {
+    const host = req.headers.host;
+    const protocol = req.protocol === 'https' ? 'https' : 'http';
+    config.baseURL = `${protocol}://${host}`;
+
+    return oidc.auth(config)(req, res, next);
+}
+
+// const oidcMiddleware = oidc.auth({
+//     issuerBaseURL: process.env.OIDC_ISSUER,
+//     // baseURL: process.env.APP_ORIGIN,
+//     clientID: process.env.OIDC_CLIENT_ID,
+//     clientSecret: process.env.OIDC_CLIENT_SECRET,
+//     secret: 'cookie secret',
+//     authorizationParams: {
+//         response_type: 'code',
+//         scope: 'openid profile email'
+//     },
+//     authRequired: false,
+//     routes: {
+//         callback: process.env.OIDC_CALLBACK_PATH || '/api/oidc/callback',
+//         login: false,
+//         logout: process.env.OIDC_LOGOUT_PATH || '/api/oidc/logout'
+//     }
+// });
+
 
 function oidcLogin(req, res) {
     res.oidc.login({
         returnTo: req.query.returnTo || '/_admin',
         authorizationParams: {
-            redirect_uri: process.env.APP_ORIGIN + '/api/oidc/callback',
+            redirect_uri: `https://${req.hostname}/api/oidc/callback`,
         },
     });
 }
