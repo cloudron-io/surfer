@@ -53,8 +53,6 @@ function hat(bits) {
     return crypto.randomBytes(bits / 8).toString('hex');
 }
 
-
-
 const config = {
     issuerBaseURL: process.env.OIDC_ISSUER,
     // baseURL: process.env.APP_ORIGIN,
@@ -80,26 +78,7 @@ const oidcMiddleware = function (req, res, next) {
     config.baseURL = `${protocol}://${host}`;
 
     return oidc.auth(config)(req, res, next);
-}
-
-// const oidcMiddleware = oidc.auth({
-//     issuerBaseURL: process.env.OIDC_ISSUER,
-//     // baseURL: process.env.APP_ORIGIN,
-//     clientID: process.env.OIDC_CLIENT_ID,
-//     clientSecret: process.env.OIDC_CLIENT_SECRET,
-//     secret: 'cookie secret',
-//     authorizationParams: {
-//         response_type: 'code',
-//         scope: 'openid profile email'
-//     },
-//     authRequired: false,
-//     routes: {
-//         callback: process.env.OIDC_CALLBACK_PATH || '/api/oidc/callback',
-//         login: false,
-//         logout: process.env.OIDC_LOGOUT_PATH || '/api/oidc/logout'
-//     }
-// });
-
+};
 
 function oidcLogin(req, res) {
     res.oidc.login({
