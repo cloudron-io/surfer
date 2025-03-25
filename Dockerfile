@@ -1,11 +1,7 @@
-FROM cloudron/base:4.2.0@sha256:46da2fffb36353ef714f97ae8e962bd2c212ca091108d768ba473078319a47f4
+FROM cloudron/base:5.0.0@sha256:04fd70dbd8ad6149c19de39e35718e024417c3e01dc9c6637eaf4a41ec4e596c
 
 RUN mkdir -p /app/code
 WORKDIR /app/code
-
-ARG NODE_VERSION=22.11.0
-RUN mkdir -p /usr/local/node-${NODE_VERSION} && curl -L https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz | tar zxf - --strip-components 1 -C /usr/local/node-${NODE_VERSION}
-ENV PATH /usr/local/node-${NODE_VERSION}/bin:$PATH
 
 # renovate: datasource=gitlab-tags depName=apps/surfer versioning=semver extractVersion=^v(?<version>.+)$ registryUrl=https://git.cloudron.io
 ARG SURFER_VERSION=6.3.1
