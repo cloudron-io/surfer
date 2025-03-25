@@ -317,3 +317,6 @@
 * Update surfer to 6.3.1
 * Enable admin login on alias domains
 
+[6.4.0]
+* Update base image to 5.0.0
+
