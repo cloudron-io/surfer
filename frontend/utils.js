@@ -54,7 +54,7 @@ function download(entry) {
 }
 
 const mimeTypes = {
-    images: [ '.png', '.jpg', '.jpeg', '.tiff', '.gif' ],
+    images: [ '.png', '.jpg', '.jpeg', '.tiff', '.gif', '.webp' ],
     text: [ '.txt', '.md' ],
     pdf: [ '.pdf' ],
     html: [ '.html', '.htm', '.php' ],
