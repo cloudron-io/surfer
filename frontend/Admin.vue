@@ -15,10 +15,12 @@
         </template>
 
         <template #right>
-          <Button tool icon="fa-solid fa-file-arrow-up" @click="onUpload"><span class="pankow-no-mobile">Upload </span>File</Button>
-          <Button tool icon="fa-solid fa-upload" @click="onUploadFolder"><span class="pankow-no-mobile">Upload </span>Folder</Button>
-          <Button tool icon="fa-solid fa-plus" success @click="openNewFolderDialog"><span class="pankow-no-mobile">New </span>Folder</Button>
-          <Button icon="fa-solid fa-ellipsis" tool outline :menu="mainMenu" id="burgerMenuButton" :show-dropdown="false"/>
+          <div style="display: flex; gap: 6px">
+            <Button tool icon="fa-solid fa-file-arrow-up" @click="onUpload"><span class="pankow-no-mobile">Upload </span>File</Button>
+            <Button tool icon="fa-solid fa-upload" @click="onUploadFolder"><span class="pankow-no-mobile">Upload </span>Folder</Button>
+            <Button tool icon="fa-solid fa-plus" success @click="openNewFolderDialog"><span class="pankow-no-mobile">New </span>Folder</Button>
+            <Button icon="fa-solid fa-ellipsis" tool outline :menu="mainMenu" id="burgerMenuButton" :show-dropdown="false"/>
+          </div>
         </template>
       </TopBar>
     </div>
@@ -349,7 +351,7 @@ export default {
       await this.initWithToken(localStorage.accessToken);
     },
     async logout() {
-      await fetcher.del('/api/tokens/' + localStorage.accessToken, { access_token: localStorage.accessToken });
+      await fetcher.del('/api/tokens/' + localStorage.accessToken, {}, { access_token: localStorage.accessToken });
       this.username = '';
       delete localStorage.accessToken;
       window.location.href = '/api/oidc/logout';
@@ -536,7 +538,7 @@ export default {
       await fetcher.put('/api/settings', data, query);
 
       if (this.settingsDialog.faviconFile === 'reset') {
-        await fetcher.delete('/api/favicon', query);
+        await fetcher.delete('/api/favicon', {}, query);
       } else if (this.settingsDialog.faviconFile) {
         const formData = new FormData();
         formData.append('file', this.settingsDialog.faviconFile);
@@ -581,7 +583,7 @@ export default {
       const path = encode(sanitize(this.path + '/' + entry.fileName));
 
       try {
-        const result = await fetcher.del(`/api/files${path}`, { access_token: localStorage.accessToken, recursive: true });
+        const result = await fetcher.del(`/api/files${path}`, {}, { access_token: localStorage.accessToken, recursive: true });
         if (result.status === 401) return this.logout();
         if (result.status !== 200) return this.error('Error deleting file');
       } catch (error) {
@@ -646,7 +648,7 @@ export default {
       if (!yes) return;
 
       try {
-        await fetcher.delete(`/api/tokens/${token}`, { access_token: localStorage.accessToken });
+        await fetcher.delete(`/api/tokens/${token}`, {}, { access_token: localStorage.accessToken });
       } catch (error) {
         return this.error(error.message);
       }
