@@ -16,7 +16,7 @@
   "dependencies": {
     "async": "^3.2.6",
     "colors": "1.4.0",
-    "commander": "^12.1.0",
+    "commander": "^13.1.0",
     "compression": "^1.8.0",
     "connect-lastmile": "^2.2.0",
     "content-disposition": "^0.5.4",
