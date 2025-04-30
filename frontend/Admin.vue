@@ -60,7 +60,7 @@
         <label>Favicon</label>
         <img ref="faviconImage" :src="'/api/favicon?' + Date.now()" width="64" height="64" style="margin-top: 4px;"/>
       </div>
-      <div>
+      <div style="display: flex; gap: 6px">
         <Button icon="fa-solid fa-upload" @click="onUploadFavicon">Upload Favicon</Button>
         <Button outline icon="fa-solid fa-rotate-left" @click="onResetFavicon">Reset Favicon</Button>
       </div>
@@ -80,8 +80,8 @@
     <div>
       <h3>Access</h3>
       <p>This controls how the public folder listing or any served up site can be accessed.</p>
-      <Radiobutton v-model="settingsDialog.accessRestriction" value="" label="Public (everyone)" /><br/>
-      <Radiobutton v-model="settingsDialog.accessRestriction" value="password" label="Password restricted"/><br/>
+      <Radiobutton v-model="settingsDialog.accessRestriction" value="" label="Public (everyone)" />
+      <Radiobutton v-model="settingsDialog.accessRestriction" value="password" label="Password restricted"/>
       <div v-show="settingsDialog.accessRestriction === 'password'">
         <PasswordInput v-model="settingsDialog.accessPassword" :required="settingsDialog.accessRestriction === 'password'"/>
         <small>Changing the password will require every user to re-login.</small>
@@ -116,7 +116,7 @@
       </h3>
       <div v-for="accessToken in accessTokens" :key="accessToken.value">
         <span @click="onCopyAccessToken(accessToken.value)" style="cursor: copy; font-family: monospace;">{{ accessToken.value }}</span>
-        <Button primary tool plain icon="fa-regular fa-copy" v-tooltip="'Copy Token to Clipboard'" @click="onCopyAccessToken(accessToken.value)"/>
+        <Button style="margin: 0 6px" primary tool plain icon="fa-regular fa-copy" v-tooltip="'Copy Token to Clipboard'" @click="onCopyAccessToken(accessToken.value)"/>
         <Button danger tool plain icon="fa-solid fa-trash" v-tooltip="'Revoke Token'" @click="onDeleteAccessToken(accessToken.value)"/>
       </div>
     </div>

@@ -284,6 +284,8 @@ export default {
 }
 
 .action-buttons {
+  display: flex;
+  gap: 6px;
   visibility: hidden;
 }
 

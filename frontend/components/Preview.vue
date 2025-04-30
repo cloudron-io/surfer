@@ -120,6 +120,8 @@ export default {
 }
 
 .actions {
+  display: flex;
+  gap: 6px;
   text-align: center;
   padding: 20px;
 }

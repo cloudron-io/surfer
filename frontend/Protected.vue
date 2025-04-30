@@ -2,7 +2,7 @@
   <div class="login-container" v-show="ready">
     <h1>Login to {{ settings.title }}</h1>
     <form @submit="onLogin" @submit.prevent v-show="settings.accessRestriction === 'password'">
-      <div>
+      <div style="margin-bottom: 10px;">
         <label for="passwordInput">Password</label>
         <PasswordInput id="passwordInput" :feedback="false" v-model="password" :class="{ 'has-error': error }"/>
         <small v-show="error" :class="{ 'has-error': error }">Wrong password</small>
