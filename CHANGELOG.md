@@ -320,3 +320,7 @@
 [6.4.0]
 * Update base image to 5.0.0
 
+[6.4.1]
+* Update surfer to 6.3.2
+* Correctly handle .webp files
+
