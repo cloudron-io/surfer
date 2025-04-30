@@ -126,7 +126,7 @@ function getFolderListing(filePath, callback) {
 
 function get(req, res, next) {
     const recursive = boolLike(req.query.recursive);
-    const filePath = req.params[0];
+    const filePath = req.params.path;
 
     const absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath) return next(new HttpError(403, 'Path not allowed'));
@@ -160,7 +160,7 @@ function get(req, res, next) {
 }
 
 function post(req, res, next) {
-    const filePath = req.params[0];
+    const filePath = req.params.path;
     const isDirectory = boolLike(req.query.directory);
 
     if (!(req.files && req.files.file) && !isDirectory) return next(new HttpError(400, 'missing file or directory'));
@@ -214,7 +214,7 @@ function post(req, res, next) {
 }
 
 function put(req, res, next) {
-    const oldFilePath = req.params[0];
+    const oldFilePath = req.params.path;
 
     if (!req.body || !req.body.newFilePath) return next(new HttpError(400, 'missing newFilePath'));
 
@@ -238,7 +238,7 @@ function put(req, res, next) {
 }
 
 function del(req, res, next) {
-    const filePath = req.params[0];
+    const filePath = req.params.path;
     const recursive = boolLike(req.query.recursive);
 
     const absoluteFilePath = getAbsolutePath(filePath);

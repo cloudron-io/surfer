@@ -232,10 +232,10 @@ router.get   ('/api/tokens', auth.verifyToken, auth.getTokens);
 router.post  ('/api/tokens', auth.verifyToken, auth.createToken);
 router.delete('/api/tokens/:token', auth.verifyToken, auth.delToken);
 router.get   ('/api/profile', auth.verifyToken, auth.getProfile);
-router.get   ('/api/files/*', auth.verifyToken, files.get);
-router.post  ('/api/files/*', auth.verifyToken, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), files.post);
-router.put   ('/api/files/*', auth.verifyToken, files.put);
-router.delete('/api/files/*', auth.verifyToken, files.del);
+router.get   ('/api/files/*path', auth.verifyToken, files.get);
+router.post  ('/api/files/*path', auth.verifyToken, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), files.post);
+router.put   ('/api/files/*path', auth.verifyToken, files.put);
+router.delete('/api/files/*path', auth.verifyToken, files.del);
 
 app.use('/api/healthcheck', function (req, res) { res.status(200).send(); });
 app.use(morgan('dev'));

@@ -49,7 +49,6 @@ export default function (express) {
         const obj = {};
         obj[type] = types[type];
 
-        express.static.mime.define(obj);
+        // express.static.mime.define(obj);
     });
-
 };
