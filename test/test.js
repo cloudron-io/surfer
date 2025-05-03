@@ -181,12 +181,12 @@ describe('Application life cycle test', function () {
         await waitForElement(By.xpath('//div[@class="pankow-menu-item"][text() = "Access Tokens"]'));
         await browser.findElement(By.xpath('//div[@class="pankow-menu-item"][text() = "Access Tokens"]')).click();
 
-        await waitForElement(By.xpath('//a[text() = "Create New Access Token"]'));
-        await browser.findElement(By.xpath('//a[text() = "Create New Access Token"]')).click();
+        await waitForElement(By.xpath('//*[text() = "Create New Access Token"]'));
+        await browser.findElement(By.xpath('//*[text() = "Create New Access Token"]')).click();
 
         // will easily break
-        await waitForElement(By.xpath('//div[@class = "pankow-dialog-body"]/div/div/span'));
-        gApiToken = await browser.findElement(By.xpath('//div[@class = "pankow-dialog-body"]/div/div/span')).getText();
+        await waitForElement(By.xpath('//span[contains(@style,"font-family: monospace")]'));
+        gApiToken = await browser.findElement(By.xpath('//span[contains(@style,"font-family: monospace")]')).getText();
 
         expect(gApiToken).to.be.a('string');
         expect(gApiToken).to.not.be.empty();
