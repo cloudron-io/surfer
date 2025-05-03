@@ -324,3 +324,7 @@
 * Update surfer to 6.3.2
 * Correctly handle .webp files
 
+[6.4.2]
+* Update surfer to 6.3.3
+* Update dependencies
+
