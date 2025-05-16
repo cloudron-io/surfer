@@ -62,7 +62,7 @@ function setServMiddlewareHeaders (res, path) {
 }
 
 // we will regenerate this if settings change
-let staticServMiddleware = express.static(ROOT_FOLDER, { index: config.index || 'index.html', setHeaders: setServMiddlewareHeaders });
+let staticServMiddleware = express.static(ROOT_FOLDER, { index: config.index || 'index.html', setHeaders: setServMiddlewareHeaders, dotfiles: 'allow' });
 
 function getSettings(req, res) {
     res.send({
@@ -114,7 +114,7 @@ function setSettings(req, res, next) {
     config.title = req.body.title;
     config.index = req.body.index;
 
-    staticServMiddleware = express.static(ROOT_FOLDER, { index: config.index || 'index.html', setHeaders: setServMiddlewareHeaders });
+    staticServMiddleware = express.static(ROOT_FOLDER, { index: config.index || 'index.html', setHeaders: setServMiddlewareHeaders, dotfiles: 'allow' });
 
     // if changed invalidate sessions
     if (config.accessRestriction !== req.body.accessRestriction) clearPasswordProtectionSessions();
