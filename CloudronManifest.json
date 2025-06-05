@@ -22,7 +22,7 @@
   "manifestVersion": 2,
   "multiDomain": true,
   "website": "https://git.cloudron.io/cloudron/surfer",
-  "documentationUrl": "https://docs.cloudron.io/apps/surfer/",
+  "documentationUrl": "https://docs.cloudron.io/packages/surfer/",
   "forumUrl": "https://forum.cloudron.io/category/28/surfer",
   "contactEmail": "support@cloudron.io",
   "icon": "file://logo.png",
