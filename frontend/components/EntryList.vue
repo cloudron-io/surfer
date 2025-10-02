@@ -39,8 +39,8 @@
 
 import { nextTick } from 'vue';
 import { prettyDate, prettyLongDate, prettyFileSize, download, encode } from '../utils.js';
-import { Button, Icon, Spinner, TextInput } from 'pankow';
-import { copyToClipboard } from 'pankow/utils.js';
+import { Button, Icon, Spinner, TextInput } from '@cloudron/pankow';
+import { copyToClipboard } from '@cloudron/pankow/utils.js';
 
 export default {
   name: 'EntryList',

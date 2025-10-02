@@ -24,7 +24,7 @@
 
 <script>
 
-import { Breadcrumb, Button, Notification, TopBar, fetcher } from 'pankow';
+import { Breadcrumb, Button, Notification, TopBar, fetcher } from '@cloudron/pankow';
 import { sanitize, encode, decode, getPreviewUrl, getExtension } from './utils.js';
 
 import EntryList from './components/EntryList.vue';

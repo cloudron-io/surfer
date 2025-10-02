@@ -1,6 +1,6 @@
 import { createApp } from 'vue';
 
-import tooltip from 'pankow/tooltip';
+import tooltip from '@cloudron/pankow/tooltip';
 
 import './style.css';
 

@@ -136,10 +136,10 @@
 
 <script>
 
-import { Breadcrumb, Button, Checkbox, Dialog, InputDialog, Notification, PasswordInput, ProgressBar, Radiobutton, Spinner, TextInput, TopBar, fetcher } from 'pankow';
+import { Breadcrumb, Button, Checkbox, Dialog, InputDialog, Notification, PasswordInput, ProgressBar, Radiobutton, Spinner, TextInput, TopBar, fetcher } from '@cloudron/pankow';
 import { eachLimit, each } from 'async';
 import { sanitize, encode, decode, getPreviewUrl, getExtension } from './utils.js';
-import { copyToClipboard } from 'pankow/utils.js';
+import { copyToClipboard } from '@cloudron/pankow/utils.js';
 
 import EntryList from './components/EntryList.vue';
 import Preview from './components/Preview.vue';

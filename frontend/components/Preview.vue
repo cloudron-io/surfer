@@ -19,9 +19,9 @@
 
 <script>
 
-import { Button, Icon } from 'pankow';
+import { Button, Icon } from '@cloudron/pankow';
 import { download, encode, hasViewer } from '../utils.js';
-import { copyToClipboard } from 'pankow/utils';
+import { copyToClipboard } from '@cloudron/pankow/utils';
 
 export default {
   name: 'Preview',
@@ -122,7 +122,7 @@ export default {
 .actions {
   display: flex;
   gap: 6px;
-  text-align: center;
+  justify-content: center;
   padding: 20px;
 }
 

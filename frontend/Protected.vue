@@ -17,7 +17,7 @@
 
 <script>
 
-import { Button, PasswordInput, fetcher } from 'pankow';
+import { Button, PasswordInput, fetcher } from '@cloudron/pankow';
 
 const ORIGIN = window.location.origin;
 
