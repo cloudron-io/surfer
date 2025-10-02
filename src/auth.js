@@ -84,7 +84,7 @@ function oidcLogin(req, res) {
     res.oidc.login({
         returnTo: req.query.returnTo || '/_admin',
         authorizationParams: {
-            redirect_uri: `https://${req.hostname}/api/oidc/callback`,
+            redirect_uri: (process.env.LOCALDEVELOP_OIDC_ORIGIN || `https://${req.hostname}`) + '/api/oidc/callback',
         },
     });
 }
