@@ -4,7 +4,7 @@ RUN mkdir -p /app/code
 WORKDIR /app/code
 
 # renovate: datasource=gitlab-tags depName=apps/surfer versioning=semver extractVersion=^v(?<version>.+)$ registryUrl=https://git.cloudron.io
-ARG SURFER_VERSION=6.3.4
+ARG SURFER_VERSION=6.3.5
 
 # for release
 RUN curl -L https://git.cloudron.io/apps/surfer/-/archive/v${SURFER_VERSION}/surfer-v${SURFER_VERSION}.tar.gz | tar -xz --strip-components 1 -f - -C . && \
