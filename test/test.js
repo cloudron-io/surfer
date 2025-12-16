@@ -80,8 +80,7 @@ describe('Application life cycle test', function () {
         await browser.manage().deleteAllCookies();
         await browser.get(`https://${app.fqdn}/_admin`);
 
-        // let the redirects happen
-        await browser.sleep(5000);
+        await browser.sleep(1000);
 
         if (!session) {
             await waitForElement(By.id('inputUsername'));
@@ -102,8 +101,8 @@ describe('Application life cycle test', function () {
         // wait for open animation
         await browser.sleep(1000);
 
-        await waitForElement(By.xpath('//div[@class="pankow-menu-item"][text() = "Logout"]'));
-        await browser.findElement(By.xpath('//div[@class="pankow-menu-item"][text() = "Logout"]')).click();
+        await waitForElement(By.xpath('//div[@class="pankow-menu-item"][contains(text(),"Logout")]'));
+        await browser.findElement(By.xpath('//div[@class="pankow-menu-item"][contains(text(),"Logout")]')).click();
 
         // let it happen
         await browser.sleep(2000);
@@ -178,8 +177,8 @@ describe('Application life cycle test', function () {
         // wait for open animation
         await browser.sleep(1000);
 
-        await waitForElement(By.xpath('//div[@class="pankow-menu-item"][text() = "Access Tokens"]'));
-        await browser.findElement(By.xpath('//div[@class="pankow-menu-item"][text() = "Access Tokens"]')).click();
+        await waitForElement(By.xpath('//div[@class="pankow-menu-item"][contains(text(),"Access Tokens")]'));
+        await browser.findElement(By.xpath('//div[@class="pankow-menu-item"][contains(text(),"Access Tokens")]')).click();
 
         await waitForElement(By.xpath('//*[text() = "Create New Access Token"]'));
         await browser.findElement(By.xpath('//*[text() = "Create New Access Token"]')).click();
