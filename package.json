@@ -14,7 +14,7 @@
   },
   "main": "server.js",
   "dependencies": {
-    "@cloudron/pankow": "^3.5.18",
+    "@cloudron/pankow": "^3.6.0",
     "async": "^3.2.6",
     "colors": "1.4.0",
     "commander": "^14.0.2",
@@ -24,13 +24,13 @@
     "debug": "^4.4.3",
     "ejs": "^3.1.10",
     "express": "^5.2.1",
-    "express-openid-connect": "^2.19.3",
+    "express-openid-connect": "^2.19.4",
     "express-session": "^1.18.2",
     "morgan": "^1.10.1",
     "multiparty": "^4.2.3",
     "readline-sync": "^1.4.10",
     "safetydance": "^2.5.1",
-    "superagent": "^10.2.3",
+    "superagent": "^10.3.0",
     "underscore": "^1.13.7",
     "webdav-server": "^2.6.2"
   },
@@ -39,8 +39,8 @@
     "eslint": "^9.39.2",
     "eslint-plugin-vue": "^10.6.2",
     "filesize": "^11.0.13",
-    "vite": "^7.3.0",
-    "vue": "^3.5.25"
+    "vite": "^7.3.1",
+    "vue": "^3.5.26"
   },
   "bin": {
     "surfer": "./cli/surfer.js"
