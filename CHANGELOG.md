@@ -340,3 +340,7 @@
 * Improve 404 page
 * Update dependencies
 
+[6.4.6]
+* Update surfer to 6.4.0
+* Fix breadcrumbs in public folder listing
+
