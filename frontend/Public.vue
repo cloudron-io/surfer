@@ -45,7 +45,7 @@ function loadDirectory(folderPath) {
   breadcrumbItems.value = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
     return {
       label: e,
-      route: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
+      route: sanitize('/' + a.slice(0, i).join('/') + '/' + e)
     };
   });
 }
