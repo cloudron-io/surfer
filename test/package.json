@@ -3,10 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
-    "chromedriver": "^143.0.1",
+    "chromedriver": "^143.0.4",
     "expect.js": "^0.3.1",
     "mocha": "^11.7.5",
     "selenium-webdriver": "^4.39.0",
-    "superagent": "^10.2.3"
+    "superagent": "^10.3.0"
   }
 }
