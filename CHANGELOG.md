@@ -344,3 +344,7 @@
 * Update surfer to 6.4.0
 * Fix breadcrumbs in public folder listing
 
+[6.4.7]
+* Update surfer to 6.4.1
+* Update frontend and backend dependencies
+
