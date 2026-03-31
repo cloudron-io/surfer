@@ -2,7 +2,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import safe from 'safetydance';
+import safe from '@cloudron/safetydance';
 import _ from 'underscore';
 
 const HOME = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;

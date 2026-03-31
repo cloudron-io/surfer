@@ -29,7 +29,7 @@
     "morgan": "^1.10.1",
     "multiparty": "^4.2.3",
     "readline-sync": "^1.4.10",
-    "safetydance": "^2.5.1",
+    "@cloudron/safetydance": "^3.0.1",
     "superagent": "^10.3.0",
     "underscore": "^1.13.8",
     "webdav-server": "^2.6.2"

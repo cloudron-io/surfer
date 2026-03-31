@@ -3,7 +3,7 @@
 import fs from 'fs';
 import fsPromises from 'node:fs/promises';
 import path from 'path';
-import safe from 'safetydance';
+import safe from '@cloudron/safetydance';
 import Debug from 'debug';
 import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
 
