@@ -5,7 +5,7 @@ WORKDIR /app/code
 
 # SURFER_COMMIT is ignored as we always build from master but this tracks the release sha for renovate
 # renovate: datasource=git-refs packageName=https://git.cloudron.io/apps/surfer branch=master
-ARG SURFER_COMMIT=ccc03a60bb26c050dba038039b660fd7d822ecb6
+ARG SURFER_COMMIT=b11c7d411ea5415b7430bb5ccfa34779e5de0b3c
 
 COPY . /app/code/
 
