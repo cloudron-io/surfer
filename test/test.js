@@ -2,17 +2,14 @@
 
 /* global it, xit, describe, before, after, afterEach */
 
-'use strict';
-
-require('chromedriver');
-
-const execSync = require('child_process').execSync,
-    expect = require('expect.js'),
-    fs = require('fs'),
-    path = require('path'),
-    superagent = require('superagent'),
-    { Builder, By, until } = require('selenium-webdriver'),
-    { Options } = require('selenium-webdriver/chrome');
+import assert from 'node:assert/strict';
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import 'chromedriver';
+import superagent from 'superagent';
+import { Builder, By, until } from 'selenium-webdriver';
+import { Options } from 'selenium-webdriver/chrome.js';
 
 if (!process.env.USERNAME || !process.env.PASSWORD) {
     console.log('USERNAME and PASSWORD env vars need to be set');
@@ -22,7 +19,7 @@ if (!process.env.USERNAME || !process.env.PASSWORD) {
 describe('Application life cycle test', function () {
     this.timeout(0);
 
-    const EXEC_ARGS = { cwd: path.resolve(__dirname, '..'), stdio: 'inherit' };
+    const EXEC_ARGS = { cwd: path.resolve(import.meta.dirname, '..'), stdio: 'inherit' };
     const LOCATION = process.env.LOCATION || 'test';
     const TEST_TIMEOUT = 10000;
     const TEST_FILE_NAME_0 = 'index.html';
@@ -59,7 +56,7 @@ describe('Application life cycle test', function () {
 
         const currentUrl = await browser.getCurrentUrl();
         if (!currentUrl.includes(app.domain)) return;
-        expect(this.currentTest.title).to.be.a('string');
+        assert.strictEqual(typeof this.currentTest.title, 'string');
 
         const screenshotData = await browser.takeScreenshot();
         fs.writeFileSync(`./screenshots/${new Date().getTime()}-${this.currentTest.title.replaceAll(' ', '_')}.png`, screenshotData, 'base64');
@@ -68,7 +65,7 @@ describe('Application life cycle test', function () {
     function getAppInfo() {
         var inspect = JSON.parse(execSync('cloudron inspect'));
         app = inspect.apps.filter(function (a) { return a.location.indexOf(LOCATION) === 0; })[0];
-        expect(app).to.be.an('object');
+        assert.ok(app && typeof app === 'object');
     }
 
     async function waitForElement(elem) {
@@ -128,9 +125,9 @@ describe('Application life cycle test', function () {
 
     function checkFileIsGone(name, done) {
         superagent.get(`https://${app.fqdn}/${name}`).end(function (error, result) {
-            expect(error).to.be.an('object');
-            expect(error.response.status).to.equal(404);
-            expect(result).to.be.an('object');
+            assert.ok(error && typeof error === 'object');
+            assert.strictEqual(error.response.status, 404);
+            assert.ok(result && typeof result === 'object');
             done();
         });
     }
@@ -138,17 +135,17 @@ describe('Application life cycle test', function () {
     async function checkFileInFolder() {
         const encodedSpecialFilepath = `/testfiles/%3F%20!%20%2B%20%23folder/Fancy%20-%20%2B!%22%23%24%26'()*%2B%2C%3A%3B%3D%3F%40%20-%20Filename`;
         const result = await superagent.get(`https://${app.fqdn}${encodedSpecialFilepath}`);
-        expect(result.statusCode).to.equal(200);
+        assert.strictEqual(result.statusCode, 200);
     }
 
     async function createSpecialFolders() {
         const res0 = await superagent.post(`https://${app.fqdn}/api/files/${encodeURIComponent(SPECIAL_FOLDER_NAME_0)}`)
             .query({ access_token: gApiToken, directory: true }).send({});
-        expect(res0.statusCode).to.equal(201);
+        assert.strictEqual(res0.statusCode, 201);
 
         const res1 = await superagent.post(`https://${app.fqdn}/api/files/${encodeURIComponent(SPECIAL_FOLDER_NAME_0)}/${encodeURIComponent(SPECIAL_FOLDER_NAME_1)}`)
             .query({ access_token: gApiToken, directory: true });
-        expect(res1.statusCode).to.equal(201);
+        assert.strictEqual(res1.statusCode, 201);
     }
 
     async function checkFilesInSpecialFolder() {
@@ -161,7 +158,7 @@ describe('Application life cycle test', function () {
         const res0 = await superagent.put(`https://${app.fqdn}/api/settings`)
             .query({ access_token: gApiToken })
             .send({"folderListingEnabled":true,"sortFoldersFirst":true,"title":"Surfer","index":"","accessRestriction":""});
-        expect(res0.statusCode).to.equal(201);
+        assert.strictEqual(res0.statusCode, 201);
     }
 
     function cliLogin() {
@@ -187,36 +184,36 @@ describe('Application life cycle test', function () {
         await waitForElement(By.xpath('//span[contains(@style,"font-family: monospace")]'));
         gApiToken = await browser.findElement(By.xpath('//span[contains(@style,"font-family: monospace")]')).getText();
 
-        expect(gApiToken).to.be.a('string');
-        expect(gApiToken).to.not.be.empty();
+        assert.strictEqual(typeof gApiToken, 'string');
+        assert.ok(gApiToken.length > 0);
     }
 
     function uploadFile(name, target = '/') {
         // File upload can't be tested with selenium, since the file input is not visible and thus can't be interacted with :-(
-        execSync(`${CLI} put ${path.join(__dirname, name)} ${target}`,  { stdio: 'inherit' } );
+        execSync(`${CLI} put ${path.join(import.meta.dirname, name)} ${target}`,  { stdio: 'inherit' } );
     }
 
     function uploadFileWithToken(name) {
         // File upload can't be tested with selenium, since the file input is not visible and thus can't be interacted with :-(
-        execSync(`${CLI} put --token ${gApiToken} ${path.join(__dirname, name)} /`,  { stdio: 'inherit' } );
+        execSync(`${CLI} put --token ${gApiToken} ${path.join(import.meta.dirname, name)} /`,  { stdio: 'inherit' } );
     }
 
     function uploadFolder() {
-        execSync(`${CLI} put ${path.join(__dirname, 'testfiles')} /`,  { stdio: 'inherit' } );
+        execSync(`${CLI} put ${path.join(import.meta.dirname, 'testfiles')} /`,  { stdio: 'inherit' } );
     }
 
     function checkFolderExists() {
         var result;
         result = execSync(`${CLI} get`).toString();
-        expect(result.indexOf('test/')).to.not.equal(-1);
+        assert.notStrictEqual(result.indexOf('test/'), -1);
         result = execSync(`${CLI} get test/`).toString();
-        expect(result.indexOf('04 - Wormlust - Sex Augu, Tólf Stjörnur.flac')).to.not.equal(-1);
+        assert.notStrictEqual(result.indexOf('04 - Wormlust - Sex Augu, Tólf Stjörnur.flac'), -1);
     }
 
     function checkFolderIsGone() {
         var result;
         result = execSync(`${CLI} get`).toString();
-        expect(result.indexOf('test/')).to.equal(-1);
+        assert.strictEqual(result.indexOf('test/'), -1);
     }
 
     xit('build app', function () { execSync('cloudron build', EXEC_ARGS); });
