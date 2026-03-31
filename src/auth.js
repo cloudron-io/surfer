@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import oidc from 'express-openid-connect';
-import { HttpSuccess, HttpError } from 'connect-lastmile';
+import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
 import webdavServer from 'webdav-server';
 
 const webdavErrors = webdavServer.v2.Errors;

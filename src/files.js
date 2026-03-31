@@ -5,7 +5,7 @@ import fsPromises from 'node:fs/promises';
 import path from 'path';
 import safe from 'safetydance';
 import Debug from 'debug';
-import { HttpSuccess, HttpError } from 'connect-lastmile';
+import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
 
 const debug = Debug('files');
 
