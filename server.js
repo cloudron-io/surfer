@@ -275,11 +275,8 @@ app.use('/', function (req, res, next) {
 });
 app.use(lastMile());
 
-const server = app.listen(3000, function () {
-    const host = server.address().address;
-    const port = server.address().port;
-
+app.listen(3000, function () {
     console.log(`Base path: ${ROOT_FOLDER}`);
     console.log();
-    console.log(`Listening on http://${host}:${port}`);
+    console.log('Listening on http://0.0.0.0:3000');
 });
