@@ -1,0 +1,12 @@
+.git
+.gitignore
+.dockerignore
+node_modules
+screenshots
+test
+data
+dist
+files
+CloudronManifest.json
+CloudronVersions.json
+.env.sh
