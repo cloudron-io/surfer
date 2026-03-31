@@ -311,5 +311,36 @@
 * Ensure we load the configuration as early as possible to know the custom index document
 
 [6.3.0]
-* Packaging code is now split off into a separate repo at https://git.cloudron/packages/surfer-app
+* Update surfer to 6.3.0
+
+[6.3.1]
+* Update surfer to 6.3.1
+* Enable admin login on alias domains
+
+[6.4.0]
+* Update base image to 5.0.0
+
+[6.4.1]
+* Update surfer to 6.3.2
+* Correctly handle .webp files
+
+[6.4.2]
+* Update surfer to 6.3.3
+* Update dependencies
+
+[6.4.3]
+* Update surfer to 6.3.4
+
+[6.4.4]
+* Update surfer to 6.3.5
+* Update dependencies
+
+[6.4.5]
+* Update surfer to 6.3.6
+* Improve 404 page
+* Update dependencies
+
+[6.4.6]
+* Update surfer to 6.4.0
+* Fix breadcrumbs in public folder listing
 
