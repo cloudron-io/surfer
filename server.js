@@ -243,7 +243,8 @@ app.use(compression());
 app.use(cors({ origins: [ '*' ], allowCredentials: false }));
 app.use('/api', express.json());
 app.use('/api', express.urlencoded({ extended: false, limit: '100mb' }));
-app.use(session({ store: sessionStore, secret: 'surfin surfin', resave: false, saveUninitialized: true, cookie: { secure: !!process.env.CLOUDRON, sameSite: 'strict' } }));
+const sessionSameSite = process.env.CLOUDRON ? 'strict' : 'lax';
+app.use(session({ store: sessionStore, secret: 'surfin surfin', resave: false, saveUninitialized: true, cookie: { secure: !!process.env.CLOUDRON, sameSite: sessionSameSite } }));
 app.use(auth.oidcMiddleware);
 app.use(router);
 app.use(webdav.v2.extensions.express('/_webdav', webdavServer));
@@ -278,5 +279,5 @@ app.use(lastMile());
 app.listen(3000, function () {
     console.log(`Base path: ${ROOT_FOLDER}`);
     console.log();
-    console.log('Listening on http://0.0.0.0:3000');
+    console.log('Listening on http://localhost:3000');
 });
