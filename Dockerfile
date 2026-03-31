@@ -4,7 +4,7 @@ RUN mkdir -p /app/code
 WORKDIR /app/code
 
 # SURFER_COMMIT is ignored as we always build from master but this tracks the release sha for renovate
-# renovate: datasource=git-refs packageName=https://git.cloudron.io/apps/surfer branch=main
+# renovate: datasource=git-refs packageName=https://git.cloudron.io/apps/surfer branch=master
 ARG SURFER_COMMIT=ccc03a60bb26c050dba038039b660fd7d822ecb6
 
 COPY . /app/code/
