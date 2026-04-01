@@ -3,7 +3,6 @@
 import fs from 'fs';
 import path from 'path';
 import safe from '@cloudron/safetydance';
-import _ from 'underscore';
 
 const HOME = process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE;
 const CONFIG_FILE_PATH = path.join(HOME, '.surfer.json');
@@ -22,7 +21,7 @@ function clear() {
 
 function set(key, value) {
     if (typeof key === 'object') {
-        _.extend(gConfig, key);
+        Object.assign(gConfig, key);
     } else {
         safe.set(gConfig, key, value);
     }
