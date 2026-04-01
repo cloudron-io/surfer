@@ -10,7 +10,6 @@ import ejs from 'ejs';
 import fs from 'fs';
 import crypto from 'crypto';
 import cors from './src/cors.js';
-import compression from 'compression';
 import contentDisposition from 'content-disposition';
 import lastMile from '@cloudron/connect-lastmile';
 import { HttpError, HttpSuccess } from '@cloudron/connect-lastmile';
@@ -239,7 +238,6 @@ router.delete('/api/files/*path', auth.verifyToken, files.del);
 
 app.use('/api/healthcheck', function (req, res) { res.status(200).send(); });
 app.use(morgan('dev'));
-app.use(compression());
 app.use(cors({ origins: [ '*' ], allowCredentials: false }));
 app.use('/api', express.json());
 app.use('/api', express.urlencoded({ extended: false, limit: '100mb' }));
