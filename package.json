@@ -19,7 +19,6 @@
     "@cloudron/pankow": "^4.1.8",
     "@cloudron/safetydance": "^3.0.1",
     "async": "^3.2.6",
-    "colors": "1.4.0",
     "commander": "^14.0.3",
     "content-disposition": "^1.0.1",
     "debug": "^4.4.3",

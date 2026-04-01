@@ -8,7 +8,6 @@ import async from 'async';
 import fs from 'fs';
 import url from 'url';
 import path from 'path';
-import 'colors';
 import { Readable } from 'node:stream';
 
 const API = '/api/files/';
@@ -26,7 +25,7 @@ function exit(errorArgs) {
 }
 
 function checkConfig(options) {
-    if ((!options.server && !config.server()) || (!options.token && !config.accessToken())) exit('Run %s first, or provide %s', 'surfer config'.bold, '--server <domain>'.bold, '--token <access token>'.bold);
+    if ((!options.server && !config.server()) || (!options.token && !config.accessToken())) exit('Run %s first, or provide %s', 'surfer config', '--server <domain>', '--token <access token>');
 
     if (options.server) {
         let tmp = url.parse(options.server);
@@ -38,7 +37,7 @@ function checkConfig(options) {
 
     gQuery = { access_token: options.token || config.accessToken() };
 
-    console.error('Using server %s'.white, gServer.cyan);
+    console.error('Using server %s', gServer);
 }
 
 function collectFiles(filePath, basePath, options) {
@@ -73,7 +72,7 @@ function collectFiles(filePath, basePath, options) {
             tmp = tmp.concat(collectFiles(path.join(absoluteFilePath, fileName), basePath, options));
         });
     } else {
-        console.log('Skipping %s', filePath.cyan);
+        console.log('Skipping %s', filePath);
     }
 
     return tmp;
@@ -83,7 +82,7 @@ function putOne(file, destination, callback) {
     const destinationPath = path.join(destination, file.filePath);
 
     if (file.isFile) {
-        console.log('Uploading %s -> %s', file.filePath.cyan, (gServer + destinationPath).cyan);
+        console.log('Uploading %s -> %s', file.filePath, gServer + destinationPath);
 
         superagent.post(gServer + path.join(API, encodeURIComponent(destinationPath))).query(gQuery).attach('file', file.absoluteFilePath).field('mtime', file.mtime).end(function (error, result) {
             if (result && result.statusCode === 403) return callback(new Error('Destination ' + destinationPath + ' not allowed'));
@@ -93,7 +92,7 @@ function putOne(file, destination, callback) {
             callback(null);
         });
     } else if (file.isDirectory) {
-        console.log('Creating directory %s', destinationPath.cyan);
+        console.log('Creating directory %s', destinationPath);
 
         const query = safe.JSON.parse(safe.JSON.stringify(gQuery));
         query.directory = true;
@@ -129,27 +128,27 @@ function configure(options) {
     checkConfig(options);
 
     superagent.get(gServer + '/api/profile').query(gQuery).end(function (error, result) {
-        if (error && error.code === 'ENOTFOUND') exit('Server %s not found.'.red, gServer.bold);
-        if (error && error.code) exit('Failed to connect to server %s'.red, gServer.bold, error.code);
+        if (error && error.code === 'ENOTFOUND') exit('Server %s not found.', gServer);
+        if (error && error.code) exit('Failed to connect to server %s', gServer, error.code);
         if (result.status !== 200) {
             console.log(result.status, gQuery);
-            console.log('Access failed. Provide an api access token with --token\n'.red);
+            console.log('Access failed. Provide an api access token with --token\n');
             process.exit(1);
         }
 
         config.set('server', gServer);
         config.set('accessToken', gQuery.access_token);
 
-        console.log('Default server successfully set'.green);
+        console.log('Default server successfully set');
     });
 }
 
 function login() {
-    exit('Unsupported.'.red + ' Use "surfer config" instead.');
+    exit('Unsupported. Use "surfer config" instead.');
 }
 
 function logout() {
-    exit('Unsupported.'.red + ` Delete the config file at ${config.filePath.bold} instead.`);
+    exit('Unsupported. Delete the config file at ' + config.filePath + ' instead.');
 }
 
 async function get(filePath, options) {
@@ -168,7 +167,7 @@ async function get(filePath, options) {
         if (response.status === 222) {
             const files = await response.json();
             if (!files || files.entries.length === 0) {
-                console.log('Empty directory. Use %s to upload some.', 'surfer put <file>'.yellow);
+                console.log('Empty directory. Use %s to upload some.', 'surfer put <file>');
             } else {
                 console.log('Entries:');
                 files.entries.forEach(function (entry) {
@@ -178,7 +177,7 @@ async function get(filePath, options) {
         } else if (response.status === 401) {
             exit('Invalid token');
         } else if (response.status === 404) {
-            exit('No such file or directory %s', filePath.yellow);
+            exit('No such file or directory %s', filePath);
         } else {
             Readable.fromWeb(response.body).pipe(process.stdout);
         }
@@ -197,12 +196,12 @@ function del(filePath, options) {
     };
 
     if (filePath === '/') {
-        if (!options.recursive) exit('To delete all files --recursive is required.'.yellow);
+        if (!options.recursive) exit('To delete all files --recursive is required.');
         if (!options.yes && !readlineSync.keyInYN('Really delete all files?')) exit();
     }
 
     delOne(file, function (error) {
-        if (error) exit(error.red);
+        if (error) exit(error);
         else console.log('Success.');
     });
 }
@@ -211,12 +210,12 @@ function put(filePaths, options) {
     checkConfig(options);
 
     if (filePaths.length < 2) {
-        console.log('Target directory argument is missing. Falling back to /'.yellow);
+        console.log('Target directory argument is missing. Falling back to /');
         filePaths.push('/');
     }
 
     let absoluteDestPath = filePaths.pop();
-    if (!path.isAbsolute(absoluteDestPath)) exit('Target directory must be absolute, starting with /'.red);
+    if (!path.isAbsolute(absoluteDestPath)) exit('Target directory must be absolute, starting with /');
     if (!absoluteDestPath.endsWith('/')) absoluteDestPath += '/';
 
     let localFiles = [];
@@ -271,7 +270,7 @@ function put(filePaths, options) {
 
         // first purging remote files
         async.eachLimit(remoteFilesNotLocalAnymore, 10, function (remoteFile, callback) {
-            console.log(`Removing ${remoteFile.filePath.cyan}`);
+            console.log(`Removing ${remoteFile.filePath}`);
 
             const file = remoteFiles.find(function (f) { return f.filePath === remoteFile.filePath; });
             if (!file) return callback(`File not found ${remoteFile.filePath}`);
