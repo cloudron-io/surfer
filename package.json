@@ -26,7 +26,6 @@
     "express-openid-connect": "^2.20.1",
     "express-session": "^1.19.0",
     "multiparty": "^4.2.3",
-    "readline-sync": "^1.4.10",
     "superagent": "^10.3.0",
     "webdav-server": "^2.6.2"
   },

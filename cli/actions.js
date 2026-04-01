@@ -2,7 +2,8 @@
 
 import superagent from 'superagent';
 import config from './config.js';
-import readlineSync from 'readline-sync';
+import readline from 'node:readline/promises';
+import { stdin as input, stdout as output } from 'node:process';
 import safe from '@cloudron/safetydance';
 import async from 'async';
 import fs from 'fs';
@@ -186,7 +187,7 @@ async function get(filePath, options) {
     }
 }
 
-function del(filePath, options) {
+async function del(filePath, options) {
     checkConfig(options);
 
     // construct a virtual file for further use
@@ -197,7 +198,15 @@ function del(filePath, options) {
 
     if (filePath === '/') {
         if (!options.recursive) exit('To delete all files --recursive is required.');
-        if (!options.yes && !readlineSync.keyInYN('Really delete all files?')) exit();
+        if (!options.yes) {
+            const rl = readline.createInterface({ input, output });
+            try {
+                const answer = await rl.question('Really delete all files? [y/N] ');
+                if (!/^y(es)?$/i.test(answer.trim())) exit();
+            } finally {
+                rl.close();
+            }
+        }
     }
 
     delOne(file, function (error) {
