@@ -4,10 +4,7 @@ import fs from 'fs';
 import fsPromises from 'node:fs/promises';
 import path from 'path';
 import safe from '@cloudron/safetydance';
-import Debug from 'debug';
 import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
-
-const debug = Debug('files');
 
 const gBasePath = path.resolve(import.meta.dirname, '..', process.argv[2] || 'files');
 
@@ -100,7 +97,7 @@ function getFolderListing(filePath, callback) {
     fs.stat(absoluteFilePath, function (error, stat) {
         if (error) return callback(new HttpError(404, error));
 
-        debug('get', absoluteFilePath);
+        console.log('get', absoluteFilePath);
 
         if (!stat.isDirectory()) return callback(new HttpError(500, 'unsupported type'));
 
@@ -134,7 +131,7 @@ function get(req, res, next) {
     fs.stat(absoluteFilePath, function (error, stat) {
         if (error) return next(new HttpError(404, error));
 
-        debug('get:', absoluteFilePath);
+        console.log('get:', absoluteFilePath);
 
         if (!stat.isDirectory() && !stat.isFile()) return next(new HttpError(500, 'unsupported type'));
         if (stat.isFile()) return res.download(absoluteFilePath);
@@ -168,7 +165,7 @@ function post(req, res, next) {
 
     const mtime = req.fields && req.fields.mtime ? new Date(req.fields.mtime) : null;
 
-    debug('post:', filePath, mtime);
+    console.log('post:', filePath, mtime);
 
     const absoluteFilePath = getAbsolutePath(filePath);
     if (!absoluteFilePath || isProtected(absoluteFilePath)) return next(new HttpError(403, 'Path not allowed'));
@@ -220,7 +217,7 @@ function put(req, res, next) {
 
     const newFilePath = decodeURIComponent(req.body.newFilePath);
 
-    debug('put: %s -> %s', oldFilePath, newFilePath);
+    console.log('put: %s -> %s', oldFilePath, newFilePath);
 
     const absoluteOldFilePath = getAbsolutePath(oldFilePath);
     if (!absoluteOldFilePath || isProtected(absoluteOldFilePath)) return next(new HttpError(403, 'Path not allowed'));
@@ -231,7 +228,7 @@ function put(req, res, next) {
     fs.rename(absoluteOldFilePath, absoluteNewFilePath, function (error) {
         if (error) return next (new HttpError(500, error));
 
-        debug('put: successful');
+        console.log('put: successful');
 
         return next(new HttpSuccess(200, {}));
     });
