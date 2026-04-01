@@ -9,6 +9,7 @@
   },
   "scripts": {
     "test": "./node_modules/mocha/bin/_mocha --bail -R spec ./test/test.js",
+    "dev": "cd frontend && ../node_modules/.bin/vite",
     "build": "cd frontend && ../node_modules/.bin/vite build",
     "watch": "cd frontend && ../node_modules/.bin/vite watch"
   },

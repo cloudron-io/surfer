@@ -9,5 +9,17 @@ export OIDC_CLIENT_ID="cid-1ab519f17e6136d3e5d0679ecf5a1119"
 export OIDC_CLIENT_SECRET="e588e41e3ab084694b198d8766f24cc4fac4085c8134eb10bc7512a05b4e9450"
 export LOCALDEVELOP_OIDC_ORIGIN="${APP_ORIGIN}"
 
+echo ""
+echo "┌────────────────────────────────────────────────────────────┐"
+echo "│ Frontend development                                       │"
+echo "├────────────────────────────────────────────────────────────┤"
+echo "│ In a second terminal for hot reload:                       │"
+echo "│                                                            │"
+echo "│   npm run dev                                              │"
+echo "│                                                            │"
+echo "│ Then open e.g. http://localhost:5173/admin.html            │"
+echo "└────────────────────────────────────────────────────────────┘"
+echo ""
+
 echo "=> Start surfer"
 node ./server.js

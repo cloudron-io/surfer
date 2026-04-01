@@ -8,6 +8,13 @@ export default defineConfig({
   plugins: [
     vue()
   ],
+  server: {
+    proxy: {
+      '/api': 'http://localhost:3000',
+      '/_admin': 'http://localhost:3000',
+      '/assets': 'http://localhost:3000'
+    }
+  },
   // https://vitejs.dev/config/build-options
   build: {
     rollupOptions: {
