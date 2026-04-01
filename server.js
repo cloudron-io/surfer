@@ -3,7 +3,6 @@
 'use strict';
 
 import express from 'express';
-import morgan from 'morgan';
 import path from 'path';
 import session from 'express-session';
 import ejs from 'ejs';
@@ -236,7 +235,15 @@ router.put   ('/api/files/*path', auth.verifyToken, files.put);
 router.delete('/api/files/*path', auth.verifyToken, files.del);
 
 app.use('/api/healthcheck', function (req, res) { res.status(200).send(); });
-app.use(morgan('dev'));
+app.use(function (req, res, next) {
+    res.on('finish', function () {
+        const status = res.statusCode;
+        if (status < 200 || status >= 400) {
+            console.warn(req.method + ' ' + (req.originalUrl || req.url) + ' ' + status);
+        }
+    });
+    next();
+});
 app.use(cors({ origins: [ '*' ], allowCredentials: false }));
 app.use('/api', express.json());
 app.use('/api', express.urlencoded({ extended: false, limit: '100mb' }));
