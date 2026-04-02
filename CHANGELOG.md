@@ -344,3 +344,7 @@
 * Update surfer to 6.4.0
 * Fix breadcrumbs in public folder listing
 
+[6.5.0]
+* Update surfer to 6.5.0
+* Remove various node modules to reduce dependency on 3rdparty code as a precaution due to increasing supply chain attacks
+
