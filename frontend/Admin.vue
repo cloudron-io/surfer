@@ -28,6 +28,9 @@
       <div class="main-container-content">
         <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @dropped="onDrop" @entry-activated="onEntryOpen" @entry-renamed="onRename" @entry-delete="onDelete" @selection-changed="onSelectionChanged" editable/>
       </div>
+      <div class="preview-open-chevron" v-if="previewSuppressed">
+        <Button tool plain icon="fa-solid fa-chevron-left" v-tooltip="'Show preview'" @click="onPreviewOpen"/>
+      </div>
       <Preview :entry="previewEntry" @close="onPreviewClose"/>
     </div>
     <div class="main-container-footer" v-show="uploadStatus.busy">
@@ -138,7 +141,7 @@
 
 import { Breadcrumb, Button, Checkbox, Dialog, InputDialog, Notification, PasswordInput, ProgressBar, Radiobutton, Spinner, TextInput, TopBar, fetcher } from '@cloudron/pankow';
 import { eachLimit, each } from 'async';
-import { sanitize, encode, decode, getPreviewUrl, getExtension, makeCurrentFolderPreviewEntry } from './utils.js';
+import { sanitize, encode, decode, getPreviewUrl, getExtension, makeCurrentFolderPreviewEntry, isPreviewPanelOpenPreference, setPreviewPanelOpenPreference } from './utils.js';
 import { copyToClipboard } from '@cloudron/pankow/utils.js';
 
 import EntryList from './components/EntryList.vue';
@@ -186,7 +189,7 @@ export default {
       breadcrumbItems: [],
       entries: [],
       activeEntry: {},
-      previewSuppressed: false,
+      previewSuppressed: !isPreviewPanelOpenPreference(),
       accessTokens: [],
       // holds settings values stored on backend
       settings: {
@@ -262,7 +265,6 @@ export default {
       // only do this if no modal is active - body classlist would be empty
       if (e.key === 'Escape' && e.target.classList.length === 0) {
         this.activeEntry = {};
-        this.previewSuppressed = false;
       }
     });
 
@@ -317,7 +319,6 @@ export default {
 
       this.busy = true;
       this.activeEntry = {};
-      this.previewSuppressed = false;
 
       folderPath = folderPath ? sanitize(folderPath) : '/';
 
@@ -680,13 +681,18 @@ export default {
 
       this.activeEntry = entry;
       this.previewSuppressed = false;
+      setPreviewPanelOpenPreference(true);
     },
     onSelectionChanged(selectedEntries) {
-      this.previewSuppressed = false;
       this.activeEntry = selectedEntries[0] || {};
+    },
+    onPreviewOpen() {
+      this.previewSuppressed = false;
+      setPreviewPanelOpenPreference(true);
     },
     onPreviewClose() {
       this.previewSuppressed = true;
+      setPreviewPanelOpenPreference(false);
     }
   }
 };

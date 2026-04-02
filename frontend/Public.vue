@@ -2,7 +2,7 @@
 
 import { ref, onMounted, computed } from 'vue';
 import { Breadcrumb, Button, Notification, TopBar, fetcher } from '@cloudron/pankow';
-import { sanitize, encode, decode, getPreviewUrl, getExtension, makeCurrentFolderPreviewEntry } from './utils.js';
+import { sanitize, encode, decode, getPreviewUrl, getExtension, makeCurrentFolderPreviewEntry, isPreviewPanelOpenPreference, setPreviewPanelOpenPreference } from './utils.js';
 
 import EntryList from './components/EntryList.vue';
 import Preview from './components/Preview.vue';
@@ -25,7 +25,7 @@ const settings = ref({
   title: false
 });
 const activeEntry = ref({});
-const previewSuppressed = ref(false);
+const previewSuppressed = ref(!isPreviewPanelOpenPreference());
 
 const previewEntry = computed(function () {
   if (previewSuppressed.value) return {};
@@ -35,7 +35,6 @@ const previewEntry = computed(function () {
 
 function loadDirectory(folderPath) {
   activeEntry.value = {};
-  previewSuppressed.value = false;
 
   folderPath = folderPath ? sanitize(folderPath) : '/';
 
@@ -69,17 +68,21 @@ function onEntryOpen(entry) {
 }
 
 function onSelectionChanged(selectedEntries) {
-  previewSuppressed.value = false;
   activeEntry.value = selectedEntries[0] || {};
 }
 
 function onPreviewClose() {
   previewSuppressed.value = true;
+  setPreviewPanelOpenPreference(false);
+}
+
+function onPreviewOpen() {
+  previewSuppressed.value = false;
+  setPreviewPanelOpenPreference(true);
 }
 
 function clearSelection() {
   activeEntry.value = {};
-  previewSuppressed.value = false;
 }
 
 onMounted(async () => {
@@ -125,6 +128,9 @@ onMounted(async () => {
     <div class="main-container-body">
       <div class="main-container-content">
         <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @selection-changed="onSelectionChanged" @entry-activated="onEntryOpen"/>
+      </div>
+      <div class="preview-open-chevron" v-if="previewSuppressed">
+        <Button tool plain icon="fa-solid fa-chevron-left" v-tooltip="'Show preview'" @click="onPreviewOpen"/>
       </div>
       <Preview :entry="previewEntry" @close="onPreviewClose"/>
     </div>

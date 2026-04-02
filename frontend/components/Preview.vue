@@ -4,7 +4,7 @@
       <div class="header-filename">
         {{ entry.fileName }}
       </div>
-      <div>
+      <div v-show="!closeClicked">
         <Icon icon="fa-solid fa-xmark" style="font-size: 20px; margin-right: 16px; cursor: pointer;" @click="onClose"/>
       </div>
     </div>
@@ -38,11 +38,15 @@ export default {
   emits: [ 'close' ],
   data() {
     return {
-      iFrameSource: 'about:blank'
+      iFrameSource: 'about:blank',
+      closeClicked: false
     };
   },
   watch: {
     entry(newEntry) {
+      if (newEntry.filePath) {
+        this.closeClicked = false;
+      }
       if (!newEntry.fileName) return;
 
       if (newEntry.previewAsLocation && newEntry.isDirectory) {
@@ -86,6 +90,7 @@ export default {
       window.pankow.notify({ type:'success', text: 'Link copied to Clipboard' });
     },
     onClose() {
+      this.closeClicked = true;
       this.$emit('close');
     }
   }

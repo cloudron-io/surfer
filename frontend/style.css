@@ -18,6 +18,7 @@
 }
 
 .main-container-body {
+  position: relative;
   display: flex;
   overflow: hidden;
   width: 100%;
@@ -29,6 +30,14 @@
   display: flex;
   overflow: hidden;
   flex-grow: 1;
+}
+
+/* Top-right, aligned with Preview header row and close (X) control */
+.preview-open-chevron {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
 }
 
 .main-container-footer {

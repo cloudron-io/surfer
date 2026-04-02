@@ -117,6 +117,24 @@ function copyToClipboard(value) {
     elem.remove();
 }
 
+var PREVIEW_PANEL_OPEN_KEY = 'surfer.previewPanelOpen';
+
+function isPreviewPanelOpenPreference() {
+    try {
+        var v = localStorage.getItem(PREVIEW_PANEL_OPEN_KEY);
+        if (v === null) return true;
+        return v === '1' || v === 'true';
+    } catch (e) {
+        return true;
+    }
+}
+
+function setPreviewPanelOpenPreference(open) {
+    try {
+        localStorage.setItem(PREVIEW_PANEL_OPEN_KEY, open ? '1' : '0');
+    } catch (e) { /* ignore quota / private mode */ }
+}
+
 export {
     prettyDate,
     prettyLongDate,
@@ -129,5 +147,7 @@ export {
     hasViewer,
     getExtension,
     makeCurrentFolderPreviewEntry,
-    copyToClipboard
+    copyToClipboard,
+    isPreviewPanelOpenPreference,
+    setPreviewPanelOpenPreference
 };
