@@ -1,8 +1,8 @@
 <template>
-  <div class="loading" v-show="$parent.busy">
+  <div class="loading" v-show="busy">
     <Spinner class="pankow-spinner-large"/>
   </div>
-  <div class="table" v-show="!$parent.busy" @drop.stop.prevent="drop(null)" @dragover.stop.prevent="dragOver(null)" @dragexit="dragExit" :class="{ 'drag-active': dragActive === 'table' }" v-cloak>
+  <div class="table" v-show="!busy" @drop.stop.prevent="drop(null, $event)" @dragover.stop.prevent="dragOver(null, $event)" @dragexit="dragExit" :class="{ 'drag-active': dragActive === 'table' }" v-cloak>
     <div class="th" style="display: flex;">
       <div class="td" style="max-width: 50px;"></div>
       <div class="td hand" style="flex-grow: 2;" @click="onSort('fileName')">Name <i class="fa-solid" :class="{'fa-arrow-down-a-z': sort.desc, 'fa-arrow-up-z-a': !sort.desc }" v-show="sort.prop === 'fileName'"></i></div>
@@ -13,7 +13,7 @@
     <div class="tbody">
       <div class="tr-placeholder" v-show="entries.length === 0">Folder is empty</div>
       <div class="tr-placeholder" v-show="entries.length !== 0 && filteredAndSortedEntries.length === 0">Nothing found</div>
-      <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @dblclick="onEntryOpen(entry, false)" @click="onEntrySelect(entry)" @drop.stop.prevent="drop(entry)" @dragover.stop.prevent="dragOver(entry)" :class="{ 'selected': selected.includes(entry.filePath), 'active': entry === active,  'drag-active': entry === dragActive }">
+      <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @dblclick="onEntryOpen(entry, false)" @click="onEntrySelect(entry)" @drop.stop.prevent="drop(entry, $event)" @dragover.stop.prevent="dragOver(entry, $event)" :class="{ 'selected': selected.includes(entry.filePath), 'active': entry === active,  'drag-active': entry === dragActive }">
         <div class="td" style="max-width: 50px;"><img :src="entry.previewUrl" style="width: 32px; height: 32px; vertical-align: middle; object-fit: cover;"/></div>
         <div class="td entry-name-cell" style="flex-grow: 2;">
           <TextInput @click.stop @keyup.enter="onRenameSubmit(entry)" @keyup.esc="onRenameEnd(entry)" @blur="onRenameEnd(entry)" v-model="entry.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="entry.rename" class="rename-input"/>
@@ -35,217 +35,220 @@
   </div>
 </template>
 
-<script>
+<script setup>
 
-import { nextTick } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, inject } from 'vue';
 import { prettyDate, prettyLongDate, prettyFileSize, download, encode } from '../utils.js';
 import { Button, Icon, Spinner, TextInput } from '@cloudron/pankow';
 import { copyToClipboard } from '@cloudron/pankow/utils.js';
 
-export default {
-  name: 'EntryList',
-  components: {
-    Button,
-    Icon,
-    Spinner,
-    TextInput
+const props = defineProps({
+  busy: {
+    type: Boolean,
+    default: false
   },
-  props: {
-    editable: {
-      type: Boolean,
-      default: false
-    },
-    entries: {
-      type: Array,
-      default: () => []
-    },
-    sortFoldersFirst: {
-      type: Boolean,
-      default: true
-    },
-    useHashForNavigation: {
-      type: Boolean,
-      default: false
-    }
+  editable: {
+    type: Boolean,
+    default: false
   },
-  emits: [ 'selection-changed', 'entry-activated', 'entry-renamed', 'entry-delete', 'dropped' ],
-  data() {
-    return {
-      active: {},
-      selected: [],
-      sort: {
-        prop: 'fileName',
-        desc: true
-      },
-      dragActive: '',
-      isMobileViewport: false,
-      mobileMediaQuery: null
-    };
+  entries: {
+    type: Array,
+    default: () => []
   },
-  computed: {
-    filteredAndSortedEntries() {
-      var that = this;
-
-      function sorting(list) {
-        const tmp = list.sort(function (a, b) {
-          const av = a[that.sort.prop];
-          const bv = b[that.sort.prop];
-
-          if (typeof av === 'string') return (av.toUpperCase() < bv.toUpperCase()) ? -1 : 1;
-          else return (av < bv) ? -1 : 1;
-        });
-
-        if (that.sort.desc) return tmp;
-        return tmp.reverse();
-      }
-
-      if (this.sortFoldersFirst) {
-        return sorting(this.entries.filter(function (e) { return e.isDirectory; })).concat(sorting(this.entries.filter(function (e) { return !e.isDirectory; })));
-      } else {
-        return sorting(this.entries);
-      }
-    }
+  sortFoldersFirst: {
+    type: Boolean,
+    default: true
   },
-  mounted() {
-    this.mobileMediaQuery = window.matchMedia('(max-width: 767px)');
-    this.isMobileViewport = this.mobileMediaQuery.matches;
-    this._onMobileViewportChange = (e) => { this.isMobileViewport = e.matches; };
-    this.mobileMediaQuery.addEventListener('change', this._onMobileViewportChange);
-
-    // global key handler for up/down selection
-    window.addEventListener('keydown', (event) => {
-      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-        if (this.selected.length === 0) return;
-
-        var index = this.filteredAndSortedEntries.findIndex((entry) =>  entry.filePath === this.selected[0]);
-        if (index === -1) return;
-
-        if (event.key === 'ArrowUp') {
-          if (index === 0) return;
-          this.onEntrySelect(this.filteredAndSortedEntries[index-1]);
-        } else {
-          if (index === this.filteredAndSortedEntries.length-1) return;
-          this.onEntrySelect(this.filteredAndSortedEntries[index+1]);
-        }
-
-        // prevents scrolling the viewport
-        event.preventDefault();
-      }
-    });
-  },
-  beforeUnmount() {
-    if (this.mobileMediaQuery && this._onMobileViewportChange) {
-      this.mobileMediaQuery.removeEventListener('change', this._onMobileViewportChange);
-    }
-  },
-  methods: {
-    encode,
-    prettyDate,
-    prettyFileSize,
-    prettyLongDate,
-    onSort(prop) {
-      if (this.sort.prop === prop) this.sort.desc = !this.sort.desc;
-      else this.sort.prop = prop;
-    },
-    onEntrySelect(entry) {
-      this.selected = [ entry.filePath ];
-      this.$emit('selection-changed', this.entries.filter((e) => this.selected.includes(e.filePath)));
-    },
-    entryNameHref(entry) {
-      var path = encode(entry.filePath) + (entry.isDirectory ? '/' : '');
-      if (this.useHashForNavigation && entry.isDirectory) return '#' + path;
-      return path;
-    },
-    onEntryNameClick(entry, event) {
-      if (entry.rename) {
-        event.preventDefault();
-        event.stopPropagation();
-        return;
-      }
-      if (this.isMobileViewport) {
-        event.stopPropagation();
-        return;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-      this.onEntryOpen(entry, true);
-    },
-    onEntryOpen(entry, select) {
-      if (entry.rename) return;
-
-      this.$emit('entry-activated', entry);
-
-      if (select) this.onEntrySelect(entry);
-    },
-    onDownload(entry) {
-      download(entry);
-    },
-    onCopyLink(entry) {
-      copyToClipboard(location.origin + encode(entry.filePath));
-      window.pankow.notify({ type:'success', text: 'Link copied to Clipboard' });
-    },
-    onRename(entry) {
-      if (entry.rename) return entry.rename = false;
-
-      entry.filePathNew = entry.fileName;
-      entry.rename = true;
-
-      nextTick(function () {
-        const elem = document.getElementById('filePathRenameInputId-' + entry.fileName);
-        elem.focus();
-
-        if (typeof elem.selectionStart != "undefined") {
-          elem.selectionStart = 0;
-          elem.selectionEnd = entry.fileName.lastIndexOf('.');
-        }
-      });
-    },
-    onRenameEnd(entry) {
-      entry.rename = false;
-    },
-    onRenameSubmit(entry) {
-      entry.rename = false;
-
-      if (entry.filePathNew === entry.fileName) return;
-
-      this.$emit('entry-renamed', entry, entry.filePathNew);
-    },
-    async onDelete(entry) {
-      const yes = await this.$root.$refs.inputDialog.confirm({
-        message: `Really delete ${entry.isDirectory ? 'folder ' : ''} ${entry.fileName}`,
-        confirmStyle: 'danger',
-        confirmLabel: 'Yes',
-        rejectLabel: 'No',
-        modal: false
-      });
-
-      if (!yes) return;
-
-      this.$emit('entry-delete', entry);
-    },
-    dragExit() {
-      this.dragActive = '';
-    },
-    dragOver(entry) {
-      if (!this.editable) return;
-
-      event.dataTransfer.dropEffect = 'copy';
-
-      if (!entry || entry.isFile) this.dragActive = 'table';
-      else this.dragActive = entry;
-    },
-    drop(entry) {
-      if (!this.editable) return;
-
-      this.dragActive = '';
-
-      if (!event.dataTransfer.items[0]) return;
-
-      if (entry && entry.isDirectory) this.$emit('dropped', event, entry);
-      else this.$emit('dropped', event, null);
-    }
+  useHashForNavigation: {
+    type: Boolean,
+    default: false
   }
-};
+});
+
+const emit = defineEmits(['selection-changed', 'entry-activated', 'entry-renamed', 'entry-delete', 'dropped']);
+
+const inputDialog = inject('inputDialog', null);
+
+const active = ref({});
+const selected = ref([]);
+const sort = ref({
+  prop: 'fileName',
+  desc: true
+});
+const dragActive = ref('');
+const isMobileViewport = ref(false);
+let mobileMediaQuery = null;
+let onMobileViewportChange = null;
+
+const filteredAndSortedEntries = computed(() => {
+  function sorting(list) {
+    const tmp = list.sort(function (a, b) {
+      const av = a[sort.value.prop];
+      const bv = b[sort.value.prop];
+
+      if (typeof av === 'string') return (av.toUpperCase() < bv.toUpperCase()) ? -1 : 1;
+      else return (av < bv) ? -1 : 1;
+    });
+
+    if (sort.value.desc) return tmp;
+    return tmp.reverse();
+  }
+
+  if (props.sortFoldersFirst) {
+    return sorting(props.entries.filter(function (e) { return e.isDirectory; })).concat(sorting(props.entries.filter(function (e) { return !e.isDirectory; })));
+  } else {
+    return sorting(props.entries);
+  }
+});
+
+function onSort(prop) {
+  if (sort.value.prop === prop) sort.value.desc = !sort.value.desc;
+  else sort.value.prop = prop;
+}
+
+function onEntrySelect(entry) {
+  selected.value = [entry.filePath];
+  emit('selection-changed', props.entries.filter((e) => selected.value.includes(e.filePath)));
+}
+
+function entryNameHref(entry) {
+  var path = encode(entry.filePath) + (entry.isDirectory ? '/' : '');
+  if (props.useHashForNavigation && entry.isDirectory) return '#' + path;
+  return path;
+}
+
+function onEntryNameClick(entry, event) {
+  if (entry.rename) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+  if (isMobileViewport.value) {
+    event.stopPropagation();
+    return;
+  }
+  event.preventDefault();
+  event.stopPropagation();
+  onEntryOpen(entry, true);
+}
+
+function onEntryOpen(entry, select) {
+  if (entry.rename) return;
+
+  emit('entry-activated', entry);
+
+  if (select) onEntrySelect(entry);
+}
+
+function onDownload(entry) {
+  download(entry);
+}
+
+function onCopyLink(entry) {
+  copyToClipboard(location.origin + encode(entry.filePath));
+  window.pankow.notify({ type:'success', text: 'Link copied to Clipboard' });
+}
+
+function onRename(entry) {
+  if (entry.rename) return entry.rename = false;
+
+  entry.filePathNew = entry.fileName;
+  entry.rename = true;
+
+  nextTick(function () {
+    const elem = document.getElementById('filePathRenameInputId-' + entry.fileName);
+    elem.focus();
+
+    if (typeof elem.selectionStart != "undefined") {
+      elem.selectionStart = 0;
+      elem.selectionEnd = entry.fileName.lastIndexOf('.');
+    }
+  });
+}
+
+function onRenameEnd(entry) {
+  entry.rename = false;
+}
+
+function onRenameSubmit(entry) {
+  entry.rename = false;
+
+  if (entry.filePathNew === entry.fileName) return;
+
+  emit('entry-renamed', entry, entry.filePathNew);
+}
+
+async function onDelete(entry) {
+  if (!inputDialog?.value) return;
+
+  const yes = await inputDialog.value.confirm({
+    message: `Really delete ${entry.isDirectory ? 'folder ' : ''} ${entry.fileName}`,
+    confirmStyle: 'danger',
+    confirmLabel: 'Yes',
+    rejectLabel: 'No',
+    modal: false
+  });
+
+  if (!yes) return;
+
+  emit('entry-delete', entry);
+}
+
+function dragExit() {
+  dragActive.value = '';
+}
+
+function dragOver(entry, event) {
+  if (!props.editable) return;
+
+  event.dataTransfer.dropEffect = 'copy';
+
+  if (!entry || entry.isFile) dragActive.value = 'table';
+  else dragActive.value = entry;
+}
+
+function drop(entry, event) {
+  if (!props.editable) return;
+
+  dragActive.value = '';
+
+  if (!event.dataTransfer.items[0]) return;
+
+  if (entry && entry.isDirectory) emit('dropped', event, entry);
+  else emit('dropped', event, null);
+}
+
+onMounted(() => {
+  mobileMediaQuery = window.matchMedia('(max-width: 767px)');
+  isMobileViewport.value = mobileMediaQuery.matches;
+  onMobileViewportChange = (e) => { isMobileViewport.value = e.matches; };
+  mobileMediaQuery.addEventListener('change', onMobileViewportChange);
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+      if (selected.value.length === 0) return;
+
+      var index = filteredAndSortedEntries.value.findIndex((entry) => entry.filePath === selected.value[0]);
+      if (index === -1) return;
+
+      if (event.key === 'ArrowUp') {
+        if (index === 0) return;
+        onEntrySelect(filteredAndSortedEntries.value[index - 1]);
+      } else {
+        if (index === filteredAndSortedEntries.value.length - 1) return;
+        onEntrySelect(filteredAndSortedEntries.value[index + 1]);
+      }
+
+      event.preventDefault();
+    }
+  });
+});
+
+onBeforeUnmount(() => {
+  if (mobileMediaQuery && onMobileViewportChange) {
+    mobileMediaQuery.removeEventListener('change', onMobileViewportChange);
+  }
+});
 
 </script>
 

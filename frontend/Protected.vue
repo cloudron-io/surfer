@@ -15,68 +15,56 @@
   </div>
 </template>
 
-<script>
+<script setup>
 
+import { ref, onMounted, nextTick } from 'vue';
 import { Button, PasswordInput, fetcher } from '@cloudron/pankow';
 
 const ORIGIN = window.location.origin;
 
-export default {
-  name: 'ProtectedView',
-  components: {
-    Button,
-    PasswordInput
-  },
-  data() {
-    return {
-      ready: false,
-      busy: false,
-      origin: ORIGIN,
-      error: false,
-      returnTo: '/',
-      password: '',
-      settings: {
-        accessRestriction: '',
-        title: ''
-      }
-    };
-  },
-  async mounted() {
-    // ensure we end up in the target destination after oidc login
-    this.returnTo = window.location.pathname || '/';
+const ready = ref(false);
+const busy = ref(false);
+const error = ref(false);
+const returnTo = ref('/');
+const password = ref('');
+const settings = ref({
+  accessRestriction: '',
+  title: ''
+});
 
-    try {
-      const result = await fetcher.get(`${this.origin}/api/settings`);
-      this.settings.accessRestriction =  result.body.accessRestriction;
-      this.settings.title =  result.body.title;
-    } catch (error) {
-      console.error(error);
-    }
+async function onLogin() {
+  busy.value = true;
+  error.value = false;
 
-    window.document.title = this.settings.title;
-
-    this.ready = true;
-
-    this.$nextTick(() => document.getElementById('passwordInput').focus());
-  },
-  methods: {
-    async onLogin() {
-      this.busy = true;
-      this.error = false;
-
-      try {
-        const result = await fetcher.post(`${this.origin}/api/protectedLogin`, { password: this.password });
-        if (result.status === 200) return window.location.reload();
-      } catch (error) {
-        console.error(error);
-      }
-
-      this.password = '';
-      this.busy = false;
-      this.error = true;
-    }
+  try {
+    const result = await fetcher.post(`${ORIGIN}/api/protectedLogin`, { password: password.value });
+    if (result.status === 200) return window.location.reload();
+  } catch (e) {
+    console.error(e);
   }
-};
+
+  password.value = '';
+  busy.value = false;
+  error.value = true;
+}
+
+onMounted(async () => {
+  returnTo.value = window.location.pathname || '/';
+
+  try {
+    const result = await fetcher.get(`${ORIGIN}/api/settings`);
+    settings.value.accessRestriction = result.body.accessRestriction;
+    settings.value.title = result.body.title;
+  } catch (e) {
+    console.error(e);
+  }
+
+  window.document.title = settings.value.title;
+
+  ready.value = true;
+
+  nextTick(() => document.getElementById('passwordInput').focus());
+});
 
 </script>
 

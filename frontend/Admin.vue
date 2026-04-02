@@ -26,7 +26,7 @@
     </div>
     <div class="main-container-body">
       <div class="main-container-content">
-        <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" use-hash-for-navigation @dropped="onDrop" @entry-activated="onEntryOpen" @entry-renamed="onRename" @entry-delete="onDelete" @selection-changed="onSelectionChanged" editable/>
+        <EntryList :entries="entries" :busy="busy" :sort-folders-first="settings.sortFoldersFirst" use-hash-for-navigation @dropped="onDrop" @entry-activated="onEntryOpen" @entry-renamed="onRename" @entry-delete="onDelete" @selection-changed="onSelectionChanged" editable/>
       </div>
       <div class="preview-open-chevron" v-if="previewSuppressed">
         <Button tool plain icon="fa-solid fa-chevron-left" v-tooltip="'Show preview'" @click="onPreviewOpen"/>
@@ -43,7 +43,7 @@
   </div>
 
   <!-- Settings Dialog -->
-  <Dialog ref="settingsDialog" title="Settings" :modal="true" reject-label="Cancel" confirm-label="Save" confirm-style="success" :confirm-busy="settingsDialog.busy" @confirm="onSaveSettingsDialog">
+  <Dialog ref="settingsDialogRef" title="Settings" :modal="true" reject-label="Cancel" confirm-label="Save" confirm-style="success" :confirm-busy="settingsDialog.busy" @confirm="onSaveSettingsDialog">
     <div>
       <Checkbox v-model="settingsDialog.folderListingEnabled" label="Public Folder Listing"/>
       <p>If enabled, all folders and files will be publicly listed. If a folder contains a file with an Index Document (see below), this will be displayed instead.</p>
@@ -137,8 +137,9 @@
   </Dialog>
 </template>
 
-<script>
+<script setup>
 
+import { ref, reactive, computed, onMounted, provide } from 'vue';
 import { Breadcrumb, Button, Checkbox, Dialog, InputDialog, Notification, PasswordInput, ProgressBar, Radiobutton, Spinner, TextInput, TopBar, fetcher } from '@cloudron/pankow';
 import { eachLimit, each } from 'async';
 import { sanitize, encode, decode, getPreviewUrl, getExtension, makeCurrentFolderPreviewEntry, isPreviewPanelOpenPreference, setPreviewPanelOpenPreference } from './utils.js';
@@ -147,555 +148,525 @@ import { copyToClipboard } from '@cloudron/pankow/utils.js';
 import EntryList from './components/EntryList.vue';
 import Preview from './components/Preview.vue';
 
-export default {
-  name: 'AdminView',
-  components: {
-    Breadcrumb,
-    Button,
-    Checkbox,
-    Dialog,
-    EntryList,
-    InputDialog,
-    Notification,
-    PasswordInput,
-    Preview,
-    ProgressBar,
-    Radiobutton,
-    Spinner,
-    TextInput,
-    TopBar,
-  },
-  data() {
-    return {
-      ready: false,
-      busy: true,
-      origin: window.location.origin,
-      domain: window.location.host,
-      username: '',
-      uploadStatus: {
-        busy: false,
-        count: 0,
-        done: 0,
-        size: 0,
-        percentDone: 0,
-        uploadListCount: 0
-      },
-      path: '/',
-      breadcrumbHomeItem: {
-        label: '',
-        icon: 'fa-solid fa-house',
-        route: '#/'
-      },
-      breadcrumbItems: [],
-      entries: [],
-      activeEntry: {},
-      previewSuppressed: !isPreviewPanelOpenPreference(),
-      accessTokens: [],
-      // holds settings values stored on backend
-      settings: {
-        folderListingEnabled: false,
-        sortFoldersFirst: false,
-        title: 'Surfer',
-        accessRestriction: '',
-        accessPassword: '',
-        index: ''
-      },
-      settingsDialog: {
-        busy: false,
-        // settings copy for modification
-        folderListingEnabled: false,
-        sortFoldersFirst: false,
-        title: '',
-        faviconFile: null,
-        accessRestriction: '',
-        accessPassword: '',
-        index: ''
-      },
-      mainMenu: [{
-        label: 'Settings',
-        icon: 'fa-solid fa-gear',
-        action: this.openSettingsDialog
-      }, {
-        label: 'Access Tokens',
-        icon: 'fa-solid fa-key',
-        action: this.openAccessTokenDialog
-      }, {
-        separator: true
-      }, {
-        label: 'About',
-        icon: 'fa-solid fa-circle-info',
-        action: () => this.$refs.aboutDialog.open()
-      }, {
-        label: 'Logout',
-        icon: 'fa-solid fa-arrow-right-from-bracket',
-        action: this.logout
-      }]
-    };
-  },
-  computed: {
-    previewEntry() {
-      if (this.previewSuppressed) return {};
-      if (this.activeEntry.filePath) return this.activeEntry;
-      return makeCurrentFolderPreviewEntry(this.path);
-    }
-  },
-  async mounted() {
-    try {
-      const result = await fetcher.get('/api/settings');
-      if (result.status !== 200) {
-        console.error('Failed to fetch settings', result.status);
-      } else {
-        this.settings.folderListingEnabled =  !!result.body.folderListingEnabled;
-        this.settings.sortFoldersFirst =  !!result.body.sortFoldersFirst;
-        this.settings.title = result.body.title;
-        this.settings.index = result.body.index;
-        this.settings.accessRestriction = result.body.accessRestriction;
-        this.settings.accessPassword = result.body.accessPassword;
-      }
-    } catch (error) {
-      console.error(error);
-    }
+const upload = ref(null);
+const uploadFolder = ref(null);
+const uploadFavicon = ref(null);
+const faviconImage = ref(null);
+const inputDialog = ref(null);
+const settingsDialogRef = ref(null);
+const accessTokenDialog = ref(null);
+const aboutDialog = ref(null);
 
-    window.document.title = this.settings.title;
+provide('inputDialog', inputDialog);
 
-    await this.initWithToken(localStorage.accessToken);
+const ready = ref(false);
+const busy = ref(true);
+const origin = window.location.origin;
+const domain = window.location.host;
+const username = ref('');
+const uploadStatus = reactive({
+  busy: false,
+  count: 0,
+  done: 0,
+  size: 0,
+  percentDone: 0,
+  uploadListCount: 0
+});
+const path = ref('/');
+const breadcrumbHomeItem = ref({
+  label: '',
+  icon: 'fa-solid fa-house',
+  route: '#/'
+});
+const breadcrumbItems = ref([]);
+const entries = ref([]);
+const activeEntry = ref({});
+const previewSuppressed = ref(!isPreviewPanelOpenPreference());
+const accessTokens = ref([]);
+const settings = reactive({
+  folderListingEnabled: false,
+  sortFoldersFirst: false,
+  title: 'Surfer',
+  accessRestriction: '',
+  accessPassword: '',
+  index: ''
+});
+const settingsDialog = reactive({
+  busy: false,
+  folderListingEnabled: false,
+  sortFoldersFirst: false,
+  title: '',
+  faviconFile: null,
+  accessRestriction: '',
+  accessPassword: '',
+  index: ''
+});
 
-    // global key handler to unset activeEntry
-    window.addEventListener('keyup', (e) => {
-      // only do this if no modal is active - body classlist would be empty
-      if (e.key === 'Escape' && e.target.classList.length === 0) {
-        this.activeEntry = {};
-      }
-    });
+const mainMenu = [
+  { label: 'Settings', icon: 'fa-solid fa-gear', action: openSettingsDialog },
+  { label: 'Access Tokens', icon: 'fa-solid fa-key', action: openAccessTokenDialog },
+  { separator: true },
+  { label: 'About', icon: 'fa-solid fa-circle-info', action: () => aboutDialog.value.open() },
+  { label: 'Logout', icon: 'fa-solid fa-arrow-right-from-bracket', action: logout }
+];
 
-    window.addEventListener('hashchange', () => {
-      this.loadDirectory(decode(window.location.hash.slice(1)));
-    }, false);
+const previewEntry = computed(() => {
+  if (previewSuppressed.value) return {};
+  if (activeEntry.value.filePath) return activeEntry.value;
+  return makeCurrentFolderPreviewEntry(path.value);
+});
 
-    // upload input event handler
-    this.$refs.upload.addEventListener('change', () => {
-      this.uploadFiles(this.$refs.upload.files || []);
-    });
+function error(header, message) {
+  window.pankow.notify({ type: 'danger', text: header + message });
+  console.error(header, message);
+}
 
-    this.$refs.uploadFolder.addEventListener('change', () => {
-      this.uploadFiles(this.$refs.uploadFolder.files || []);
-    });
+async function initWithToken(accessToken) {
+  if (!accessToken) return login();
 
-    this.$refs.uploadFavicon.addEventListener('change', () => {
-      this.settingsDialog.faviconFile = this.$refs.uploadFavicon.files[0] || null;
-      if (this.settingsDialog.faviconFile) this.$refs.faviconImage.src = URL.createObjectURL(this.settingsDialog.faviconFile);
-    });
-  },
-  methods: {
-    error(header, message) {
-      window.pankow.notify({ type: 'danger', text: header + message });
-      console.error(header, message);
-    },
-    async initWithToken(accessToken) {
-      if (!accessToken) return this.login();
-
-      try {
-        const result = await fetcher.get('/api/profile', { access_token: accessToken });
-        if (result.status !== 200) {
-          delete localStorage.accessToken;
-          return this.login();
-        }
-
-        this.username = result.body.username;
-      } catch (error) {
-        return console.error(error);
-      }
-
-      this.ready = true;
-
-      localStorage.accessToken = accessToken;
-
-      this.loadDirectory(decode(window.location.hash.slice(1)));
-
-      this.refreshAccessTokens();
-    },
-    async loadDirectory(folderPath) {
-      if (!folderPath) return window.location.hash = '/';
-
-      this.busy = true;
-      this.activeEntry = {};
-
-      folderPath = folderPath ? sanitize(folderPath) : '/';
-
-      try {
-        const result = await fetcher.get('/api/files/' + encode(folderPath), { access_token: localStorage.accessToken });
-        if (result.status === 401) return this.logout();
-
-        this.busy = false;
-
-        result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
-        this.entries = result.body.entries.map(function (entry) {
-          entry.previewUrl = getPreviewUrl(entry, folderPath);
-          entry.extension = getExtension(entry);
-          entry.rename = false;
-          entry.filePathNew = entry.fileName;
-          return entry;
-        });
-      } catch (error) {
-        return console.error(error);
-      }
-
-      this.path = folderPath;
-      this.breadcrumbItems = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
-        return {
-          label: e,
-          route: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
-        };
-      });
-
-      // update in case this was triggered from code
-      window.location.hash = this.path;
-    },
-    async login() {
-      // first try to get a new token if we have a session otherwise redirect to oidc login
-      try {
-        const result = await fetcher.get('/api/token');
-        if (result.status !== 201) return window.location.replace('/api/oidc/login');  // we replace to avoid back button loop
-        localStorage.accessToken = result.body.accessToken;
-      } catch (error) {
-        return window.location.replace('/api/oidc/login');  // we replace to avoid back button loop
-      }
-
-      await this.initWithToken(localStorage.accessToken);
-    },
-    async logout() {
-      await fetcher.del('/api/tokens/' + localStorage.accessToken, {}, { access_token: localStorage.accessToken });
-      this.username = '';
+  try {
+    const result = await fetcher.get('/api/profile', { access_token: accessToken });
+    if (result.status !== 200) {
       delete localStorage.accessToken;
-      window.location.href = '/api/oidc/logout';
-    },
-    async refresh() {
-      await this.loadDirectory(this.path);
-    },
-    uploadFiles(files, targetPath) {
-      if (!files || !files.length) return;
+      return login();
+    }
 
-      targetPath = targetPath || this.path;
+    username.value = result.body.username;
+  } catch (e) {
+    return console.error(e);
+  }
 
-      this.uploadStatus.busy = true;
-      this.uploadStatus.count = files.length;
-      this.uploadStatus.size = 0;
-      this.uploadStatus.done = 0;
-      this.uploadStatus.percentDone = 0;
+  ready.value = true;
 
-      for (var i = 0; i < files.length; ++i) {
-        this.uploadStatus.size += files[i].size;
-      }
+  localStorage.accessToken = accessToken;
 
-      eachLimit(files, 10, async (file) => {
-        const path = encode(sanitize(targetPath + '/' + (file.webkitRelativePath || file.name)));
+  loadDirectory(decode(window.location.hash.slice(1)));
 
-        const formData = new FormData();
-        formData.append('file', file);
+  refreshAccessTokens();
+}
 
-        let finishedUploadSize = 0;
+async function loadDirectory(folderPath) {
+  if (!folderPath) return window.location.hash = '/';
 
-        const req = new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.withCredentials = true;
+  busy.value = true;
+  activeEntry.value = {};
 
-          xhr.addEventListener('load', () => {
-            resolve({
-              status: xhr.status,
-              statusText: xhr.statusText
-            });
-          });
+  folderPath = folderPath ? sanitize(folderPath) : '/';
 
-          xhr.addEventListener('error', () => {
-            reject({
-              status: xhr.status,
-              statusText: xhr.statusText
-            });
-          });
+  try {
+    const result = await fetcher.get('/api/files/' + encode(folderPath), { access_token: localStorage.accessToken });
+    if (result.status === 401) return logout();
 
-          xhr.upload.addEventListener('progress', (event) => {
-            // only handle upload events
-            if (!(event.target instanceof XMLHttpRequestUpload)) return;
+    busy.value = false;
 
-            this.uploadStatus.done += event.loaded - finishedUploadSize;
-            // keep track of progress diff not absolute
-            finishedUploadSize = event.loaded;
+    result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
+    entries.value = result.body.entries.map(function (entry) {
+      entry.previewUrl = getPreviewUrl(entry, folderPath);
+      entry.extension = getExtension(entry);
+      entry.rename = false;
+      entry.filePathNew = entry.fileName;
+      return entry;
+    });
+  } catch (e) {
+    return console.error(e);
+  }
 
-            const tmp = Math.round(this.uploadStatus.done / this.uploadStatus.size * 100);
-            this.uploadStatus.percentDone = tmp > 100 ? 100 : tmp;
-          });
+  path.value = folderPath;
+  breadcrumbItems.value = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
+    return {
+      label: e,
+      route: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
+    };
+  });
 
-          xhr.open('POST', `/api/files${path}?access_token=${localStorage.accessToken}`);
-          xhr.send(formData);
-        });
+  window.location.hash = path.value;
+}
 
-        const result = await req;
-        if (result.status === 401) return this.logout();
-        if (result.status !== 201) throw('Error uploading file: ' + result.status);
-      }, async (error) => {
-        if (error) console.error(error);
+async function login() {
+  try {
+    const result = await fetcher.get('/api/token');
+    if (result.status !== 201) return window.location.replace('/api/oidc/login');
+    localStorage.accessToken = result.body.accessToken;
+  } catch (e) {
+    return window.location.replace('/api/oidc/login');
+  }
 
-        this.uploadStatus.busy = false;
-        this.uploadStatus.count = 0;
-        this.uploadStatus.size = 0;
-        this.uploadStatus.done = 0;
-        this.uploadStatus.percentDone = 100;
+  await initWithToken(localStorage.accessToken);
+}
 
-        await this.refresh();
-      });
-    },
-    onDrop(event, entry) {
-      if (!event.dataTransfer.items[0]) return;
+async function logout() {
+  await fetcher.del('/api/tokens/' + localStorage.accessToken, {}, { access_token: localStorage.accessToken });
+  username.value = '';
+  delete localStorage.accessToken;
+  window.location.href = '/api/oidc/logout';
+}
 
-      // figure if a folder was dropped on a modern browser, in this case the first would have to be a directory
-      var folderItem;
-      var targetPath = entry ? entry.filePath : null;
-      try {
-        folderItem = event.dataTransfer.items[0].webkitGetAsEntry();
-        if (folderItem.isFile) return this.uploadFiles(event.dataTransfer.files, targetPath);
-      } catch (e) {
-        return this.uploadFiles(event.dataTransfer.files, targetPath);
-      }
+async function refresh() {
+  await loadDirectory(path.value);
+}
 
-      // if we got here we have a folder drop and a modern browser
-      // now traverse the folder tree and create a file list
-      this.uploadStatus.busy = true;
-      this.uploadStatus.uploadListCount = 0;
+function uploadFiles(files, targetPath) {
+  if (!files || !files.length) return;
 
-      var that = this;
-      var fileList = [];
-      function traverseFileTree(item, path, callback) {
-        if (item.isFile) {
-          // Get file
-          item.file(function (file) {
-            fileList.push(file);
-            ++that.uploadStatus.uploadListCount;
-            callback();
-          });
-        } else if (item.isDirectory) {
-          // Get folder contents
-          const dirReader = item.createReader();
-          dirReader.readEntries(function (entries) {
-            each(entries, function (entry, callback) {
-              traverseFileTree(entry, path + item.name + '/', callback);
-            }, callback);
-          });
-        }
-      }
+  targetPath = targetPath || path.value;
 
-      traverseFileTree(folderItem, '', (error) => {
-        this.uploadStatus.busy = false;
-        this.uploadStatus.uploadListCount = 0;
+  uploadStatus.busy = true;
+  uploadStatus.count = files.length;
+  uploadStatus.size = 0;
+  uploadStatus.done = 0;
+  uploadStatus.percentDone = 0;
 
-        if (error) return console.error(error);
+  for (var i = 0; i < files.length; ++i) {
+    uploadStatus.size += files[i].size;
+  }
 
-        this.uploadFiles(fileList, targetPath);
-      });
-    },
-    async openNewFolderDialog() {
-      const newFolderName = await this.$refs.inputDialog.prompt({
-        message: 'New Foldername',
-        modal: false,
-        value: '',
-        confirmStyle: 'success',
-        confirmLabel: 'Create',
-        rejectLabel: 'Cancel'
+  eachLimit(files, 10, async (file) => {
+    const filePath = encode(sanitize(targetPath + '/' + (file.webkitRelativePath || file.name)));
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    let finishedUploadSize = 0;
+
+    const req = new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.withCredentials = true;
+
+      xhr.addEventListener('load', () => {
+        resolve({ status: xhr.status, statusText: xhr.statusText });
       });
 
-      if (!newFolderName) return;
-
-      const path = encode(sanitize(this.path + '/' + newFolderName));
-
-      try {
-        const result = await fetcher.post(`/api/files${path}`, {}, { access_token: localStorage.accessToken, directory: true });
-        if (result.status === 401) return this.logout();
-        if (result.status === 403) return window.pankow.notify({ type: 'danger', text: 'Folder name not allowed' });
-        if (result.status === 409) return window.pankow.notify({ type: 'danger', text: 'Folder already exists' });
-        if (result.status !== 201) return window.pankow.notify({ type: 'danger', text: 'Error creating folder: ' + result.status });
-      } catch (error) {
-        return window.pankow.notify({ type: 'danger', text: error.message });
-      }
-
-      await this.refresh();
-    },
-    openAccessTokenDialog() {
-      this.$refs.accessTokenDialog.open();
-    },
-    openSettingsDialog() {
-      this.settingsDialog.folderListingEnabled = this.settings.folderListingEnabled;
-      this.settingsDialog.sortFoldersFirst = this.settings.sortFoldersFirst;
-      this.settingsDialog.title = this.settings.title;
-      this.settingsDialog.faviconFile = null;
-      this.settingsDialog.index = this.settings.index;
-      this.settingsDialog.accessRestriction = this.settings.accessRestriction;
-
-      this.$refs.settingsDialog.open();
-    },
-    async onSaveSettingsDialog() {
-      this.settingsDialog.busy = true;
-
-      const data = {
-        folderListingEnabled: this.settingsDialog.folderListingEnabled,
-        sortFoldersFirst: this.settingsDialog.sortFoldersFirst,
-        title: this.settingsDialog.title,
-        index: this.settingsDialog.index,
-        accessRestriction: this.settingsDialog.accessRestriction
-      };
-
-      if (this.settingsDialog.accessPassword) data.accessPassword = this.settingsDialog.accessPassword;
-
-      const query = {
-        access_token: localStorage.accessToken
-      };
-
-      await fetcher.put('/api/settings', data, query);
-
-      if (this.settingsDialog.faviconFile === 'reset') {
-        await fetcher.delete('/api/favicon', {}, query);
-      } else if (this.settingsDialog.faviconFile) {
-        const formData = new FormData();
-        formData.append('file', this.settingsDialog.faviconFile);
-        await fetcher.put('/api/favicon', formData, query);
-      }
-
-      this.settings.folderListingEnabled = data.folderListingEnabled;
-      this.settings.sortFoldersFirst = data.sortFoldersFirst;
-      this.settings.title = data.title;
-      this.settings.index = data.index;
-      this.settings.accessRestriction = data.accessRestriction;
-
-      // refresh immedately
-      document.querySelector('link[rel="icon"]').href = '/api/favicon?' + Date.now();
-      window.document.title = this.settings.title;
-
-      this.settingsDialog.busy = false;
-
-      this.$refs.settingsDialog.close();
-    },
-    onUploadFavicon() {
-      // reset the form first to make the change handler retrigger even on the same file selected
-      this.$refs.uploadFavicon.value = '';
-      this.$refs.uploadFavicon.click();
-    },
-    onResetFavicon() {
-      // magic 'reset' token to indicate removal and reset to default
-      this.settingsDialog.faviconFile = 'reset';
-      this.$refs.faviconImage.src = '/_admin/logo.png';
-    },
-    onUpload() {
-      // reset the form first to make the change handler retrigger even on the same file selected
-      this.$refs.upload.value = '';
-      this.$refs.upload.click();
-    },
-    onUploadFolder() {
-      // reset the form first to make the change handler retrigger even on the same file selected
-      this.$refs.uploadFolder.value = '';
-      this.$refs.uploadFolder.click();
-    },
-    async onDelete(entry) {
-      const path = encode(sanitize(this.path + '/' + entry.fileName));
-
-      try {
-        const result = await fetcher.del(`/api/files${path}`, {}, { access_token: localStorage.accessToken, recursive: true });
-        if (result.status === 401) return this.logout();
-        if (result.status !== 200) return this.error('Error deleting file');
-      } catch (error) {
-        return this.error(error.message);
-      }
-
-      await this.refresh();
-    },
-    async onRename(entry, newFileName) {
-      const path = encode(sanitize(this.path + '/' + entry.fileName));
-      const newFilePath = sanitize(this.path + '/' + newFileName);
-
-      try {
-        const result = await fetcher.put(`/api/files${path}`, { newFilePath: newFilePath }, { access_token: localStorage.accessToken });
-        if (result.status === 401) return this.logout();
-        if (result.status !== 200) return this.error('Error renaming file');
-      } catch (error) {
-        return this.error(error.message);
-      }
-
-      // update in-place to avoid reload
-      entry.fileName = newFileName;
-      // FIXME setting this will correctly update the preview, which on some types might trigger a download on rename!
-      entry.filePath = newFilePath;
-    },
-    async refreshAccessTokens() {
-      try {
-        const result = await fetcher.get('/api/tokens', { access_token: localStorage.accessToken });
-
-        // have to create an array of objects for referencing in v-for -> input
-        this.accessTokens = result.body.accessTokens.map(function (t) { return { value: t }; });
-      } catch (error) {
-        this.error(error.message);
-      }
-    },
-    onCopyToClipboard(value) {
-      copyToClipboard(value);
-      window.pankow.notify({ type:'success', text: 'Copied to Clipboard' });
-    },
-    onCopyAccessToken(value) {
-      copyToClipboard(value);
-      window.pankow.notify({ type:'success', text: 'Token copied to Clipboard' });
-    },
-    async onCreateAccessToken() {
-      try {
-        await fetcher.post('/api/tokens', {}, { access_token: localStorage.accessToken });
-      } catch (error) {
-        return this.error(error.message);
-      }
-
-      await this.refreshAccessTokens();
-    },
-    async onDeleteAccessToken(token) {
-      const yes = await this.$refs.inputDialog.confirm({
-        message: 'Really revoke this access token? Any actions currently using this token will fail.',
-        confirmStyle: 'danger',
-        confirmLabel: 'Yes',
-        rejectLabel: 'No',
-        modal: false
+      xhr.addEventListener('error', () => {
+        reject({ status: xhr.status, statusText: xhr.statusText });
       });
 
-      if (!yes) return;
+      xhr.upload.addEventListener('progress', (event) => {
+        if (!(event.target instanceof XMLHttpRequestUpload)) return;
 
-      try {
-        await fetcher.delete(`/api/tokens/${token}`, {}, { access_token: localStorage.accessToken });
-      } catch (error) {
-        return this.error(error.message);
-      }
+        uploadStatus.done += event.loaded - finishedUploadSize;
+        finishedUploadSize = event.loaded;
 
-      await this.refreshAccessTokens();
-    },
-    onEntryOpen(entry) {
-      // ignore item open on row clicks if we are renaming this entry
-      if (entry.rename) return;
+        const tmp = Math.round(uploadStatus.done / uploadStatus.size * 100);
+        uploadStatus.percentDone = tmp > 100 ? 100 : tmp;
+      });
 
-      const path = sanitize(this.path + '/' + entry.fileName);
+      xhr.open('POST', `/api/files${filePath}?access_token=${localStorage.accessToken}`);
+      xhr.send(formData);
+    });
 
-      if (entry.isDirectory) {
-        window.location.hash = path;
-        return;
-      }
+    const result = await req;
+    if (result.status === 401) return logout();
+    if (result.status !== 201) throw('Error uploading file: ' + result.status);
+  }, async (err) => {
+    if (err) console.error(err);
 
-      this.activeEntry = entry;
-      this.previewSuppressed = false;
-      setPreviewPanelOpenPreference(true);
-    },
-    onSelectionChanged(selectedEntries) {
-      this.activeEntry = selectedEntries[0] || {};
-    },
-    onPreviewOpen() {
-      this.previewSuppressed = false;
-      setPreviewPanelOpenPreference(true);
-    },
-    onPreviewClose() {
-      this.previewSuppressed = true;
-      setPreviewPanelOpenPreference(false);
+    uploadStatus.busy = false;
+    uploadStatus.count = 0;
+    uploadStatus.size = 0;
+    uploadStatus.done = 0;
+    uploadStatus.percentDone = 100;
+
+    await refresh();
+  });
+}
+
+function onDrop(event, entry) {
+  if (!event.dataTransfer.items[0]) return;
+
+  var folderItem;
+  var targetPath = entry ? entry.filePath : null;
+  try {
+    folderItem = event.dataTransfer.items[0].webkitGetAsEntry();
+    if (folderItem.isFile) return uploadFiles(event.dataTransfer.files, targetPath);
+  } catch (e) {
+    return uploadFiles(event.dataTransfer.files, targetPath);
+  }
+
+  uploadStatus.busy = true;
+  uploadStatus.uploadListCount = 0;
+
+  var fileList = [];
+  function traverseFileTree(item, treePath, callback) {
+    if (item.isFile) {
+      item.file(function (file) {
+        fileList.push(file);
+        ++uploadStatus.uploadListCount;
+        callback();
+      });
+    } else if (item.isDirectory) {
+      const dirReader = item.createReader();
+      dirReader.readEntries(function (dirEntries) {
+        each(dirEntries, function (dirEntry, cb) {
+          traverseFileTree(dirEntry, treePath + item.name + '/', cb);
+        }, callback);
+      });
     }
   }
-};
+
+  traverseFileTree(folderItem, '', (err) => {
+    uploadStatus.busy = false;
+    uploadStatus.uploadListCount = 0;
+
+    if (err) return console.error(err);
+
+    uploadFiles(fileList, targetPath);
+  });
+}
+
+async function openNewFolderDialog() {
+  const newFolderName = await inputDialog.value.prompt({
+    message: 'New Foldername',
+    modal: false,
+    value: '',
+    confirmStyle: 'success',
+    confirmLabel: 'Create',
+    rejectLabel: 'Cancel'
+  });
+
+  if (!newFolderName) return;
+
+  const folderPath = encode(sanitize(path.value + '/' + newFolderName));
+
+  try {
+    const result = await fetcher.post(`/api/files${folderPath}`, {}, { access_token: localStorage.accessToken, directory: true });
+    if (result.status === 401) return logout();
+    if (result.status === 403) return window.pankow.notify({ type: 'danger', text: 'Folder name not allowed' });
+    if (result.status === 409) return window.pankow.notify({ type: 'danger', text: 'Folder already exists' });
+    if (result.status !== 201) return window.pankow.notify({ type: 'danger', text: 'Error creating folder: ' + result.status });
+  } catch (e) {
+    return window.pankow.notify({ type: 'danger', text: e.message });
+  }
+
+  await refresh();
+}
+
+function openAccessTokenDialog() {
+  accessTokenDialog.value.open();
+}
+
+function openSettingsDialog() {
+  settingsDialog.folderListingEnabled = settings.folderListingEnabled;
+  settingsDialog.sortFoldersFirst = settings.sortFoldersFirst;
+  settingsDialog.title = settings.title;
+  settingsDialog.faviconFile = null;
+  settingsDialog.index = settings.index;
+  settingsDialog.accessRestriction = settings.accessRestriction;
+
+  settingsDialogRef.value.open();
+}
+
+async function onSaveSettingsDialog() {
+  settingsDialog.busy = true;
+
+  const data = {
+    folderListingEnabled: settingsDialog.folderListingEnabled,
+    sortFoldersFirst: settingsDialog.sortFoldersFirst,
+    title: settingsDialog.title,
+    index: settingsDialog.index,
+    accessRestriction: settingsDialog.accessRestriction
+  };
+
+  if (settingsDialog.accessPassword) data.accessPassword = settingsDialog.accessPassword;
+
+  const query = { access_token: localStorage.accessToken };
+
+  await fetcher.put('/api/settings', data, query);
+
+  if (settingsDialog.faviconFile === 'reset') {
+    await fetcher.delete('/api/favicon', {}, query);
+  } else if (settingsDialog.faviconFile) {
+    const formData = new FormData();
+    formData.append('file', settingsDialog.faviconFile);
+    await fetcher.put('/api/favicon', formData, query);
+  }
+
+  settings.folderListingEnabled = data.folderListingEnabled;
+  settings.sortFoldersFirst = data.sortFoldersFirst;
+  settings.title = data.title;
+  settings.index = data.index;
+  settings.accessRestriction = data.accessRestriction;
+
+  document.querySelector('link[rel="icon"]').href = '/api/favicon?' + Date.now();
+  window.document.title = settings.title;
+
+  settingsDialog.busy = false;
+
+  settingsDialogRef.value.close();
+}
+
+function onUploadFavicon() {
+  uploadFavicon.value.value = '';
+  uploadFavicon.value.click();
+}
+
+function onResetFavicon() {
+  settingsDialog.faviconFile = 'reset';
+  faviconImage.value.src = '/_admin/logo.png';
+}
+
+function onUpload() {
+  upload.value.value = '';
+  upload.value.click();
+}
+
+function onUploadFolder() {
+  uploadFolder.value.value = '';
+  uploadFolder.value.click();
+}
+
+async function onDelete(entry) {
+  const filePath = encode(sanitize(path.value + '/' + entry.fileName));
+
+  try {
+    const result = await fetcher.del(`/api/files${filePath}`, {}, { access_token: localStorage.accessToken, recursive: true });
+    if (result.status === 401) return logout();
+    if (result.status !== 200) return error('Error deleting file');
+  } catch (e) {
+    return error(e.message);
+  }
+
+  await refresh();
+}
+
+async function onRename(entry, newFileName) {
+  const filePath = encode(sanitize(path.value + '/' + entry.fileName));
+  const newFilePath = sanitize(path.value + '/' + newFileName);
+
+  try {
+    const result = await fetcher.put(`/api/files${filePath}`, { newFilePath: newFilePath }, { access_token: localStorage.accessToken });
+    if (result.status === 401) return logout();
+    if (result.status !== 200) return error('Error renaming file');
+  } catch (e) {
+    return error(e.message);
+  }
+
+  entry.fileName = newFileName;
+  // FIXME setting this will correctly update the preview, which on some types might trigger a download on rename!
+  entry.filePath = newFilePath;
+}
+
+async function refreshAccessTokens() {
+  try {
+    const result = await fetcher.get('/api/tokens', { access_token: localStorage.accessToken });
+    accessTokens.value = result.body.accessTokens.map(function (t) { return { value: t }; });
+  } catch (e) {
+    error(e.message);
+  }
+}
+
+function onCopyToClipboard(value) {
+  copyToClipboard(value);
+  window.pankow.notify({ type:'success', text: 'Copied to Clipboard' });
+}
+
+function onCopyAccessToken(value) {
+  copyToClipboard(value);
+  window.pankow.notify({ type:'success', text: 'Token copied to Clipboard' });
+}
+
+async function onCreateAccessToken() {
+  try {
+    await fetcher.post('/api/tokens', {}, { access_token: localStorage.accessToken });
+  } catch (e) {
+    return error(e.message);
+  }
+
+  await refreshAccessTokens();
+}
+
+async function onDeleteAccessToken(token) {
+  const yes = await inputDialog.value.confirm({
+    message: 'Really revoke this access token? Any actions currently using this token will fail.',
+    confirmStyle: 'danger',
+    confirmLabel: 'Yes',
+    rejectLabel: 'No',
+    modal: false
+  });
+
+  if (!yes) return;
+
+  try {
+    await fetcher.delete(`/api/tokens/${token}`, {}, { access_token: localStorage.accessToken });
+  } catch (e) {
+    return error(e.message);
+  }
+
+  await refreshAccessTokens();
+}
+
+function onEntryOpen(entry) {
+  if (entry.rename) return;
+
+  const entryPath = sanitize(path.value + '/' + entry.fileName);
+
+  if (entry.isDirectory) {
+    window.location.hash = entryPath;
+    return;
+  }
+
+  activeEntry.value = entry;
+  previewSuppressed.value = false;
+  setPreviewPanelOpenPreference(true);
+}
+
+function onSelectionChanged(selectedEntries) {
+  activeEntry.value = selectedEntries[0] || {};
+}
+
+function onPreviewOpen() {
+  previewSuppressed.value = false;
+  setPreviewPanelOpenPreference(true);
+}
+
+function onPreviewClose() {
+  previewSuppressed.value = true;
+  setPreviewPanelOpenPreference(false);
+}
+
+onMounted(async () => {
+  try {
+    const result = await fetcher.get('/api/settings');
+    if (result.status !== 200) {
+      console.error('Failed to fetch settings', result.status);
+    } else {
+      settings.folderListingEnabled = !!result.body.folderListingEnabled;
+      settings.sortFoldersFirst = !!result.body.sortFoldersFirst;
+      settings.title = result.body.title;
+      settings.index = result.body.index;
+      settings.accessRestriction = result.body.accessRestriction;
+      settings.accessPassword = result.body.accessPassword;
+    }
+  } catch (e) {
+    console.error(e);
+  }
+
+  window.document.title = settings.title;
+
+  await initWithToken(localStorage.accessToken);
+
+  window.addEventListener('keyup', (e) => {
+    if (e.key === 'Escape' && e.target.classList.length === 0) {
+      activeEntry.value = {};
+    }
+  });
+
+  window.addEventListener('hashchange', () => {
+    loadDirectory(decode(window.location.hash.slice(1)));
+  }, false);
+
+  upload.value.addEventListener('change', () => {
+    uploadFiles(upload.value.files || []);
+  });
+
+  uploadFolder.value.addEventListener('change', () => {
+    uploadFiles(uploadFolder.value.files || []);
+  });
+
+  uploadFavicon.value.addEventListener('change', () => {
+    settingsDialog.faviconFile = uploadFavicon.value.files[0] || null;
+    if (settingsDialog.faviconFile) faviconImage.value.src = URL.createObjectURL(settingsDialog.faviconFile);
+  });
+});
 
 </script>
 
