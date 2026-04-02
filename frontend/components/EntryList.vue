@@ -6,8 +6,8 @@
     <div class="th" style="display: flex;">
       <div class="td" style="max-width: 50px;"></div>
       <div class="td hand" style="flex-grow: 2;" @click="onSort('fileName')">Name <i class="fa-solid" :class="{'fa-arrow-down-a-z': sort.desc, 'fa-arrow-up-z-a': !sort.desc }" v-show="sort.prop === 'fileName'"></i></div>
-      <div class="td hand" style="max-width: 100px;" @click="onSort('size')">Size <i class="fa-solid" :class="{'fa-arrow-down': sort.desc, 'fa-arrow-up': !sort.desc }" v-show="sort.prop === 'size'"></i></div>
-      <div class="td hand" style="max-width: 150px;" @click="onSort('mtime')">Last Modified <i class="pi" :class="{'fa-arrow-down': sort.desc, 'fa-arrow-up': !sort.desc }" v-show="sort.prop === 'mtime'"></i></div>
+      <div class="td hand entry-meta-cell" style="max-width: 100px;" @click="onSort('size')">Size <i class="fa-solid" :class="{'fa-arrow-down': sort.desc, 'fa-arrow-up': !sort.desc }" v-show="sort.prop === 'size'"></i></div>
+      <div class="td hand entry-meta-cell" style="max-width: 150px;" @click="onSort('mtime')">Last Modified <i class="pi" :class="{'fa-arrow-down': sort.desc, 'fa-arrow-up': !sort.desc }" v-show="sort.prop === 'mtime'"></i></div>
       <div class="td" style="max-width: 200px; justify-content: flex-end;"></div>
     </div>
     <div class="tbody">
@@ -20,8 +20,8 @@
           <a v-show="!entry.rename" class="entry-name-link" :href="entry.filePath" @click.stop.prevent="onEntryOpen(entry, true)" :title="entry.fileName">{{ entry.fileName }}</a>
           <div class="rename-action" v-show="editable && !entry.rename" @click.stop="onRename(entry)" v-tooltip.right="'Rename'"><Icon icon="fa-solid fa-pencil"/></div>
         </div>
-        <div class="td" style="display: flex; max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
-        <div class="td" style="display: flex; max-width: 150px;"><span v-tooltip.top="prettyLongDate(entry.mtime)">{{ prettyDate(entry.mtime) }}</span></div>
+        <div class="td entry-meta-cell" style="max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
+        <div class="td entry-meta-cell" style="max-width: 150px;"><span v-tooltip.top="prettyLongDate(entry.mtime)">{{ prettyDate(entry.mtime) }}</span></div>
         <div class="td" style="max-width: 200px; white-space: nowrap; justify-content: flex-end;">
           <span class="action-buttons">
             <Button tool outline icon="fa-solid fa-download" v-tooltip.top="'Download'" v-show="!entry.rename && entry.isFile" @click.stop="onDownload(entry)"/>
@@ -287,6 +287,10 @@ export default {
   white-space: normal;
 }
 
+.th > .td.entry-meta-cell {
+  white-space: nowrap;
+}
+
 .tr {
   width: 100%;
   display: flex;
@@ -341,6 +345,11 @@ export default {
 
 .hand {
   cursor: pointer;
+}
+
+.entry-meta-cell {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 </style>
