@@ -94,6 +94,20 @@ function getExtension(entry) {
     return '';
 }
 
+function makeCurrentFolderPreviewEntry(folderPath) {
+    folderPath = folderPath ? sanitize(folderPath) : '/';
+    var segments = decode(folderPath).split('/').filter(function (e) { return !!e; });
+    var fileName = segments.length ? segments[segments.length - 1] : '.';
+    return {
+        isDirectory: true,
+        isFile: false,
+        filePath: folderPath,
+        fileName: fileName,
+        previewUrl: getPreviewUrl({ isDirectory: true }, folderPath),
+        previewAsLocation: true
+    };
+}
+
 function copyToClipboard(value) {
     var elem = document.createElement('input');
     elem.value = value;
@@ -114,5 +128,6 @@ export {
     getPreviewUrl,
     hasViewer,
     getExtension,
+    makeCurrentFolderPreviewEntry,
     copyToClipboard
 };

@@ -45,6 +45,11 @@ export default {
     entry(newEntry) {
       if (!newEntry.fileName) return;
 
+      if (newEntry.previewAsLocation && newEntry.isDirectory) {
+        this.iFrameSource = encode(newEntry.filePath);
+        return;
+      }
+
       this.iFrameSource = newEntry.previewUrl || 'about:blank';
 
       if (newEntry.isDirectory || !hasViewer(newEntry)) return;

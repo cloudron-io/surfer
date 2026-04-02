@@ -28,7 +28,7 @@
       <div class="main-container-content">
         <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @dropped="onDrop" @entry-activated="onEntryOpen" @entry-renamed="onRename" @entry-delete="onDelete" @selection-changed="onSelectionChanged" editable/>
       </div>
-      <Preview :entry="activeEntry" @close="onPreviewClose"/>
+      <Preview :entry="previewEntry" @close="onPreviewClose"/>
     </div>
     <div class="main-container-footer" v-show="uploadStatus.busy">
       <div v-show="uploadStatus.uploadListCount">
@@ -138,7 +138,7 @@
 
 import { Breadcrumb, Button, Checkbox, Dialog, InputDialog, Notification, PasswordInput, ProgressBar, Radiobutton, Spinner, TextInput, TopBar, fetcher } from '@cloudron/pankow';
 import { eachLimit, each } from 'async';
-import { sanitize, encode, decode, getPreviewUrl, getExtension } from './utils.js';
+import { sanitize, encode, decode, getPreviewUrl, getExtension, makeCurrentFolderPreviewEntry } from './utils.js';
 import { copyToClipboard } from '@cloudron/pankow/utils.js';
 
 import EntryList from './components/EntryList.vue';
@@ -186,6 +186,7 @@ export default {
       breadcrumbItems: [],
       entries: [],
       activeEntry: {},
+      previewSuppressed: false,
       accessTokens: [],
       // holds settings values stored on backend
       settings: {
@@ -228,6 +229,13 @@ export default {
       }]
     };
   },
+  computed: {
+    previewEntry() {
+      if (this.previewSuppressed) return {};
+      if (this.activeEntry.filePath) return this.activeEntry;
+      return makeCurrentFolderPreviewEntry(this.path);
+    }
+  },
   async mounted() {
     try {
       const result = await fetcher.get('/api/settings');
@@ -250,9 +258,12 @@ export default {
     await this.initWithToken(localStorage.accessToken);
 
     // global key handler to unset activeEntry
-    window.addEventListener('keyup', () => {
+    window.addEventListener('keyup', (e) => {
       // only do this if no modal is active - body classlist would be empty
-      if (event.key === 'Escape' && event.target.classList.length === 0) this.activeEntry = {};
+      if (e.key === 'Escape' && e.target.classList.length === 0) {
+        this.activeEntry = {};
+        this.previewSuppressed = false;
+      }
     });
 
     window.addEventListener('hashchange', () => {
@@ -306,6 +317,7 @@ export default {
 
       this.busy = true;
       this.activeEntry = {};
+      this.previewSuppressed = false;
 
       folderPath = folderPath ? sanitize(folderPath) : '/';
 
@@ -667,12 +679,14 @@ export default {
       }
 
       this.activeEntry = entry;
+      this.previewSuppressed = false;
     },
     onSelectionChanged(selectedEntries) {
-      this.activeEntry = selectedEntries[0];
+      this.previewSuppressed = false;
+      this.activeEntry = selectedEntries[0] || {};
     },
     onPreviewClose() {
-      this.activeEntry = {};
+      this.previewSuppressed = true;
     }
   }
 };

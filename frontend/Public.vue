@@ -1,8 +1,8 @@
 <script setup>
 
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { Breadcrumb, Button, Notification, TopBar, fetcher } from '@cloudron/pankow';
-import { sanitize, encode, decode, getPreviewUrl, getExtension } from './utils.js';
+import { sanitize, encode, decode, getPreviewUrl, getExtension, makeCurrentFolderPreviewEntry } from './utils.js';
 
 import EntryList from './components/EntryList.vue';
 import Preview from './components/Preview.vue';
@@ -25,9 +25,17 @@ const settings = ref({
   title: false
 });
 const activeEntry = ref({});
+const previewSuppressed = ref(false);
+
+const previewEntry = computed(function () {
+  if (previewSuppressed.value) return {};
+  if (activeEntry.value.filePath) return activeEntry.value;
+  return makeCurrentFolderPreviewEntry(path.value);
+});
 
 function loadDirectory(folderPath) {
   activeEntry.value = {};
+  previewSuppressed.value = false;
 
   folderPath = folderPath ? sanitize(folderPath) : '/';
 
@@ -61,15 +69,17 @@ function onEntryOpen(entry) {
 }
 
 function onSelectionChanged(selectedEntries) {
-  activeEntry.value = selectedEntries[0];
+  previewSuppressed.value = false;
+  activeEntry.value = selectedEntries[0] || {};
 }
 
 function onPreviewClose() {
-  activeEntry.value = {};
+  previewSuppressed.value = true;
 }
 
 function clearSelection() {
   activeEntry.value = {};
+  previewSuppressed.value = false;
 }
 
 onMounted(async () => {
@@ -116,7 +126,7 @@ onMounted(async () => {
       <div class="main-container-content">
         <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @selection-changed="onSelectionChanged" @entry-activated="onEntryOpen"/>
       </div>
-      <Preview :entry="activeEntry" @close="onPreviewClose"/>
+      <Preview :entry="previewEntry" @close="onPreviewClose"/>
     </div>
   </div>
 </template>
