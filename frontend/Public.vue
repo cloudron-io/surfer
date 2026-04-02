@@ -121,7 +121,9 @@ onMounted(async () => {
         </template>
 
         <template #right>
-          <Button href="/_admin" icon="fa-solid fa-arrow-right-to-bracket">Login</Button>
+          <div class="login-in-topbar">
+            <Button href="/_admin" icon="fa-solid fa-arrow-right-to-bracket">Login</Button>
+          </div>
         </template>
       </TopBar>
     </div>
@@ -134,7 +136,28 @@ onMounted(async () => {
       </div>
       <Preview :entry="previewEntry" @close="onPreviewClose"/>
     </div>
+    <div class="login-fab-mobile">
+      <Button href="/_admin" tool secondary icon="fa-solid fa-arrow-right-to-bracket"/>
+    </div>
   </div>
 </template>
 
-<style></style>
+<style scoped>
+.login-fab-mobile {
+  display: none;
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 10;
+}
+
+@media only screen and (max-width: 767px) {
+  .login-in-topbar {
+    display: none;
+  }
+
+  .login-fab-mobile {
+    display: flex;
+  }
+}
+</style>
