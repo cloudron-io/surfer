@@ -1,31 +1,46 @@
 <template>
-  <div class="container" :class="{ 'visible': entry.filePath }">
-    <div style="display: flex; padding-bottom: 10px;">
-      <div class="header-filename">
-        <span v-if="showFilenameInHeader">{{ entry.fileName }}</span>
+  <div
+    class="container"
+    :class="{ 'visible': entry.filePath, 'resizing': resizeDragging }"
+    :style="containerStyle"
+  >
+    <div
+      class="preview-resize-handle"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize preview panel"
+      tabindex="0"
+      @mousedown.prevent="onResizePointerDown($event)"
+      @keydown="onResizeKeydown"
+    />
+    <div class="preview-main-column">
+      <div style="display: flex; padding-bottom: 10px;">
+        <div class="header-filename">
+          <span v-if="showFilenameInHeader">{{ entry.fileName }}</span>
+        </div>
+        <div v-show="!closeClicked">
+          <Icon icon="fa-solid fa-xmark" style="font-size: 20px; margin-right: 16px; cursor: pointer;" @click="onClose"/>
+        </div>
       </div>
-      <div v-show="!closeClicked">
-        <Icon icon="fa-solid fa-xmark" style="font-size: 20px; margin-right: 16px; cursor: pointer;" @click="onClose"/>
+      <div class="preview-body">
+        <div v-if="staticPreviewSrc" class="preview-folder">
+          <img :src="staticPreviewSrc" alt="" class="preview-folder-image"/>
+          <span v-if="entry.fileName" class="preview-static-filename">{{ entry.fileName }}</span>
+        </div>
+        <iframe
+          v-else-if="entry.filePath"
+          id="previewIframe"
+          ref="iframe"
+          :src="iFrameSource"
+          class="preview-iframe"
+          @load="onIframeLoad"
+        />
       </div>
-    </div>
-    <div class="preview-body">
-      <div v-if="staticPreviewSrc" class="preview-folder">
-        <img :src="staticPreviewSrc" alt="" class="preview-folder-image"/>
-        <span v-if="entry.fileName" class="preview-static-filename">{{ entry.fileName }}</span>
+      <div class="actions">
+        <Button outline v-show="entry.isFile" icon="fa-solid fa-download" @click="onDownload(entry)">Download</Button>
+        <Button outline icon="fa-solid fa-arrow-up-right-from-square" :href="encode(entry.filePath)" target="_blank">Open</Button>
+        <Button outline icon="fa-regular fa-copy" @click="onCopyLink(entry)">Copy Link</Button>
       </div>
-      <iframe
-        v-else-if="entry.filePath"
-        id="previewIframe"
-        ref="iframe"
-        :src="iFrameSource"
-        class="preview-iframe"
-        @load="onIframeLoad"
-      />
-    </div>
-    <div class="actions">
-      <Button outline v-show="entry.isFile" icon="fa-solid fa-download" @click="onDownload(entry)">Download</Button>
-      <Button outline icon="fa-solid fa-arrow-up-right-from-square" :href="encode(entry.filePath)" target="_blank">Open</Button>
-      <Button outline icon="fa-regular fa-copy" @click="onCopyLink(entry)">Copy Link</Button>
     </div>
   </div>
 </template>
@@ -33,7 +48,7 @@
 <script>
 
 import { Button, Icon } from '@cloudron/pankow';
-import { download, encode, getPreviewUrl, hasViewer, sanitize } from '../utils.js';
+import { download, encode, getPreviewUrl, hasViewer, sanitize, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from '../utils.js';
 import { copyToClipboard } from '@cloudron/pankow/utils';
 
 export default {
@@ -50,6 +65,10 @@ export default {
   },
   emits: [ 'close' ],
   computed: {
+    containerStyle() {
+      if (!this.entry.filePath) return { width: '0' };
+      return { width: this.panelWidthVw + 'vw' };
+    },
     showFilenameInHeader() {
       return !!(this.entry.filePath && hasViewer(this.entry));
     },
@@ -67,7 +86,9 @@ export default {
   data() {
     return {
       iFrameSource: 'about:blank',
-      closeClicked: false
+      closeClicked: false,
+      panelWidthVw: getPreviewPanelWidthVw(),
+      resizeDragging: false
     };
   },
   watch: {
@@ -121,6 +142,49 @@ export default {
     onClose() {
       this.closeClicked = true;
       this.$emit('close');
+    },
+    onResizePointerDown(e) {
+      if (typeof window === 'undefined' || window.matchMedia('(max-width: 767px)').matches) return;
+
+      var self = this;
+      self.resizeDragging = true;
+
+      function applyFromClientX(clientX) {
+        var w = document.documentElement.clientWidth;
+        if (w <= 0) return;
+        self.panelWidthVw = clampPreviewPanelWidthVw(((w - clientX) / w) * 100);
+      }
+
+      applyFromClientX(e.clientX);
+
+      var prevCursor = document.body.style.cursor;
+      var prevUserSelect = document.body.style.userSelect;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+
+      function onMove(e) {
+        applyFromClientX(e.clientX);
+      }
+
+      function onUp() {
+        self.resizeDragging = false;
+        document.body.style.cursor = prevCursor;
+        document.body.style.userSelect = prevUserSelect;
+        setPreviewPanelWidthVw(self.panelWidthVw);
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+      }
+
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    },
+    onResizeKeydown(e) {
+      if (typeof window === 'undefined' || window.matchMedia('(max-width: 767px)').matches) return;
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault();
+      var delta = e.key === 'ArrowLeft' ? -1 : 1;
+      this.panelWidthVw = clampPreviewPanelWidthVw(this.panelWidthVw + delta);
+      setPreviewPanelWidthVw(this.panelWidthVw);
     }
   }
 };
@@ -131,25 +195,59 @@ export default {
 
 .container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: stretch;
   height: 100%;
   overflow: hidden;
   width: 0;
   transition: width 200ms;
   background-color: var(--pankow-color-background);
   padding: 0;
-  border-left: solid 1px #e6e6e6;
+  flex-shrink: 0;
+}
+
+.container.resizing {
+  transition: none;
+}
+
+.preview-resize-handle {
+  flex: 0 0 6px;
+  width: 6px;
+  min-width: 6px;
+  cursor: col-resize;
+  touch-action: none;
+  align-self: stretch;
+  border-right: solid 1px #e6e6e6;
+  box-sizing: border-box;
+}
+
+.preview-resize-handle:hover,
+.container.resizing .preview-resize-handle {
+  background-color: rgba(0, 0, 0, 0.06);
 }
 
 @media (prefers-color-scheme: dark) {
-  .container {
-    border-left: none;
+  .preview-resize-handle {
+    border-right: none;
+  }
+
+  .preview-resize-handle:hover,
+  .container.resizing .preview-resize-handle {
+    background-color: rgba(255, 255, 255, 0.08);
   }
 }
 
-.container.visible {
+.preview-main-column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+}
+
+.container.visible .preview-main-column {
   padding: 10px 10px 0px 10px;
-  width: 40%;
 }
 
 .header-filename {
@@ -214,9 +312,13 @@ export default {
 @media only screen and (max-width: 767px)  {
   .container.visible {
     position: absolute;
-    width: 100%;
+    width: 100% !important;
     height: 100%;
     top: 0;
+  }
+
+  .preview-resize-handle {
+    display: none;
   }
 }
 

@@ -118,6 +118,33 @@ function copyToClipboard(value) {
 
 var PREVIEW_PANEL_OPEN_KEY = 'surfer.previewPanelOpen';
 
+var PREVIEW_PANEL_WIDTH_VW_KEY = 'surfer.previewPanelWidthVw';
+var PREVIEW_PANEL_WIDTH_VW_DEFAULT = 40;
+var PREVIEW_PANEL_WIDTH_VW_MIN = 15;
+var PREVIEW_PANEL_WIDTH_VW_MAX = 85;
+
+function clampPreviewPanelWidthVw(n) {
+    var x = Number(n);
+    if (!isFinite(x)) return PREVIEW_PANEL_WIDTH_VW_DEFAULT;
+    return Math.min(PREVIEW_PANEL_WIDTH_VW_MAX, Math.max(PREVIEW_PANEL_WIDTH_VW_MIN, x));
+}
+
+function getPreviewPanelWidthVw() {
+    try {
+        var v = localStorage.getItem(PREVIEW_PANEL_WIDTH_VW_KEY);
+        if (v === null) return PREVIEW_PANEL_WIDTH_VW_DEFAULT;
+        return clampPreviewPanelWidthVw(parseFloat(v));
+    } catch (e) {
+        return PREVIEW_PANEL_WIDTH_VW_DEFAULT;
+    }
+}
+
+function setPreviewPanelWidthVw(widthVw) {
+    try {
+        localStorage.setItem(PREVIEW_PANEL_WIDTH_VW_KEY, String(clampPreviewPanelWidthVw(widthVw)));
+    } catch (e) { /* ignore quota / private mode */ }
+}
+
 function isPreviewPanelOpenPreference() {
     try {
         var v = localStorage.getItem(PREVIEW_PANEL_OPEN_KEY);
@@ -148,5 +175,8 @@ export {
     makeCurrentFolderPreviewEntry,
     copyToClipboard,
     isPreviewPanelOpenPreference,
-    setPreviewPanelOpenPreference
+    setPreviewPanelOpenPreference,
+    getPreviewPanelWidthVw,
+    setPreviewPanelWidthVw,
+    clampPreviewPanelWidthVw
 };
