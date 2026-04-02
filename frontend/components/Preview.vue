@@ -302,6 +302,10 @@ export default {
   min-height: 0;
 }
 
+.container.resizing .preview-iframe {
+  pointer-events: none;
+}
+
 .actions {
   display: flex;
   gap: 6px;
