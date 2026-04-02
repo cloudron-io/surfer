@@ -348,3 +348,8 @@
 * Update surfer to 6.5.0
 * Remove various node modules to reduce dependency on 3rdparty code as a precaution due to increasing supply chain attacks
 
+[6.5.1]
+* Update surfer to 6.5.1
+* Improved preview behavior
+* Various mobile fixes
+
