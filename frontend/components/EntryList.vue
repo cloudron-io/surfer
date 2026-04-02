@@ -15,9 +15,9 @@
       <div class="tr-placeholder" v-show="entries.length !== 0 && filteredAndSortedEntries.length === 0">Nothing found</div>
       <div class="tr" v-for="entry in filteredAndSortedEntries" :key="entry.fileName" @dblclick="onEntryOpen(entry, false)" @click="onEntrySelect(entry)" @drop.stop.prevent="drop(entry)" @dragover.stop.prevent="dragOver(entry)" :class="{ 'selected': selected.includes(entry.filePath), 'active': entry === active,  'drag-active': entry === dragActive }">
         <div class="td" style="max-width: 50px;"><img :src="entry.previewUrl" style="width: 32px; height: 32px; vertical-align: middle; object-fit: cover;"/></div>
-        <div class="td" style="flex-grow: 2;">
+        <div class="td entry-name-cell" style="flex-grow: 2;">
           <TextInput @click.stop @keyup.enter="onRenameSubmit(entry)" @keyup.esc="onRenameEnd(entry)" @blur="onRenameEnd(entry)" v-model="entry.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="entry.rename" class="rename-input"/>
-          <a v-show="!entry.rename" :href="entry.filePath" @click.stop.prevent="onEntryOpen(entry, true)">{{ entry.fileName }}</a>
+          <a v-show="!entry.rename" class="entry-name-link" :href="entry.filePath" @click.stop.prevent="onEntryOpen(entry, true)" :title="entry.fileName">{{ entry.fileName }}</a>
           <div class="rename-action" v-show="editable && !entry.rename" @click.stop="onRename(entry)" v-tooltip.right="'Rename'"><Icon icon="fa-solid fa-pencil"/></div>
         </div>
         <div class="td" style="display: flex; max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
@@ -243,11 +243,27 @@ export default {
 }
 
 .rename-input {
+  flex: 1 1 auto;
+  min-width: 0;
   width: 100%;
+}
+
+.entry-name-cell {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.entry-name-link {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .rename-action {
   cursor: pointer;
+  flex-shrink: 0;
   margin-left: 20px;
   font-size: 16px;
 }
@@ -305,7 +321,7 @@ export default {
 
 .td > a {
   color: inherit;
-  margin: auto 0px;
+  margin: auto 0;
 }
 
 .td {
