@@ -1,6 +1,6 @@
 <template>
   <div
-    class="container"
+    class="container preview-panel"
     :class="{ 'visible': entry.filePath, 'resizing': resizeDragging }"
     :style="containerStyle"
   >
@@ -309,16 +309,13 @@ export default {
   padding: 20px;
 }
 
-@media only screen and (max-width: 767px)  {
-  .container.visible {
-    position: absolute;
-    width: 100% !important;
-    height: 100%;
-    top: 0;
-  }
-
-  .preview-resize-handle {
-    display: none;
+@media only screen and (max-width: 767px) {
+  .preview-panel {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden;
+    pointer-events: none;
   }
 }
 

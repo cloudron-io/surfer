@@ -17,7 +17,7 @@
         <div class="td" style="max-width: 50px;"><img :src="entry.previewUrl" style="width: 32px; height: 32px; vertical-align: middle; object-fit: cover;"/></div>
         <div class="td entry-name-cell" style="flex-grow: 2;">
           <TextInput @click.stop @keyup.enter="onRenameSubmit(entry)" @keyup.esc="onRenameEnd(entry)" @blur="onRenameEnd(entry)" v-model="entry.filePathNew" :id="'filePathRenameInputId-' + entry.fileName" v-show="entry.rename" class="rename-input"/>
-          <a v-show="!entry.rename" class="entry-name-link" :href="entry.filePath" @click.stop.prevent="onEntryOpen(entry, true)" :title="entry.fileName">{{ entry.fileName }}</a>
+          <a v-show="!entry.rename" class="entry-name-link" :href="entryNameHref(entry)" @click="onEntryNameClick(entry, $event)" :title="entry.fileName">{{ entry.fileName }}</a>
           <div class="rename-action" v-show="editable && !entry.rename" @click.stop="onRename(entry)" v-tooltip.right="'Rename'"><Icon icon="fa-solid fa-pencil"/></div>
         </div>
         <div class="td entry-meta-cell" style="max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
@@ -62,6 +62,10 @@ export default {
     sortFoldersFirst: {
       type: Boolean,
       default: true
+    },
+    useHashForNavigation: {
+      type: Boolean,
+      default: false
     }
   },
   emits: [ 'selection-changed', 'entry-activated', 'entry-renamed', 'entry-delete', 'dropped' ],
@@ -73,7 +77,9 @@ export default {
         prop: 'fileName',
         desc: true
       },
-      dragActive: ''
+      dragActive: '',
+      isMobileViewport: false,
+      mobileMediaQuery: null
     };
   },
   computed: {
@@ -101,6 +107,11 @@ export default {
     }
   },
   mounted() {
+    this.mobileMediaQuery = window.matchMedia('(max-width: 767px)');
+    this.isMobileViewport = this.mobileMediaQuery.matches;
+    this._onMobileViewportChange = (e) => { this.isMobileViewport = e.matches; };
+    this.mobileMediaQuery.addEventListener('change', this._onMobileViewportChange);
+
     // global key handler for up/down selection
     window.addEventListener('keydown', (event) => {
       if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
@@ -122,6 +133,11 @@ export default {
       }
     });
   },
+  beforeUnmount() {
+    if (this.mobileMediaQuery && this._onMobileViewportChange) {
+      this.mobileMediaQuery.removeEventListener('change', this._onMobileViewportChange);
+    }
+  },
   methods: {
     encode,
     prettyDate,
@@ -134,6 +150,25 @@ export default {
     onEntrySelect(entry) {
       this.selected = [ entry.filePath ];
       this.$emit('selection-changed', this.entries.filter((e) => this.selected.includes(e.filePath)));
+    },
+    entryNameHref(entry) {
+      var path = encode(entry.filePath) + (entry.isDirectory ? '/' : '');
+      if (this.useHashForNavigation && entry.isDirectory) return '#' + path;
+      return path;
+    },
+    onEntryNameClick(entry, event) {
+      if (entry.rename) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      if (this.isMobileViewport) {
+        event.stopPropagation();
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      this.onEntryOpen(entry, true);
     },
     onEntryOpen(entry, select) {
       if (entry.rename) return;

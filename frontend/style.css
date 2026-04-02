@@ -40,6 +40,12 @@
   z-index: 2;
 }
 
+@media only screen and (max-width: 767px) {
+  .preview-open-chevron {
+    display: none !important;
+  }
+}
+
 .main-container-footer {
   display: flex;
   padding: 10px;
