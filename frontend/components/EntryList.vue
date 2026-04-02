@@ -6,7 +6,7 @@
     <div class="th" style="display: flex;">
       <div class="td" style="max-width: 50px;"></div>
       <div class="td hand" style="flex-grow: 2;" @click="onSort('fileName')">Name <i class="fa-solid" :class="{'fa-arrow-down-a-z': sort.desc, 'fa-arrow-up-z-a': !sort.desc }" v-show="sort.prop === 'fileName'"></i></div>
-      <div class="td hand entry-meta-cell" style="max-width: 100px;" @click="onSort('size')">Size <i class="fa-solid" :class="{'fa-arrow-down': sort.desc, 'fa-arrow-up': !sort.desc }" v-show="sort.prop === 'size'"></i></div>
+      <div class="td hand entry-meta-cell entry-size-cell" style="max-width: 100px;" @click="onSort('size')">Size <i class="fa-solid" :class="{'fa-arrow-down': sort.desc, 'fa-arrow-up': !sort.desc }" v-show="sort.prop === 'size'"></i></div>
       <div class="td hand entry-meta-cell" style="max-width: 150px;" @click="onSort('mtime')">Last Modified <i class="pi" :class="{'fa-arrow-down': sort.desc, 'fa-arrow-up': !sort.desc }" v-show="sort.prop === 'mtime'"></i></div>
       <div class="td entry-actions-cell" style="max-width: 200px; justify-content: flex-end;"></div>
     </div>
@@ -20,7 +20,7 @@
           <a v-show="!entry.rename" class="entry-name-link" :href="entryNameHref(entry)" @click="onEntryNameClick(entry, $event)" :title="entry.fileName">{{ entry.fileName }}</a>
           <div class="rename-action" v-show="editable && !entry.rename" @click.stop="onRename(entry)" v-tooltip.right="'Rename'"><Icon icon="fa-solid fa-pencil"/></div>
         </div>
-        <div class="td entry-meta-cell" style="max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
+        <div class="td entry-meta-cell entry-size-cell" style="max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
         <div class="td entry-meta-cell" style="max-width: 150px;"><span v-tooltip.top="prettyLongDate(entry.mtime)">{{ prettyDate(entry.mtime) }}</span></div>
         <div class="td entry-actions-cell" style="max-width: 200px; white-space: nowrap; justify-content: flex-end;">
           <span class="action-buttons">
@@ -400,7 +400,14 @@ export default {
     display: none;
   }
 
-  .entry-actions-cell {
+  /* Must beat `.th > .td { display: block }` or header keeps an extra column vs rows */
+  .entry-actions-cell,
+  .th > .td.entry-actions-cell {
+    display: none;
+  }
+
+  .entry-size-cell,
+  .th > .td.entry-size-cell {
     display: none;
   }
 }
