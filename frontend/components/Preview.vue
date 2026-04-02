@@ -38,8 +38,8 @@
       </div>
       <div class="actions">
         <Button outline v-show="entry.isFile" icon="fa-solid fa-download" @click="onDownload(entry)">Download</Button>
-        <Button outline icon="fa-solid fa-arrow-up-right-from-square" :href="encode(entry.filePath)" target="_blank">Open</Button>
         <Button outline icon="fa-regular fa-copy" @click="onCopyLink(entry)">Copy Link</Button>
+        <Button outline icon="fa-solid fa-arrow-up-right-from-square" :href="encode(entry.filePath)" target="_blank">Open</Button>
       </div>
     </div>
   </div>
