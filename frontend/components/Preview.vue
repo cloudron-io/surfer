@@ -2,13 +2,26 @@
   <div class="container" :class="{ 'visible': entry.filePath }">
     <div style="display: flex; padding-bottom: 10px;">
       <div class="header-filename">
-        {{ entry.fileName }}
+        <span v-if="showFilenameInHeader">{{ entry.fileName }}</span>
       </div>
       <div v-show="!closeClicked">
         <Icon icon="fa-solid fa-xmark" style="font-size: 20px; margin-right: 16px; cursor: pointer;" @click="onClose"/>
       </div>
     </div>
-    <iframe id="previewIframe" ref="iframe" :src="iFrameSource" style="width: 100%; height: 100%; border: none;"></iframe>
+    <div class="preview-body">
+      <div v-if="staticPreviewSrc" class="preview-folder">
+        <img :src="staticPreviewSrc" alt="" class="preview-folder-image"/>
+        <span v-if="entry.fileName" class="preview-static-filename">{{ entry.fileName }}</span>
+      </div>
+      <iframe
+        v-else-if="entry.filePath"
+        id="previewIframe"
+        ref="iframe"
+        :src="iFrameSource"
+        class="preview-iframe"
+        @load="onIframeLoad"
+      />
+    </div>
     <div class="actions">
       <Button outline v-show="entry.isFile" icon="fa-solid fa-download" @click="onDownload(entry)">Download</Button>
       <Button outline icon="fa-solid fa-arrow-up-right-from-square" :href="encode(entry.filePath)" target="_blank">Open</Button>
@@ -20,7 +33,7 @@
 <script>
 
 import { Button, Icon } from '@cloudron/pankow';
-import { download, encode, hasViewer } from '../utils.js';
+import { download, encode, getPreviewUrl, hasViewer, sanitize } from '../utils.js';
 import { copyToClipboard } from '@cloudron/pankow/utils';
 
 export default {
@@ -36,6 +49,21 @@ export default {
     }
   },
   emits: [ 'close' ],
+  computed: {
+    showFilenameInHeader() {
+      return !!(this.entry.filePath && hasViewer(this.entry));
+    },
+    staticPreviewSrc() {
+      var e = this.entry;
+      if (!e.filePath || hasViewer(e)) return '';
+      if (e.isDirectory) {
+        return e.previewUrl || getPreviewUrl({ isDirectory: true }, e.filePath);
+      }
+      var i = e.filePath.lastIndexOf('/');
+      var parent = i <= 0 ? '/' : sanitize(e.filePath.slice(0, i));
+      return e.previewUrl || getPreviewUrl(e, parent);
+    }
+  },
   data() {
     return {
       iFrameSource: 'about:blank',
@@ -47,41 +75,42 @@ export default {
       if (newEntry.filePath) {
         this.closeClicked = false;
       }
-      if (!newEntry.fileName) return;
 
-      if (newEntry.previewAsLocation && newEntry.isDirectory) {
-        this.iFrameSource = encode(newEntry.filePath);
+      if (!newEntry.filePath) {
+        this.iFrameSource = 'about:blank';
         return;
       }
 
-      this.iFrameSource = newEntry.previewUrl || 'about:blank';
+      if (!hasViewer(newEntry)) {
+        this.iFrameSource = 'about:blank';
+        return;
+      }
 
-      if (newEntry.isDirectory || !hasViewer(newEntry)) return;
+      if (!newEntry.fileName) return;
+
+      this.iFrameSource = newEntry.previewUrl || 'about:blank';
 
       setTimeout(() => { this.iFrameSource = encode(newEntry.filePath); }, 100);
     }
   },
-  mounted() {
-    // this injects some styling for the preview once the document is loaded
-    this.$refs.iframe.addEventListener('load', (e) => {
-      if (!e.target.contentWindow.document.body) return;
-
-      e.target.contentWindow.document.body.style.margin = 0;
-      e.target.contentWindow.document.body.style.display = 'flex';
-      e.target.contentWindow.document.body.style.justifyContent = 'center';
-      e.target.contentWindow.document.body.style.alignItems = 'center';
-      e.target.contentWindow.document.body.style.height = '100%';
-
-      // this will ensure the content for example img is scaled
-      if (e.target.contentWindow.document.body.firstChild) {
-        e.target.contentWindow.document.body.firstChild.style.maxWidth = '100%';
-        e.target.contentWindow.document.body.firstChild.style.maxHeight = '100%';
-        e.target.contentWindow.document.body.firstChild.style.margin = '0';
-      }
-    });
-  },
   methods: {
     encode,
+    onIframeLoad(e) {
+      var doc = e.target.contentWindow && e.target.contentWindow.document;
+      if (!doc || !doc.body) return;
+
+      doc.body.style.margin = 0;
+      doc.body.style.display = 'flex';
+      doc.body.style.justifyContent = 'center';
+      doc.body.style.alignItems = 'center';
+      doc.body.style.height = '100%';
+
+      if (doc.body.firstChild) {
+        doc.body.firstChild.style.maxWidth = '100%';
+        doc.body.firstChild.style.maxHeight = '100%';
+        doc.body.firstChild.style.margin = '0';
+      }
+    },
     onDownload(entry) {
       download(entry);
     },
@@ -127,6 +156,52 @@ export default {
   margin: auto;
   white-space: nowrap;
   overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.preview-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-folder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 0;
+  padding: 0 8px;
+}
+
+.preview-static-filename {
+  max-width: 100%;
+  text-align: center;
+  word-break: break-word;
+  line-height: 1.3;
+  color: var(--pankow-color-text, inherit);
+}
+
+.preview-folder-image {
+  width: 128px;
+  height: 128px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  flex: 1;
+  min-height: 0;
 }
 
 .actions {

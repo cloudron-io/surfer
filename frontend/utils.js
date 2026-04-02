@@ -97,14 +97,13 @@ function getExtension(entry) {
 function makeCurrentFolderPreviewEntry(folderPath) {
     folderPath = folderPath ? sanitize(folderPath) : '/';
     var segments = decode(folderPath).split('/').filter(function (e) { return !!e; });
-    var fileName = segments.length ? segments[segments.length - 1] : '.';
+    var fileName = segments.length ? segments[segments.length - 1] : '';
     return {
         isDirectory: true,
         isFile: false,
         filePath: folderPath,
         fileName: fileName,
-        previewUrl: getPreviewUrl({ isDirectory: true }, folderPath),
-        previewAsLocation: true
+        previewUrl: getPreviewUrl({ isDirectory: true }, folderPath)
     };
 }
 
