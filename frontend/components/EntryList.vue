@@ -8,7 +8,7 @@
       <div class="td hand" style="flex-grow: 2;" @click="onSort('fileName')">Name <i class="fa-solid" :class="{'fa-arrow-down-a-z': sort.desc, 'fa-arrow-up-z-a': !sort.desc }" v-show="sort.prop === 'fileName'"></i></div>
       <div class="td hand entry-meta-cell" style="max-width: 100px;" @click="onSort('size')">Size <i class="fa-solid" :class="{'fa-arrow-down': sort.desc, 'fa-arrow-up': !sort.desc }" v-show="sort.prop === 'size'"></i></div>
       <div class="td hand entry-meta-cell" style="max-width: 150px;" @click="onSort('mtime')">Last Modified <i class="pi" :class="{'fa-arrow-down': sort.desc, 'fa-arrow-up': !sort.desc }" v-show="sort.prop === 'mtime'"></i></div>
-      <div class="td" style="max-width: 200px; justify-content: flex-end;"></div>
+      <div class="td entry-actions-cell" style="max-width: 200px; justify-content: flex-end;"></div>
     </div>
     <div class="tbody">
       <div class="tr-placeholder" v-show="entries.length === 0">Folder is empty</div>
@@ -22,7 +22,7 @@
         </div>
         <div class="td entry-meta-cell" style="max-width: 100px;">{{ prettyFileSize(entry.size) }}</div>
         <div class="td entry-meta-cell" style="max-width: 150px;"><span v-tooltip.top="prettyLongDate(entry.mtime)">{{ prettyDate(entry.mtime) }}</span></div>
-        <div class="td" style="max-width: 200px; white-space: nowrap; justify-content: flex-end;">
+        <div class="td entry-actions-cell" style="max-width: 200px; white-space: nowrap; justify-content: flex-end;">
           <span class="action-buttons">
             <Button tool outline icon="fa-solid fa-download" v-tooltip.top="'Download'" v-show="!entry.rename && entry.isFile" @click.stop="onDownload(entry)"/>
             <Button tool outline icon="fa-regular fa-copy" v-tooltip.top="'Copy Link'" v-show="!entry.rename && entry.isFile" @click.stop="onCopyLink(entry)"/>
@@ -385,6 +385,16 @@ export default {
 .entry-meta-cell {
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+  .rename-action {
+    display: none;
+  }
+
+  .entry-actions-cell {
+    display: none;
+  }
 }
 
 </style>
