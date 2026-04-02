@@ -387,6 +387,14 @@ export default {
   flex-shrink: 0;
 }
 
+.th > .td.entry-meta-cell {
+  text-align: right;
+}
+
+.tr .entry-meta-cell {
+  justify-content: flex-end;
+}
+
 @media (max-width: 767px) {
   .rename-action {
     display: none;
