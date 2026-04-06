@@ -204,6 +204,7 @@ const router = new express.Router();
 
 // needed for secure cookies
 app.enable('trust proxy');
+app.disable('x-powered-by');
 
 const webdavServer = new webdav.v2.WebDAVServer({
     requireAuthentification: true,
