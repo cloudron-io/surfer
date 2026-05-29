@@ -1,16 +1,16 @@
 <template>
   <div class="login-container" v-show="ready">
-    <h1>Login to {{ settings.title }}</h1>
+    <h1>Log in to {{ settings.title }}</h1>
     <form @submit="onLogin" @submit.prevent v-show="settings.accessRestriction === 'password'">
       <div style="margin-bottom: 10px;">
         <label for="passwordInput">Password</label>
         <PasswordInput id="passwordInput" :feedback="false" v-model="password" :class="{ 'has-error': error }"/>
         <small v-show="error" :class="{ 'has-error': error }">Wrong password</small>
       </div>
-      <Button @click="onLogin" id="loginButton" :loading="busy" :disabled="busy || !password">Login</Button>
+      <Button @click="onLogin" id="loginButton" :loading="busy" :disabled="busy || !password">Log in</Button>
     </form>
     <div>
-      <Button :href="'/api/oidc/login?returnTo=' + returnTo" v-show="settings.accessRestriction !== 'password'" icon="fa-solid fa-arrow-right-to-bracket">Login with Cloudron</Button>
+      <Button :href="'/api/oidc/login?returnTo=' + returnTo" v-show="settings.accessRestriction !== 'password'" icon="fa-solid fa-arrow-right-to-bracket">Log in with Cloudron</Button>
     </div>
   </div>
 </template>

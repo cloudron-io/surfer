@@ -207,7 +207,7 @@ const mainMenu = [
   { label: 'Access Tokens', icon: 'fa-solid fa-key', action: openAccessTokenDialog },
   { separator: true },
   { label: 'About', icon: 'fa-solid fa-circle-info', action: () => aboutDialog.value.open() },
-  { label: 'Logout', icon: 'fa-solid fa-arrow-right-from-bracket', action: logout }
+  { label: 'Log out', icon: 'fa-solid fa-arrow-right-from-bracket', action: logout }
 ];
 
 const previewEntry = computed(() => {

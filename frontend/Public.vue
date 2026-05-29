@@ -122,7 +122,7 @@ onMounted(async () => {
 
         <template #right>
           <div class="login-in-topbar">
-            <Button href="/_admin" icon="fa-solid fa-arrow-right-to-bracket">Login</Button>
+            <Button href="/_admin" icon="fa-solid fa-arrow-right-to-bracket">Log in</Button>
           </div>
         </template>
       </TopBar>
