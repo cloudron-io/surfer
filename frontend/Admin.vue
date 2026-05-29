@@ -19,7 +19,7 @@
             <Button tool icon="fa-solid fa-file-arrow-up" @click="onUpload"><span class="pankow-no-mobile">Upload file</span><span class="pankow-no-desktop">File</span></Button>
             <Button tool icon="fa-solid fa-upload" @click="onUploadFolder"><span class="pankow-no-mobile">Upload folder</span><span class="pankow-no-desktop">Folder</span></Button>
             <Button tool icon="fa-solid fa-plus" success @click="openNewFolderDialog"><span class="pankow-no-mobile">New folder</span><span class="pankow-no-desktop">Folder</span></Button>
-            <Button icon="fa-solid fa-ellipsis" tool outline :menu="mainMenu" id="burgerMenuButton" :show-dropdown="false"/>
+            <Button icon="fa-solid fa-ellipsis" tool outline :menu="mainMenu" title="Menu" :show-dropdown="false"/>
           </div>
         </template>
       </TopBar>
