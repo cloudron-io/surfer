@@ -6,7 +6,7 @@ import path from 'node:path';
 
 import superagent from '@cloudron/superagent';
 
-import { app, click, cloudronCli, getText, goto, password, sendKeys, setupBrowser, takeScreenshot, teardownBrowser, username, waitFor } from '@cloudron/charlie';
+import { app, clearCache, click, cloudronCli, getText, goto, loginOIDC, setupBrowser, takeScreenshot, teardownBrowser, waitFor } from '@cloudron/charlie';
 
 describe('Application life cycle test', function () {
     const TEST_FILE_NAME_0 = 'index.html';
@@ -19,7 +19,8 @@ describe('Application life cycle test', function () {
     let gApiToken;
 
     before(function () {
-        execSync('npm install -g cloudron-surfer', { stdio: 'inherit' });
+        const appRoot = path.resolve(import.meta.dirname, '..');
+        execSync('npm install -g .', { cwd: appRoot, stdio: 'inherit' });
         const prefix = execSync('npm config get prefix', { encoding: 'utf8' }).trim();
         CLI = `${prefix}/bin/surfer`;
         console.log('surfer cli is probably at', CLI);
@@ -31,20 +32,14 @@ describe('Application life cycle test', function () {
         await takeScreenshot(this.currentTest);
     });
 
-    async function login(withSession = true) {
-        await goto(`https://${app.fqdn}/_admin`);
-        if (!withSession) {
-            await sendKeys('css=#inputUsername', username);
-            await sendKeys('css=#inputPassword', password);
-            await click('css=#loginSubmitButton');
-        }
-        await waitFor('css=#burgerMenuButton');
+    async function login() {
+        await goto(`https://${app.fqdn}`, /Log in/);
+        await click(/Log in/);
+        await loginOIDC('Upload file');
     }
 
     async function logout() {
-        await goto(`https://${app.fqdn}/_admin`);
-        await click('css=#burgerMenuButton');
-        await click(/Logout/);
+        await clearCache();
     }
 
     async function checkFileIsListed(name) {
@@ -63,7 +58,7 @@ describe('Application life cycle test', function () {
     }
 
     async function checkFileIsGone(name) {
-        const res = await fetch(`https://${app.fqdn}/${name}`);
+        const res = await superagent.get(`https://${app.fqdn}/${name}`).ok(() => true);
         assert.strictEqual(res.status, 404);
     }
 
@@ -102,12 +97,12 @@ describe('Application life cycle test', function () {
     async function createApiToken() {
         await goto(`https://${app.fqdn}/_admin`);
 
-        await click('css=#burgerMenuButton');
-        await click(/Access Tokens/);
-        await click('Create New Access Token');
+        await click('tooltip=Menu');
+        await click(/Access tokens/);
+        await click('Create new access token');
 
-        await waitFor('css=span[style*="monospace"]');
-        gApiToken = await getText('css=span[style*="monospace"]');
+        await waitFor(/^api/);
+        gApiToken = await getText(/^api/);
 
         assert.strictEqual(typeof gApiToken, 'string');
         assert.ok(gApiToken.length > 0);
@@ -139,7 +134,7 @@ describe('Application life cycle test', function () {
 
     it('install app', cloudronCli.install);
 
-    it('can login', () => login(false));
+    it('can login', login);
     it('can create api token', createApiToken);
     it('can cli login', cliLogin);
     it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
@@ -165,7 +160,7 @@ describe('Application life cycle test', function () {
     it('backup app', cloudronCli.createBackup);
     it('restore app', cloudronCli.restoreFromLatestBackup);
 
-    it('can login', () => login());
+    it('can login', login);
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
     it('file is served up', checkFileIsPresent);
     it('file is served up', checkIndexFileIsServedUp);
@@ -177,7 +172,7 @@ describe('Application life cycle test', function () {
 
     it('move to different location', cloudronCli.changeLocation);
 
-    it('can login', () => login());
+    it('can login', login);
     it('can cli login', cliLogin);
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
     it('file is served up', checkFileIsPresent);
@@ -195,7 +190,7 @@ describe('Application life cycle test', function () {
 
     it('can install app', cloudronCli.appstoreInstall);
 
-    it('can login', () => login(false));
+    it('can login', login);
     it('can create api token', createApiToken);
     it('can cli login', cliLogin);
     it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
@@ -210,7 +205,7 @@ describe('Application life cycle test', function () {
 
     it('can update', cloudronCli.update);
 
-    it('can login', () => login());
+    it('can login', login);
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
     it('file is served up', checkFileIsPresent);
     it('file is served up', checkIndexFileIsServedUp);
