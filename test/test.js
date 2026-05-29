@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /* global it, describe, before, after, afterEach */
 
 import assert from 'node:assert/strict';
