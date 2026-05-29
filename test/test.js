@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 
-import superagent from 'superagent';
+import superagent from '@cloudron/superagent';
 
 import { app, click, cloudronCli, getText, goto, password, sendKeys, setupBrowser, takeScreenshot, teardownBrowser, username, waitFor } from '@cloudron/charlie';
 

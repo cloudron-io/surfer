@@ -1,6 +1,6 @@
 'use strict';
 
-import superagent from 'superagent';
+import superagent from '@cloudron/superagent';
 import config from './config.js';
 import readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';

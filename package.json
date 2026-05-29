@@ -26,7 +26,7 @@
     "express-openid-connect": "^2.20.1",
     "express-session": "^1.19.0",
     "multiparty": "^4.2.3",
-    "superagent": "^10.3.0",
+    "@cloudron/superagent": "^2.1.1",
     "webdav-server": "^2.6.2"
   },
   "devDependencies": {
