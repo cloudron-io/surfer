@@ -7,7 +7,7 @@
       <div class="td" style="max-width: 50px;"></div>
       <div class="td hand" style="flex-grow: 2;" @click="onSort('fileName')">Name <i class="fa-solid" :class="{'fa-arrow-down-a-z': sort.desc, 'fa-arrow-up-z-a': !sort.desc }" v-show="sort.prop === 'fileName'"></i></div>
       <div class="td hand entry-meta-cell entry-size-cell" style="max-width: 100px;" @click="onSort('size')">Size <i class="fa-solid" :class="{'fa-arrow-down': sort.desc, 'fa-arrow-up': !sort.desc }" v-show="sort.prop === 'size'"></i></div>
-      <div class="td hand entry-meta-cell" style="max-width: 150px;" @click="onSort('mtime')">Last Modified <i class="pi" :class="{'fa-arrow-down': sort.desc, 'fa-arrow-up': !sort.desc }" v-show="sort.prop === 'mtime'"></i></div>
+      <div class="td hand entry-meta-cell" style="max-width: 150px;" @click="onSort('mtime')">Last modified <i class="pi" :class="{'fa-arrow-down': sort.desc, 'fa-arrow-up': !sort.desc }" v-show="sort.prop === 'mtime'"></i></div>
       <div class="td entry-actions-cell" style="max-width: 200px; justify-content: flex-end;"></div>
     </div>
     <div class="tbody">
@@ -25,7 +25,7 @@
         <div class="td entry-actions-cell" style="max-width: 200px; white-space: nowrap; justify-content: flex-end;">
           <span class="action-buttons">
             <Button tool outline icon="fa-solid fa-download" v-tooltip.top="'Download'" v-show="!entry.rename && entry.isFile" @click.stop="onDownload(entry)"/>
-            <Button tool outline icon="fa-regular fa-copy" v-tooltip.top="'Copy Link'" v-show="!entry.rename && entry.isFile" @click.stop="onCopyLink(entry)"/>
+            <Button tool outline icon="fa-regular fa-copy" v-tooltip.top="'Copy link'" v-show="!entry.rename && entry.isFile" @click.stop="onCopyLink(entry)"/>
             <Button tool outline icon="fa-solid fa-arrow-up-right-from-square" v-tooltip.top="'Open'" :href="encode(entry.filePath)" v-show="!entry.rename" target="_blank"/>
             <Button tool danger outline icon="fa-solid fa-trash" v-tooltip.top="'Delete'" v-show="editable && !entry.rename" @click.stop="onDelete(entry)"/>
           </span>
@@ -146,7 +146,7 @@ function onDownload(entry) {
 
 function onCopyLink(entry) {
   copyToClipboard(location.origin + encode(entry.filePath));
-  window.pankow.notify({ type:'success', text: 'Link copied to Clipboard' });
+  window.pankow.notify({ type:'success', text: 'Link copied to clipboard' });
 }
 
 function onRename(entry) {

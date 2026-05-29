@@ -95,7 +95,7 @@ function verifyToken(req, res, next) {
     const accessToken = req.query.access_token || req.body.accessToken;
 
     tokenStore.get(accessToken, function (error, user) {
-        if (error) return next(new HttpError(401, 'Invalid Access Token'));
+        if (error) return next(new HttpError(401, 'Invalid access token'));
 
         req.user = user;
 

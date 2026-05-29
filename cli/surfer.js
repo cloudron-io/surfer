@@ -24,15 +24,15 @@ program.command('logout')
 program.command('config')
     .description('Configure default server')
     .alias('configure')
-    .requiredOption('-s, --server <domain>', 'Surfer Server Domain')
-    .requiredOption('-t, --token <access token>', 'Server Access Token')
+    .requiredOption('-s, --server <domain>', 'Surfer server domain')
+    .requiredOption('-t, --token <access token>', 'Server access token')
     .action(actions.config);
 
 program.command('put <file|dir...>')
     .option('-a --all', 'Also include hidden files and folders.', false)
     .option('-d --delete', 'Delete extraneous files from dest dirs.', false)
-    .option('-s, --server <domain>', 'Surfer Server Domain (optional)')
-    .option('-t, --token <access token>', 'Server Access Token (optional)')
+    .option('-s, --server <domain>', 'Surfer server domain (optional)')
+    .option('-t, --token <access token>', 'Server access token (optional)')
     .description('Uploads a list of files or dirs to the destination. The last argument is destination dir')
     .action(actions.put)
     .on('--help', function() {
@@ -49,15 +49,15 @@ program.command('put <file|dir...>')
 
 program.command('get [file|dir]')
     .description('Get a file or directory listing')
-    .option('-s, --server <domain>', 'Surfer Server Domain (optional)')
-    .option('-t, --token <access token>', 'Server Access Token (optional)')
+    .option('-s, --server <domain>', 'Surfer server domain (optional)')
+    .option('-t, --token <access token>', 'Server access token (optional)')
     .action(actions.get);
 
 program.command('del <file>')
     .option('-r --recursive', 'Recursive delete directories.', false)
     .option('-y --yes', 'Answer questions always with yes.', false)
-    .option('-s, --server <domain>', 'Surfer Server Domain (optional)')
-    .option('-t, --token <access token>', 'Server Access Token (optional)')
+    .option('-s, --server <domain>', 'Surfer server domain (optional)')
+    .option('-t, --token <access token>', 'Server access token (optional)')
     .description('Delete a file or directory')
     .action(actions.del);
 

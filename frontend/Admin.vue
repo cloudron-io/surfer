@@ -16,9 +16,9 @@
 
         <template #right>
           <div style="display: flex; gap: 6px">
-            <Button tool icon="fa-solid fa-file-arrow-up" @click="onUpload"><span class="pankow-no-mobile">Upload </span>File</Button>
-            <Button tool icon="fa-solid fa-upload" @click="onUploadFolder"><span class="pankow-no-mobile">Upload </span>Folder</Button>
-            <Button tool icon="fa-solid fa-plus" success @click="openNewFolderDialog"><span class="pankow-no-mobile">New </span>Folder</Button>
+            <Button tool icon="fa-solid fa-file-arrow-up" @click="onUpload"><span class="pankow-no-mobile">Upload file</span><span class="pankow-no-desktop">File</span></Button>
+            <Button tool icon="fa-solid fa-upload" @click="onUploadFolder"><span class="pankow-no-mobile">Upload folder</span><span class="pankow-no-desktop">Folder</span></Button>
+            <Button tool icon="fa-solid fa-plus" success @click="openNewFolderDialog"><span class="pankow-no-mobile">New folder</span><span class="pankow-no-desktop">Folder</span></Button>
             <Button icon="fa-solid fa-ellipsis" tool outline :menu="mainMenu" id="burgerMenuButton" :show-dropdown="false"/>
           </div>
         </template>
@@ -45,8 +45,8 @@
   <!-- Settings Dialog -->
   <Dialog ref="settingsDialogRef" title="Settings" :modal="true" reject-label="Cancel" confirm-label="Save" confirm-style="success" :confirm-busy="settingsDialog.busy" @confirm="onSaveSettingsDialog">
     <div>
-      <Checkbox v-model="settingsDialog.folderListingEnabled" label="Public Folder Listing"/>
-      <p>If enabled, all folders and files will be publicly listed. If a folder contains a file with an Index Document (see below), this will be displayed instead.</p>
+      <Checkbox v-model="settingsDialog.folderListingEnabled" label="Public folder listing"/>
+      <p>If enabled, all folders and files will be publicly listed. If a folder contains a file with an index document (see below), this will be displayed instead.</p>
     </div>
 
     <hr/>
@@ -64,13 +64,13 @@
         <img ref="faviconImage" :src="'/api/favicon?' + Date.now()" width="64" height="64" style="margin-top: 4px;"/>
       </div>
       <div style="display: flex; gap: 6px">
-        <Button icon="fa-solid fa-upload" @click="onUploadFavicon">Upload Favicon</Button>
-        <Button outline icon="fa-solid fa-rotate-left" @click="onResetFavicon">Reset Favicon</Button>
+        <Button icon="fa-solid fa-upload" @click="onUploadFavicon">Upload favicon</Button>
+        <Button outline icon="fa-solid fa-rotate-left" @click="onResetFavicon">Reset favicon</Button>
       </div>
     </div>
 
     <div>
-      <h3>Index Document</h3>
+      <h3>Index document</h3>
       <p>By default files names index.html will be served up automatically in each folder. This settings allows to specify any filename as index document.</p>
       <div class="p-fluid">
         <div>
@@ -106,7 +106,7 @@
   </Dialog>
 
   <!-- Access Token Dialog -->
-  <Dialog ref="accessTokenDialog" :show-x="true" title="Access Tokens">
+  <Dialog ref="accessTokenDialog" :show-x="true" title="Access tokens">
     <p>
       These tokens are useful to programmatically deploy assets for example within a CI/CD pipeline. They are also used for WebDAV login as the password.<br/>
       <br/>
@@ -114,13 +114,13 @@
     </p>
     <div>
       <h3 style="display: flex; justify-content: space-between; align-items: center;">
-        <span v-show="accessTokens.length">Issued Tokens:</span>
-        <Button success @click="onCreateAccessToken()">Create New Access Token</Button>
+        <span v-show="accessTokens.length">Issued tokens:</span>
+        <Button success @click="onCreateAccessToken()">Create new access token</Button>
       </h3>
       <div v-for="accessToken in accessTokens" :key="accessToken.value">
         <span @click="onCopyAccessToken(accessToken.value)" style="cursor: copy; font-family: monospace;">{{ accessToken.value }}</span>
-        <Button style="margin: 0 6px" primary tool plain icon="fa-regular fa-copy" v-tooltip="'Copy Token to Clipboard'" @click="onCopyAccessToken(accessToken.value)"/>
-        <Button danger tool plain icon="fa-solid fa-trash" v-tooltip="'Revoke Token'" @click="onDeleteAccessToken(accessToken.value)"/>
+        <Button style="margin: 0 6px" primary tool plain icon="fa-regular fa-copy" v-tooltip="'Copy token to clipboard'" @click="onCopyAccessToken(accessToken.value)"/>
+        <Button danger tool plain icon="fa-solid fa-trash" v-tooltip="'Revoke token'" @click="onDeleteAccessToken(accessToken.value)"/>
       </div>
     </div>
   </Dialog>
@@ -204,7 +204,7 @@ const settingsDialog = reactive({
 
 const mainMenu = [
   { label: 'Settings', icon: 'fa-solid fa-gear', action: openSettingsDialog },
-  { label: 'Access Tokens', icon: 'fa-solid fa-key', action: openAccessTokenDialog },
+  { label: 'Access tokens', icon: 'fa-solid fa-key', action: openAccessTokenDialog },
   { separator: true },
   { label: 'About', icon: 'fa-solid fa-circle-info', action: () => aboutDialog.value.open() },
   { label: 'Log out', icon: 'fa-solid fa-arrow-right-from-bracket', action: logout }
@@ -415,7 +415,7 @@ function onDrop(event, entry) {
 
 async function openNewFolderDialog() {
   const newFolderName = await inputDialog.value.prompt({
-    message: 'New Foldername',
+    message: 'New folder name',
     modal: false,
     value: '',
     confirmStyle: 'success',
@@ -556,12 +556,12 @@ async function refreshAccessTokens() {
 
 function onCopyToClipboard(value) {
   copyToClipboard(value);
-  window.pankow.notify({ type:'success', text: 'Copied to Clipboard' });
+  window.pankow.notify({ type:'success', text: 'Copied to clipboard' });
 }
 
 function onCopyAccessToken(value) {
   copyToClipboard(value);
-  window.pankow.notify({ type:'success', text: 'Token copied to Clipboard' });
+  window.pankow.notify({ type:'success', text: 'Token copied to clipboard' });
 }
 
 async function onCreateAccessToken() {
