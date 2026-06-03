@@ -32,9 +32,15 @@ describe('Application life cycle test', function () {
         await takeScreenshot(this.currentTest);
     });
 
+    async function loginNoIndex() { // when no nidex page, the default page shows login
+        await goto(`https://${app.fqdn}/`, /Log in|Login/);
+        await click(/Log in|Login/);
+        await loginOIDC('Upload file');
+    }
+
     async function login() {
-        await goto(`https://${app.fqdn}`, /Log in/);
-        await click(/Log in/);
+        await goto(`https://${app.fqdn}/_admin`,/Log in|Login/);
+        await click(/Log in|Login/);
         await loginOIDC('Upload file');
     }
 
@@ -64,18 +70,18 @@ describe('Application life cycle test', function () {
 
     async function checkFileInFolder() {
         const encodedSpecialFilepath = `/testfiles/%3F%20!%20%2B%20%23folder/Fancy%20-%20%2B!%22%23%24%26'()*%2B%2C%3A%3B%3D%3F%40%20-%20Filename`;
-        const result = await superagent.get(`https://${app.fqdn}${encodedSpecialFilepath}`);
-        assert.strictEqual(result.statusCode, 200);
+        const result = await superagent.get(`https://${app.fqdn}${encodedSpecialFilepath}`).ok(() => true);
+        assert.strictEqual(result.status, 200);
     }
 
     async function createSpecialFolders() {
         const res0 = await superagent.post(`https://${app.fqdn}/api/files/${encodeURIComponent(SPECIAL_FOLDER_NAME_0)}`)
-            .query({ access_token: gApiToken, directory: true }).send({});
-        assert.strictEqual(res0.statusCode, 201);
+            .query({ access_token: gApiToken, directory: true }).send({}).ok(() => true);
+        assert.strictEqual(res0.status, 201);
 
         const res1 = await superagent.post(`https://${app.fqdn}/api/files/${encodeURIComponent(SPECIAL_FOLDER_NAME_0)}/${encodeURIComponent(SPECIAL_FOLDER_NAME_1)}`)
-            .query({ access_token: gApiToken, directory: true });
-        assert.strictEqual(res1.statusCode, 201);
+            .query({ access_token: gApiToken, directory: true }).ok(() => true);
+        assert.strictEqual(res1.status, 201);
     }
 
     async function checkFilesInSpecialFolder() {
@@ -86,8 +92,8 @@ describe('Application life cycle test', function () {
     async function enablePublicFolderListing() {
         const res0 = await superagent.put(`https://${app.fqdn}/api/settings`)
             .query({ access_token: gApiToken })
-            .send({ folderListingEnabled: true, sortFoldersFirst: true, title: 'Surfer', index: '', accessRestriction: '' });
-        assert.strictEqual(res0.statusCode, 201);
+            .send({ folderListingEnabled: true, sortFoldersFirst: true, title: 'Surfer', index: '', accessRestriction: '' }).ok(() => true);
+        assert.strictEqual(res0.status, 201);
     }
 
     function cliLogin() {
@@ -134,7 +140,7 @@ describe('Application life cycle test', function () {
 
     it('install app', cloudronCli.install);
 
-    it('can login', login);
+    it('can login', loginNoIndex);
     it('can create api token', createApiToken);
     it('can cli login', cliLogin);
     it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
@@ -190,7 +196,7 @@ describe('Application life cycle test', function () {
 
     it('can install app', cloudronCli.appstoreInstall);
 
-    it('can login', login);
+    it('can login', loginNoIndex);
     it('can create api token', createApiToken);
     it('can cli login', cliLogin);
     it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
