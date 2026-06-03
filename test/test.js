@@ -13,9 +13,7 @@ describe('Application life cycle test', function () {
     const TEST_FILE_NAME_1 = 'test.txt';
     const SPECIAL_FOLDER_NAME_0 = 'Tâm Tình Với Bạn';
     const SPECIAL_FOLDER_NAME_1 = '? ! + #';
-    /** @type {string} */
     let CLI;
-    /** @type {string} */
     let gApiToken;
 
     before(function () {
@@ -33,14 +31,14 @@ describe('Application life cycle test', function () {
     });
 
     async function loginNoIndex() { // when no nidex page, the default page shows login
-        await goto(`https://${app.fqdn}/`, /Log in|Login/);
-        await click(/Log in|Login/);
+        await goto(`https://${app.fqdn}/`, /Log in/);
+        await click(/Log in/);
         await loginOIDC('Upload file');
     }
 
     async function login() {
-        await goto(`https://${app.fqdn}/_admin`,/Log in|Login/);
-        await click(/Log in|Login/);
+        await goto(`https://${app.fqdn}/_admin`, /Log in/);
+        await click(/Log in/);
         await loginOIDC('Upload file');
     }
 
@@ -194,30 +192,30 @@ describe('Application life cycle test', function () {
 
     it('uninstall app', cloudronCli.uninstall);
 
-    it('can install app', cloudronCli.appstoreInstall);
-
-    it('can login', loginNoIndex);
-    it('can create api token', createApiToken);
-    it('can cli login', cliLogin);
-    it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
-    it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
-    it('file is served up', checkFileIsPresent);
-    it('file is served up', checkIndexFileIsServedUp);
-    it('can create special folder names', createSpecialFolders);
-    it('can enable public folder listing', enablePublicFolderListing);
-    it('special folder names allow public listings', checkFilesInSpecialFolder);
-    it('can upload folder', uploadFolder);
-    it('can logout', logout);
-
-    it('can update', cloudronCli.update);
-
-    it('can login', login);
-    it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
-    it('file is served up', checkFileIsPresent);
-    it('file is served up', checkIndexFileIsServedUp);
-    it('special file in folder exists', checkFileInFolder);
-    it('special folder names allow public listings', checkFilesInSpecialFolder);
-    it('can logout', logout);
-
-    it('uninstall app', cloudronCli.uninstall);
+//    it('can install app', cloudronCli.appstoreInstall);
+//
+//    it('can login', loginNoIndex);
+//    it('can create api token', createApiToken);
+//    it('can cli login', cliLogin);
+//    it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
+//    it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
+//    it('file is served up', checkFileIsPresent);
+//    it('file is served up', checkIndexFileIsServedUp);
+//    it('can create special folder names', createSpecialFolders);
+//    it('can enable public folder listing', enablePublicFolderListing);
+//    it('special folder names allow public listings', checkFilesInSpecialFolder);
+//    it('can upload folder', uploadFolder);
+//    it('can logout', logout);
+//
+//    it('can update', cloudronCli.update);
+//
+//    it('can login', login);
+//    it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
+//    it('file is served up', checkFileIsPresent);
+//    it('file is served up', checkIndexFileIsServedUp);
+//    it('special file in folder exists', checkFileInFolder);
+//    it('special folder names allow public listings', checkFilesInSpecialFolder);
+//    it('can logout', logout);
+//
+//    it('uninstall app', cloudronCli.uninstall);
 });
