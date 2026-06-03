@@ -18,6 +18,7 @@ describe('Application life cycle test', function () {
     let gApiToken;
 
     before(function () {
+        if (process.env.CI) execSync('npm install', { cwd: APP_ROOT, stdio: 'inherit' });
         console.log('surfer cli script is', CLI_SCRIPT);
     });
     before(setupBrowser);
