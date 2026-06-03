@@ -92,7 +92,12 @@ describe('Application life cycle test', function () {
     }
 
     function runCli(command, options = {}) {
-        return execSync(`${process.execPath} ${JSON.stringify(CLI_SCRIPT)} ${command}`, { cwd: APP_ROOT, ...options });
+        // delete charlie hooks in the CI when running CLI
+        const env = { ...process.env, ...(options.env || {}) };
+        delete env.NODE_OPTIONS;
+        delete env.NODE_PATH;
+
+        return execSync(`${process.execPath} ${JSON.stringify(CLI_SCRIPT)} ${command}`, { cwd: APP_ROOT, ...options, env });
     }
 
     function cliLogin() {
