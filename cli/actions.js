@@ -7,38 +7,44 @@ import { stdin as input, stdout as output } from 'node:process';
 import safe from '@cloudron/safetydance';
 import async from 'async';
 import fs from 'fs';
-import url from 'url';
 import path from 'path';
 import { Readable } from 'node:stream';
-
 const API = '/api/files/';
 
 let gServer = '';
 let gQuery = {};
 
-function exit(errorArgs) {
-    if (errorArgs) {
-        console.error.apply(console, arguments);
-        process.exit(1);
-    }
+function exit(error) {
+    if (error instanceof Error) console.log(error.message);
+    else if (error) console.log(error);
 
-    process.exit(0);
+    process.exit(error ? 1 : 0);
+}
+
+function requestError(response) {
+    if (response.status === 401) return 'Invalid token';
+
+    return `${response.status} message: ${response.body.message || JSON.stringify(String(response.body))}`; // body is sometimes just a string like in 401
 }
 
 function checkConfig(options) {
-    if ((!options.server && !config.server()) || (!options.token && !config.accessToken())) exit('Run %s first, or provide %s', 'surfer config', '--server <domain>', '--token <access token>');
+    if ((!options.server && !config.server()) || (!options.token && !config.accessToken())) exit(`Run surfer config first, or provide --server <domain> --token <access token>`);
 
     if (options.server) {
-        let tmp = url.parse(options.server);
-        if (!tmp.slashes) tmp = url.parse('https://' + options.server);
-        gServer = tmp.protocol + '//' + tmp.host;
+        let tmp;
+        try {
+            tmp = new URL(options.server);
+        } catch {
+            tmp = new URL('https://' + options.server);
+        }
+        gServer = `${tmp.protocol}//${tmp.host}`;
     } else {
         gServer = config.server();
     }
 
     gQuery = { access_token: options.token || config.accessToken() };
 
-    console.error('Using server %s', gServer);
+    console.error(`Using server ${gServer}`);
 }
 
 function collectFiles(filePath, basePath, options) {
@@ -73,75 +79,63 @@ function collectFiles(filePath, basePath, options) {
             tmp = tmp.concat(collectFiles(path.join(absoluteFilePath, fileName), basePath, options));
         });
     } else {
-        console.log('Skipping %s', filePath);
+        console.log(`Skipping ${filePath}`);
     }
 
     return tmp;
 }
 
-function putOne(file, destination, callback) {
+async function putOne(file, destination) {
     const destinationPath = path.join(destination, file.filePath);
 
     if (file.isFile) {
-        console.log('Uploading %s -> %s', file.filePath, gServer + destinationPath);
+        console.log(`Uploading ${file.filePath} -> ${gServer + destinationPath}`);
 
-        superagent.post(gServer + path.join(API, encodeURIComponent(destinationPath))).query(gQuery).attach('file', file.absoluteFilePath).field('mtime', file.mtime).end(function (error, result) {
-            if (result && result.statusCode === 403) return callback(new Error('Destination ' + destinationPath + ' not allowed'));
-            if (result && result.statusCode !== 201) return callback(new Error('Error uploading file: ' + result.statusCode));
-            if (error) return callback(error);
+        const response = await superagent.post(`${gServer}${API}${encodeURIComponent(destinationPath)}`)
+            .query(gQuery)
+            .attach('file', file.absoluteFilePath)
+            .field('mtime', file.mtime)
+            .ok(() => true);
 
-            callback(null);
-        });
+        if (response.status === 403) throw new Error(`Destination ${destinationPath} not allowed`);
+        if (response.status !== 201) new Error(`Error uploading file. ${requestError(response)}`);
     } else if (file.isDirectory) {
-        console.log('Creating directory %s', destinationPath);
+        console.log(`Creating directory ${destinationPath}`);
 
         const query = safe.JSON.parse(safe.JSON.stringify(gQuery));
         query.directory = true;
 
-        superagent.post(gServer + path.join(API, encodeURIComponent(destinationPath))).query(query).end(function (error, result) {
-            if (result && result.statusCode === 409) return callback(null); // already exists, fine
-            if (result && result.statusCode === 403) return callback(new Error('Destination ' + destinationPath + ' not allowed'));
-            if (result && result.statusCode !== 201) return callback(new Error('Error creating directory: ' + result.statusCode));
-            if (error) return callback(error);
-
-            callback(null);
-        });
+        const response = await superagent.post(`${gServer}${API}${encodeURIComponent(destinationPath)}`).query(query).ok(() => true);
+        if (response.status === 409) return; // already exists, fine
+        if (response.status === 403) throw new Error(`Destination ${destinationPath} not allowed`);
+        if (response.status !== 201) new Error(`Error creating directory. ${requestError(response)}`);
     } else {
-        callback(); // ignore
+        console.log(`Ignoring unknown file type: ${JSON.stringify(file)}`);
     }
 }
 
-function delOne(file, callback) {
+async function delOne(file) {
     const query = safe.JSON.parse(safe.JSON.stringify(gQuery));
     if (file.isDirectory) query.recursive = true;
 
-    superagent.del(gServer + path.join(API, encodeURIComponent(file.filePath))).query(query).end(function (error, result) {
-        if (error && error.status === 401) return callback('Invalid token');
-        if (error && error.status === 404) return callback(null); // file already removed
-        if (error && error.status === 403) return callback('Failed. Target is a directory. Use --recursive to delete directories.');
-        if (error) return callback('Failed %s', result ? result.body : error);
-
-        callback(null);
-    });
+    const [error, response] = await safe(superagent.del(`${gServer}${API}${encodeURIComponent(file.filePath)}`).query(query).ok(() => true));
+    if (error) return exit(error);
+    if (response.status === 404) return; // file already removed
+    if (response.status === 403) throw new Error('Failed. Target is a directory. Use --recursive to delete directories.');
+    if (response.status !== 200) throw new Error(requestError(response));
 }
 
-function configure(options) {
+async function configure(options) {
     checkConfig(options);
 
-    superagent.get(gServer + '/api/profile').query(gQuery).end(function (error, result) {
-        if (error && error.code === 'ENOTFOUND') exit('Server %s not found.', gServer);
-        if (error && error.code) exit('Failed to connect to server %s', gServer, error.code);
-        if (result.status !== 200) {
-            console.log(result.status, gQuery);
-            console.log('Access failed. Provide an api access token with --token\n');
-            process.exit(1);
-        }
+    const [error, response] = await safe(superagent.get(`${gServer}/api/profile`).query(gQuery).ok(() => true));
+    if (error) return exit(`Failed to connect to server: ${error}`);
+    if (response.status !== 200) return exit(`Access failed: ${response.status}. Provide an api access token with --token`);
 
-        config.set('server', gServer);
-        config.set('accessToken', gQuery.access_token);
+    config.set('server', gServer);
+    config.set('accessToken', gQuery.access_token);
 
-        console.log('Default server successfully set');
-    });
+    console.log('Default server successfully set');
 }
 
 async function get(filePath, options) {
@@ -153,29 +147,24 @@ async function get(filePath, options) {
     const url = new URL(gServer + path.join(API, encodeURIComponent(filePath)));
     url.search = new URLSearchParams(gQuery).toString();
 
-    try {
-        const response = await fetch(url, {});
+    const [error, response] = await safe(fetch(url, {}));
+    if (error) return exit(error);
+    if (response.status === 401) return exit('Invalid token');
+    if (response.status === 404) return exit(`No such file or directory ${filePath}`);
 
-        // 222 indicates directory listing
-        if (response.status === 222) {
-            const files = await response.json();
-            if (!files || files.entries.length === 0) {
-                console.log('Empty directory. Use %s to upload some.', 'surfer put <file>');
-            } else {
-                console.log('Entries:');
-                files.entries.forEach(function (entry) {
-                    console.log('\t %s', entry.isDirectory ? entry.filePath + '/' : entry.filePath);
-                });
-            }
-        } else if (response.status === 401) {
-            exit('Invalid token');
-        } else if (response.status === 404) {
-            exit('No such file or directory %s', filePath);
+    // 222 indicates directory listing
+    if (response.status === 222) {
+        const files = await response.json();
+        if (!files || files.entries.length === 0) {
+            console.log(`Empty directory.`);
         } else {
-            Readable.fromWeb(response.body).pipe(process.stdout);
+            console.log('Entries:');
+            files.entries.forEach(function (entry) {
+                console.log(`\t ${entry.isDirectory ? entry.filePath + '/' : entry.filePath}`);
+            });
         }
-    } catch (error) {
-        exit(error.message);
+    } else {
+        Readable.fromWeb(response.body).pipe(process.stdout);
     }
 }
 
@@ -201,13 +190,12 @@ async function del(filePath, options) {
         }
     }
 
-    delOne(file, function (error) {
-        if (error) exit(error);
-        else console.log('Success.');
-    });
+    const [error] = await safe(delOne(file));
+    if (error) return exit(error);
+    console.log('Success.');
 }
 
-function put(filePaths, options) {
+async function put(filePaths, options) {
     checkConfig(options);
 
     if (filePaths.length < 2) {
@@ -232,71 +220,62 @@ function put(filePaths, options) {
     const query = safe.JSON.parse(safe.JSON.stringify(gQuery));
     query.recursive = true;
 
-    superagent.get(gServer + path.join(API, absoluteDestPath)).query(query).end(function (error, result) {
-        if (error) {
-            if (error.status === 401) exit('Invalid token');
-            if (error.status !== 404) exit(error.message);
+    // check if destination is a directory. because path contains trailing /, it won't download any file
+    const [error, response] = await safe(superagent.get(`${gServer}${API}${absoluteDestPath}`).query(query).ok(() => true));
+    if (error) return exit(error);
+    if (response.status === 401) return exit('Invalid token');
+    if (response.status === 404) { // 404 means remote not found so upload all
+        remoteFiles = [];
+    } else if (response.status === 222) { // directory listing
+        remoteFiles = response.body.entries;
+    } else {
+        return exit(`Destination is not a directory. Cannot continue. ${requestError(response)}`);
+    }
 
-            // 404 means remote not found so upload all
-            remoteFiles = [];
-        } else {
-            // 222 indicates directory listing
-            if (result.statusCode !== 222) exit('Destination is not a directory. Cannot continue.');
-            remoteFiles = result.body.entries;
-        }
+    // we need to find below two lists of files for syncing
+    let remoteFilesNotLocalAnymore = [];
+    const newLocalFiles = localFiles.filter(function (local) {
+        return !remoteFiles.find(function (remote) {
+            if (remote.filePath !== path.join(absoluteDestPath, local.filePath)) return false;
+            if (local.isDirectory) return true;
 
-        // we need to find below two lists of files for syncing
-        let newLocalFiles = [];
-        let remoteFilesNotLocalAnymore = [];
+            if (remote.mtime !== local.mtime) return false;
+            if (remote.size !== local.size) return false;
 
-        // find new local files
-        newLocalFiles = localFiles.filter(function (local) {
-            return !remoteFiles.find(function (remote) {
-                if (remote.filePath !== path.join(absoluteDestPath, local.filePath)) return false;
-                if (local.isDirectory) return true;
-
-                if (remote.mtime !== local.mtime) return false;
-                if (remote.size !== local.size) return false;
-
-                return true;
-            });
-        }).map(function (f) { return path.join(absoluteDestPath, f.filePath); });
-
-        // find removed local files if --delete flag passed
-        if (options.delete) remoteFilesNotLocalAnymore = remoteFiles.filter(function (remote) {
-            return !localFiles.find(function (local) {
-                return remote.filePath === path.join(absoluteDestPath, local.filePath);
-            });
+            return true;
         });
+    }).map(function (f) { return path.join(absoluteDestPath, f.filePath); });
 
-        // first purging remote files
-        async.eachLimit(remoteFilesNotLocalAnymore, 10, function (remoteFile, callback) {
-            console.log(`Removing ${remoteFile.filePath}`);
-
-            const file = remoteFiles.find(function (f) { return f.filePath === remoteFile.filePath; });
-            if (!file) return callback(`File not found ${remoteFile.filePath}`);
-
-            delOne(file, callback);
-        }, function (error) {
-            if (error) return exit(error.message);
-
-            // now upload new files
-            async.eachLimit(newLocalFiles, 10, function (filePath, callback) {
-                const file = localFiles.find(function (f) { return path.join(absoluteDestPath, f.filePath) === filePath; });
-                if (!file) return callback(`File not found ${filePath}`);
-
-                putOne(file, absoluteDestPath, callback);
-            }, function (error) {
-                if (error) exit(error.message);
-
-                console.log('Done');
-            });
+    // find removed local files if --delete flag passed
+    if (options.delete) remoteFilesNotLocalAnymore = remoteFiles.filter(function (remote) {
+        return !localFiles.find(function (local) {
+            return remote.filePath === path.join(absoluteDestPath, local.filePath);
         });
     });
+
+    // first purging remote files
+    const [purgeError] = await safe(async.eachLimit(remoteFilesNotLocalAnymore, 10, async function purgeFile(remoteFile) {
+        console.log(`Removing ${remoteFile.filePath}`);
+        const file = remoteFiles.find(function (f) { return f.filePath === remoteFile.filePath; });
+        if (!file) throw new Error(`File not found ${remoteFile.filePath}`);
+        await delOne(file);
+    }));
+    if (purgeError) return exit(purgeError);
+
+    // now upload new files
+    const [uploadError] = await safe(async.eachLimit(newLocalFiles, 10, async function uploadFile(filePath) {
+        const file = localFiles.find(function (f) { return path.join(absoluteDestPath, f.filePath) === filePath; });
+        if (!file) throw new Error(`File not found ${filePath}`);
+
+        await putOne(file, absoluteDestPath);
+    }));
+    if (uploadError) return exit(uploadError);
+
+    console.log('Done');
 }
 
 export default {
-    config: configure,
+    configure,
     put,
     get,
     del,

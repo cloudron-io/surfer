@@ -18,7 +18,7 @@ program.command('config')
     .alias('configure')
     .requiredOption('-s, --server <domain>', 'Surfer server domain')
     .requiredOption('-t, --token <access token>', 'Server access token')
-    .action(actions.config);
+    .action(actions.configure);
 
 program.command('put <file|dir...>')
     .option('-a --all', 'Also include hidden files and folders.', false)
