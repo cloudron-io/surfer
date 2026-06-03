@@ -353,3 +353,6 @@
 * Improved preview behavior
 * Various mobile fixes
 
+[6.6.0]
+* Update surfer to 6.6.0
+
