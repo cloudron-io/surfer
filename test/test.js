@@ -9,19 +9,16 @@ import superagent from '@cloudron/superagent';
 import { app, clearCache, click, cloudronCli, getText, goto, loginOIDC, setupBrowser, takeScreenshot, teardownBrowser, waitFor } from '@cloudron/charlie';
 
 describe('Application life cycle test', function () {
+    const APP_ROOT = path.resolve(import.meta.dirname, '..');
+    const CLI_SCRIPT = path.join(APP_ROOT, 'cli', 'surfer.js');
     const TEST_FILE_NAME_0 = 'index.html';
     const TEST_FILE_NAME_1 = 'test.txt';
     const SPECIAL_FOLDER_NAME_0 = 'Tâm Tình Với Bạn';
     const SPECIAL_FOLDER_NAME_1 = '? ! + #';
-    let CLI;
     let gApiToken;
 
     before(function () {
-        const appRoot = path.resolve(import.meta.dirname, '..');
-        execSync('npm install -g .', { cwd: appRoot, stdio: 'inherit' });
-        const prefix = execSync('npm config get prefix', { encoding: 'utf8' }).trim();
-        CLI = `${prefix}/bin/surfer`;
-        console.log('surfer cli is probably at', CLI);
+        console.log('surfer cli script is', CLI_SCRIPT);
     });
     before(setupBrowser);
     after(teardownBrowser);
@@ -94,8 +91,12 @@ describe('Application life cycle test', function () {
         assert.strictEqual(res0.status, 201);
     }
 
+    function runCli(command, options = {}) {
+        return execSync(`${process.execPath} ${JSON.stringify(CLI_SCRIPT)} ${command}`, { cwd: APP_ROOT, ...options });
+    }
+
     function cliLogin() {
-        execSync(`${CLI} config --server https://${app.fqdn} --token ${gApiToken}`, { stdio: 'inherit' });
+        runCli(`config --server https://${app.fqdn} --token ${gApiToken}`, { stdio: 'inherit' });
     }
 
     async function createApiToken() {
@@ -113,26 +114,26 @@ describe('Application life cycle test', function () {
     }
 
     function uploadFile(name, target = '/') {
-        execSync(`${CLI} put ${path.join(import.meta.dirname, name)} ${target}`, { stdio: 'inherit' });
+        runCli(`put ${path.join(import.meta.dirname, name)} ${target}`, { stdio: 'inherit' });
     }
 
     function uploadFileWithToken(name) {
-        execSync(`${CLI} put --token ${gApiToken} ${path.join(import.meta.dirname, name)} /`, { stdio: 'inherit' });
+        runCli(`put --token ${gApiToken} ${path.join(import.meta.dirname, name)} /`, { stdio: 'inherit' });
     }
 
     function uploadFolder() {
-        execSync(`${CLI} put ${path.join(import.meta.dirname, 'testfiles')} /`, { stdio: 'inherit' });
+        runCli(`put ${path.join(import.meta.dirname, 'testfiles')} /`, { stdio: 'inherit' });
     }
 
     function checkFolderExists() {
-        let result = execSync(`${CLI} get`).toString();
+        let result = runCli('get').toString();
         assert.notStrictEqual(result.indexOf('test/'), -1);
-        result = execSync(`${CLI} get test/`).toString();
+        result = runCli('get test/').toString();
         assert.notStrictEqual(result.indexOf('04 - Wormlust - Sex Augu, Tólf Stjörnur.flac'), -1);
     }
 
     function checkFolderIsGone() {
-        const result = execSync(`${CLI} get`).toString();
+        const result = runCli('get').toString();
         assert.strictEqual(result.indexOf('test/'), -1);
     }
 
@@ -153,7 +154,7 @@ describe('Application life cycle test', function () {
     it('can upload second file with token', uploadFileWithToken.bind(null, TEST_FILE_NAME_1));
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_1));
     it('can delete second file with cli', function () {
-        execSync(`${CLI} del ${TEST_FILE_NAME_1}`, { stdio: 'inherit' });
+        runCli(`del ${TEST_FILE_NAME_1}`, { stdio: 'inherit' });
     });
     it('second file is gone', async () => checkFileIsGone(TEST_FILE_NAME_1));
     it('can upload folder', uploadFile.bind(null, 'testfiles/*', '/test/'));
@@ -185,7 +186,7 @@ describe('Application life cycle test', function () {
     it('special file in folder exists', checkFileInFolder);
     it('special folder names allow public listings', checkFilesInSpecialFolder);
     it('can delete folder', function () {
-        execSync(`${CLI}  del --recursive test`, { stdio: 'inherit' });
+        runCli('del --recursive test', { stdio: 'inherit' });
     });
     it('folder is gone', checkFolderIsGone);
     it('can logout', logout);
