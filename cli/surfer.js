@@ -13,14 +13,6 @@ const program = new Command();
 // `path.dirname(url.fileURLToPath(import.meta.url))` can be replaced with `import.meta.dirname` to only support node > 20
 program.version(JSON.parse(fs.readFileSync(path.dirname(url.fileURLToPath(import.meta.url)) + '/../package.json', 'utf8')).version);
 
-program.command('login')
-    .description('Unsupported')
-    .action(actions.login);
-
-program.command('logout')
-    .description('Unsupported')
-    .action(actions.logout);
-
 program.command('config')
     .description('Configure default server')
     .alias('configure')
@@ -65,10 +57,4 @@ program.parse(process.argv);
 
 if (!process.argv.slice(2).length) {
     program.outputHelp();
-} else { // https://github.com/tj/commander.js/issues/338
-    // var knownCommand = program.commands.some(function (command) { return command._name === process.argv[2]; });
-    // if (!knownCommand) {
-    //     console.error('Unknown command: ' + process.argv[2]);
-    //     process.exit(1);
-    // }
 }

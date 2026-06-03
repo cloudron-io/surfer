@@ -144,14 +144,6 @@ function configure(options) {
     });
 }
 
-function login() {
-    exit('Unsupported. Use "surfer config" instead.');
-}
-
-function logout() {
-    exit('Unsupported. Delete the config file at ' + config.filePath + ' instead.');
-}
-
 async function get(filePath, options) {
     checkConfig(options);
 
@@ -304,8 +296,6 @@ function put(filePaths, options) {
 }
 
 export default {
-    login,
-    logout,
     config: configure,
     put,
     get,
