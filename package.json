@@ -1,6 +1,6 @@
 {
   "name": "cloudron-surfer",
-  "version": "6.3.5",
+  "version": "6.4.0",
   "description": "Simple file server cli",
   "type": "module",
   "author": {
@@ -47,6 +47,9 @@
     "file",
     "server"
   ],
+  "engines": {
+    "node": ">22"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
