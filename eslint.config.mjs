@@ -16,6 +16,17 @@ export default [
             "prefer-const": "error"
         }
     },
+    {
+        files: ["frontend/**/*.js"],
+        languageOptions: {
+            globals: {
+                ...globals.browser,
+            }
+        },
+        rules: {
+            "no-unused-vars": ["error", { caughtErrors: "none" }]
+        }
+    },
     ...pluginVue.configs['flat/recommended'],
     // ...pluginVue.configs['flat/vue2-recommended'], // Use this if you are using Vue.js 2.x.
     {
