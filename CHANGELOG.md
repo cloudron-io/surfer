@@ -359,3 +359,7 @@
 [6.6.1]
 * Update surfer to 6.6.1
 
+[6.6.2]
+* Fix issue where files could not be downloaded
+* Default to smaller preview pane width
+
