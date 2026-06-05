@@ -3,7 +3,7 @@ FROM cloudron/base:5.0.0@sha256:04fd70dbd8ad6149c19de39e35718e024417c3e01dc9c663
 RUN mkdir -p /app/code
 WORKDIR /app/code
 
-# SURFER_COMMIT is ignored as we always build from master but this tracks the release sha for renovate
+# SURFER_COMMIT is used as a reference for renovate when building from branch. The pipeline always builds the package from the branch it is run on
 # renovate: datasource=git-refs packageName=https://git.cloudron.io/apps/surfer branch=master
 ARG SURFER_COMMIT=df07eb80c4c13b7e1e25361cf2c1a009ff6fbee0
 
