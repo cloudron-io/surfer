@@ -9,7 +9,7 @@ import ejs from 'ejs';
 import fs from 'fs';
 import crypto from 'crypto';
 import cors from './src/cors.js';
-import contentDisposition from 'content-disposition';
+import { create as createContentDisposition } from 'content-disposition';
 import { lastMile, HttpError, HttpSuccess } from '@cloudron/connect-lastmile';
 import multipart from './src/multipart.js';
 import auth from './src/auth.js';
@@ -53,9 +53,9 @@ if (typeof config.accessRestriction !== 'string') config.accessRestriction = '';
 if (typeof config.accessPassword !== 'string') config.accessPassword = '';
 if (typeof config.index !== 'string') config.index = '';
 
-function setServMiddlewareHeaders (res, path) {
+function setServMiddlewareHeaders (res, filePath) {
     // handle ?download in query
-    if ('download' in res.req.query) res.setHeader('Content-Disposition', contentDisposition(path));
+    if ('download' in res.req.query) res.setHeader('Content-Disposition', createContentDisposition(path.basename(filePath)));
 }
 
 // we will regenerate this if settings change
