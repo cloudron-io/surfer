@@ -119,7 +119,7 @@ function copyToClipboard(value) {
 var PREVIEW_PANEL_OPEN_KEY = 'surfer.previewPanelOpen';
 
 var PREVIEW_PANEL_WIDTH_VW_KEY = 'surfer.previewPanelWidthVw';
-var PREVIEW_PANEL_WIDTH_VW_DEFAULT = 40;
+var PREVIEW_PANEL_WIDTH_VW_DEFAULT = 30;
 var PREVIEW_PANEL_WIDTH_VW_MIN = 15;
 var PREVIEW_PANEL_WIDTH_VW_MAX = 85;
 
