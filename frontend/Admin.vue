@@ -316,7 +316,7 @@ function uploadFiles(files, targetPath) {
   uploadStatus.done = 0;
   uploadStatus.percentDone = 0;
 
-  for (var i = 0; i < files.length; ++i) {
+  for (let i = 0; i < files.length; ++i) {
     uploadStatus.size += files[i].size;
   }
 
@@ -373,8 +373,8 @@ function uploadFiles(files, targetPath) {
 function onDrop(event, entry) {
   if (!event.dataTransfer.items[0]) return;
 
-  var folderItem;
-  var targetPath = entry ? entry.filePath : null;
+  let folderItem;
+  const targetPath = entry ? entry.filePath : null;
   try {
     folderItem = event.dataTransfer.items[0].webkitGetAsEntry();
     if (folderItem.isFile) return uploadFiles(event.dataTransfer.files, targetPath);
@@ -385,7 +385,7 @@ function onDrop(event, entry) {
   uploadStatus.busy = true;
   uploadStatus.uploadListCount = 0;
 
-  var fileList = [];
+  const fileList = [];
   function traverseFileTree(item, treePath, callback) {
     if (item.isFile) {
       item.file(function (file) {

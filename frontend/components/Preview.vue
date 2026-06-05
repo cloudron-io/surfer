@@ -76,13 +76,13 @@ const showFilenameInHeader = computed(() => {
 });
 
 const staticPreviewSrc = computed(() => {
-  var e = props.entry;
+  const e = props.entry;
   if (!e.filePath || hasViewer(e)) return '';
   if (e.isDirectory) {
     return e.previewUrl || getPreviewUrl({ isDirectory: true }, e.filePath);
   }
-  var i = e.filePath.lastIndexOf('/');
-  var parent = i <= 0 ? '/' : sanitize(e.filePath.slice(0, i));
+  const i = e.filePath.lastIndexOf('/');
+  const parent = i <= 0 ? '/' : sanitize(e.filePath.slice(0, i));
   return e.previewUrl || getPreviewUrl(e, parent);
 });
 
@@ -109,7 +109,7 @@ watch(() => props.entry, (newEntry) => {
 });
 
 function onIframeLoad(e) {
-  var doc = e.target.contentWindow && e.target.contentWindow.document;
+  const doc = e.target.contentWindow && e.target.contentWindow.document;
   if (!doc || !doc.body) return;
 
   doc.body.style.margin = 0;
@@ -145,15 +145,15 @@ function onResizePointerDown(e) {
   resizeDragging.value = true;
 
   function applyFromClientX(clientX) {
-    var w = document.documentElement.clientWidth;
+    const w = document.documentElement.clientWidth;
     if (w <= 0) return;
     panelWidthVw.value = clampPreviewPanelWidthVw(((w - clientX) / w) * 100);
   }
 
   applyFromClientX(e.clientX);
 
-  var prevCursor = document.body.style.cursor;
-  var prevUserSelect = document.body.style.userSelect;
+  const prevCursor = document.body.style.cursor;
+  const prevUserSelect = document.body.style.userSelect;
   document.body.style.cursor = 'col-resize';
   document.body.style.userSelect = 'none';
 
@@ -178,7 +178,7 @@ function onResizeKeydown(e) {
   if (typeof window === 'undefined' || window.matchMedia('(max-width: 767px)').matches) return;
   if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
   e.preventDefault();
-  var delta = e.key === 'ArrowLeft' ? -1 : 1;
+  const delta = e.key === 'ArrowLeft' ? -1 : 1;
   panelWidthVw.value = clampPreviewPanelWidthVw(panelWidthVw.value + delta);
   setPreviewPanelWidthVw(panelWidthVw.value);
 }

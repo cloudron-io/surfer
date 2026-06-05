@@ -112,7 +112,7 @@ function onEntrySelect(entry) {
 }
 
 function entryNameHref(entry) {
-  var path = encode(entry.filePath) + (entry.isDirectory ? '/' : '');
+  const path = encode(entry.filePath) + (entry.isDirectory ? '/' : '');
   if (props.useHashForNavigation && entry.isDirectory) return '#' + path;
   return path;
 }
@@ -228,7 +228,7 @@ onMounted(() => {
     if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
       if (selected.value.length === 0) return;
 
-      var index = filteredAndSortedEntries.value.findIndex((entry) => entry.filePath === selected.value[0]);
+      const index = filteredAndSortedEntries.value.findIndex((entry) => entry.filePath === selected.value[0]);
       if (index === -1) return;
 
       if (event.key === 'ArrowUp') {

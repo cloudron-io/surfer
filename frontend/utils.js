@@ -2,7 +2,7 @@
 import { filesize } from 'filesize';
 
 function prettyDate(value) {
-    var date = new Date(value),
+    const date = new Date(value),
     diff = (((new Date()).getTime() - date.getTime()) / 1000),
     day_diff = Math.floor(diff / 86400);
 
@@ -23,7 +23,7 @@ function prettyDate(value) {
 }
 
 function prettyLongDate(value) {
-    var date = new Date(value);
+    const date = new Date(value);
     return date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
 }
 
@@ -63,7 +63,7 @@ const mimeTypes = {
 };
 
 function getPreviewUrl(entry, basePath) {
-    var path = '/_admin/mime-types/';
+    const path = '/_admin/mime-types/';
 
     if (entry.isDirectory) return path + 'directory.png';
     if (mimeTypes.images.some(function (e) { return entry.fileName.endsWith(e); })) return encode(sanitize(basePath + '/' + entry.fileName));
@@ -96,8 +96,8 @@ function getExtension(entry) {
 
 function makeCurrentFolderPreviewEntry(folderPath) {
     folderPath = folderPath ? sanitize(folderPath) : '/';
-    var segments = decode(folderPath).split('/').filter(function (e) { return !!e; });
-    var fileName = segments.length ? segments[segments.length - 1] : '';
+    const segments = decode(folderPath).split('/').filter(function (e) { return !!e; });
+    const fileName = segments.length ? segments[segments.length - 1] : '';
     return {
         isDirectory: true,
         isFile: false,
@@ -108,7 +108,7 @@ function makeCurrentFolderPreviewEntry(folderPath) {
 }
 
 function copyToClipboard(value) {
-    var elem = document.createElement('input');
+    const elem = document.createElement('input');
     elem.value = value;
     document.body.append(elem);
     elem.select();
@@ -116,22 +116,22 @@ function copyToClipboard(value) {
     elem.remove();
 }
 
-var PREVIEW_PANEL_OPEN_KEY = 'surfer.previewPanelOpen';
+const PREVIEW_PANEL_OPEN_KEY = 'surfer.previewPanelOpen';
 
-var PREVIEW_PANEL_WIDTH_VW_KEY = 'surfer.previewPanelWidthVw';
-var PREVIEW_PANEL_WIDTH_VW_DEFAULT = 30;
-var PREVIEW_PANEL_WIDTH_VW_MIN = 15;
-var PREVIEW_PANEL_WIDTH_VW_MAX = 85;
+const PREVIEW_PANEL_WIDTH_VW_KEY = 'surfer.previewPanelWidthVw';
+const PREVIEW_PANEL_WIDTH_VW_DEFAULT = 30;
+const PREVIEW_PANEL_WIDTH_VW_MIN = 15;
+const PREVIEW_PANEL_WIDTH_VW_MAX = 85;
 
 function clampPreviewPanelWidthVw(n) {
-    var x = Number(n);
+    const x = Number(n);
     if (!isFinite(x)) return PREVIEW_PANEL_WIDTH_VW_DEFAULT;
     return Math.min(PREVIEW_PANEL_WIDTH_VW_MAX, Math.max(PREVIEW_PANEL_WIDTH_VW_MIN, x));
 }
 
 function getPreviewPanelWidthVw() {
     try {
-        var v = localStorage.getItem(PREVIEW_PANEL_WIDTH_VW_KEY);
+        const v = localStorage.getItem(PREVIEW_PANEL_WIDTH_VW_KEY);
         if (v === null) return PREVIEW_PANEL_WIDTH_VW_DEFAULT;
         return clampPreviewPanelWidthVw(parseFloat(v));
     } catch (e) {
@@ -147,7 +147,7 @@ function setPreviewPanelWidthVw(widthVw) {
 
 function isPreviewPanelOpenPreference() {
     try {
-        var v = localStorage.getItem(PREVIEW_PANEL_OPEN_KEY);
+        const v = localStorage.getItem(PREVIEW_PANEL_OPEN_KEY);
         if (v === null) return true;
         return v === '1' || v === 'true';
     } catch (e) {
