@@ -50,7 +50,7 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
     "url": "https://git.cloudron.io/cloudron/surfer.git"
