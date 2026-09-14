@@ -2,12 +2,11 @@
 
 'use strict';
 
-import express from 'express';
 import path from 'path';
-import session from 'express-session';
 import ejs from 'ejs';
 import fs from 'fs';
 import crypto from 'crypto';
+import * as tegel from '@cloudron/tegel';
 import cors from './src/cors.js';
 import { create as createContentDisposition } from 'content-disposition';
 import { lastMile, HttpError, HttpSuccess } from '@cloudron/connect-lastmile';
@@ -23,14 +22,12 @@ const FAVICON_FILE = path.resolve(import.meta.dirname, process.argv[4] || 'favic
 const FAVICON_FALLBACK_FILE = path.resolve(import.meta.dirname, 'dist', 'logo.png');
 
 const PASSWORD_PLACEHOLDER = '__PLACEHOLDER__';
+const PASSWORD_COOKIE = 'surfer.auth';
 
 const CRYPTO_SALT_SIZE = 64; // 512-bit salt
 const CRYPTO_ITERATIONS = 10000; // iterations
 const CRYPTO_KEY_LENGTH = 512; // bits
 const CRYPTO_DIGEST = 'sha1'; // used to be the default in node 4.1.1 cannot change since it will affect existing db records
-
-// session is only used for passwort protection state
-const sessionStore = new session.MemoryStore();
 
 // Ensure the root folder exists
 fs.mkdirSync(ROOT_FOLDER, { recursive: true });
@@ -58,8 +55,58 @@ function setServMiddlewareHeaders (res, filePath) {
     if ('download' in res.req.query) res.setHeader('Content-Disposition', createContentDisposition(path.basename(filePath)));
 }
 
+function getCookie(req, name) {
+    const header = req.headers.cookie || '';
+    const parts = header.split(';');
+    for (const part of parts) {
+        const idx = part.indexOf('=');
+        if (idx === -1) continue;
+        if (part.slice(0, idx).trim() === name) return part.slice(idx + 1).trim();
+    }
+    return null;
+}
+
+function passwordAuthToken() {
+    // key = config.accessPassword (secret PBKDF2-derived key); message = the salt. both rotate on password change
+    return crypto.createHmac('sha256', config.accessPassword).update(config.accessPasswordSalt).digest('hex');
+}
+
+function isPasswordAuthCookie(req) {
+    const value = getCookie(req, PASSWORD_COOKIE);
+    if (!value) return false;
+
+    const a = Buffer.from(value, 'hex');
+    const b = Buffer.from(passwordAuthToken(), 'hex');
+
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+const oidcConfig = process.env.CLOUDRON ? {} : (process.env.OIDC_ISSUER_ORIGIN ? {
+    issuer: process.env.OIDC_ISSUER_ORIGIN,
+    clientId: process.env.OIDC_CLIENT_ID,
+    clientSecret: process.env.OIDC_CLIENT_SECRET,
+} : null);
+
+// skipLastMile: surfer has its own trailing static/routing handlers that must run before the error handler
+const { app, router, express } = await tegel.createExpressApp({ oidcConfig, skipLastMile: true });
+
+// Setup mime-type handling
+mime(express);
+
 // we will regenerate this if settings change
 let staticServMiddleware = express.static(ROOT_FOLDER, { index: config.index || 'index.html', setHeaders: setServMiddlewareHeaders, dotfiles: 'allow' });
+
+const webdavServer = new webdav.v2.WebDAVServer({
+    requireAuthentification: true,
+    httpAuthentication: new webdav.v2.HTTPBasicAuthentication(new auth.WebdavUserManager(), 'Cloudron Surfer')
+});
+
+webdavServer.setFileSystem('/', new webdav.v2.PhysicalFileSystem(ROOT_FOLDER), function (success) {
+    if (!success) console.error('Failed to setup webdav server!');
+});
+
+const PUBLIC_HTML = fs.readFileSync(import.meta.dirname + '/dist/public.html', 'utf8');
+const PUBLIC_NOSCRIPT_EJS = fs.readFileSync(import.meta.dirname + '/src/public.noscript.ejs', 'utf8');
 
 function getSettings(req, res) {
     res.send({
@@ -80,15 +127,6 @@ function setSettings(req, res, next) {
     if (typeof req.body.accessRestriction !== 'string') return next(new HttpError(400, 'missing accessRestriction string'));
     if ('accessPassword' in req.body && typeof req.body.accessPassword !== 'string') return next(new HttpError(400, 'accessPassword must be a string'));
 
-    function clearPasswordProtectionSessions(callback) {
-        callback = callback || function () {};
-
-        sessionStore.clear(function (error) {
-            if (error) console.error('Failed to clear sessions.', error);
-            callback();
-        });
-    }
-
     function updatePasswordIfNeeded(callback) {
         if (!('accessPassword' in req.body) || req.body.accessPassword === PASSWORD_PLACEHOLDER) return callback();
 
@@ -101,7 +139,7 @@ function setSettings(req, res, next) {
                 config.accessPassword = Buffer.from(derivedKey, 'binary').toString('hex');
                 config.accessPasswordSalt = salt.toString('hex');
 
-                clearPasswordProtectionSessions(callback);
+                callback();
             });
         });
     }
@@ -112,9 +150,6 @@ function setSettings(req, res, next) {
     config.index = req.body.index;
 
     staticServMiddleware = express.static(ROOT_FOLDER, { index: config.index || 'index.html', setHeaders: setServMiddlewareHeaders, dotfiles: 'allow' });
-
-    // if changed invalidate sessions
-    if (config.accessRestriction !== req.body.accessRestriction) clearPasswordProtectionSessions();
 
     config.accessRestriction = req.body.accessRestriction;
 
@@ -159,9 +194,9 @@ function resetFavicon(req, res, next) {
 }
 
 function handleProtection(req, res, next) {
-    if (!config.accessRestriction) return next();   // no protection
-    if (req.session.isValid) return next();         // password protection
-    if (req.oidc.isAuthenticated()) return next();  // openid user protection
+    if (!config.accessRestriction) return next();                        // no protection
+    if (config.accessRestriction === 'password' && isPasswordAuthCookie(req)) return next(); // password protection
+    if (config.accessRestriction === 'user' && req.session.user) return next();               // openid user protection
 
     res.status(401).sendFile(path.join(import.meta.dirname, '/dist/protected.html'));
 }
@@ -178,7 +213,11 @@ function protectedLogin(req, res, next) {
             const derivedKeyHex = Buffer.from(derivedKey, 'binary').toString('hex');
             if (derivedKeyHex !== config.accessPassword) return next(new HttpError(403, 'forbidden'));
 
-            req.session.isValid = true;
+            res.cookie(PASSWORD_COOKIE, passwordAuthToken(), {
+                httpOnly: true,
+                secure: !!process.env.CLOUDRON || process.env.NODE_ENV === 'production',
+                sameSite: 'lax'
+            });
 
             next(new HttpSuccess(200, {}));
         });
@@ -195,36 +234,43 @@ function send404(res) {
     res.status(404).sendFile(import.meta.dirname + '/dist/404.html');
 }
 
-// Setup mime-type handling
-mime(express);
+function logRequests(req, res, next) {
+    res.on('finish', function () {
+        const status = res.statusCode;
+        if (status < 200 || status >= 400) {
+            console.warn(req.method + ' ' + (req.originalUrl || req.url) + ' ' + status);
+        }
+    });
+    next();
+}
 
-// Setup the express server and routes
-const app = express();
-const router = new express.Router();
+function setReturnTo(req, res, next) {
+    req.session.returnTo = req.query.returnTo || '/';
+    next();
+}
 
-// needed for secure cookies
-app.enable('trust proxy');
+function oidcCallbackHandler(req, res) {
+    const returnTo = req.session.returnTo || '/';
+    delete req.session.returnTo;
 
-const webdavServer = new webdav.v2.WebDAVServer({
-    requireAuthentification: true,
-    httpAuthentication: new webdav.v2.HTTPBasicAuthentication(new auth.WebdavUserManager(), 'Cloudron Surfer')
-});
+    return tegel.oidcCallback(returnTo, '/?error=auth_failed', async () => {})(req, res);
+}
 
-webdavServer.setFileSystem('/', new webdav.v2.PhysicalFileSystem(ROOT_FOLDER), function (success) {
-    if (!success) console.error('Failed to setup webdav server!');
-});
+router.use(logRequests);
+router.use(cors({ origins: [ '*' ], allowCredentials: false }));
+router.use('/api', express.urlencoded({ extended: false, limit: '100mb' }));
 
-const PUBLIC_HTML = fs.readFileSync(import.meta.dirname + '/dist/public.html', 'utf8');
-const PUBLIC_NOSCRIPT_EJS = fs.readFileSync(import.meta.dirname + '/src/public.noscript.ejs', 'utf8');
+router.get   ('/auth/login', setReturnTo, tegel.oidcRedirectToLoginProvider);
+router.get   ('/auth/callback', oidcCallbackHandler);
+router.get   ('/auth/logout', tegel.logout('/'));
 
 router.post  ('/api/protectedLogin', protectedLogin);
-router.get   ('/api/oidc/login', auth.oidcLogin);
 router.get   ('/api/settings', getSettings);
 router.get   ('/api/favicon', getFavicon);
 router.put   ('/api/favicon', auth.verifyToken, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), setFavicon);
 router.delete('/api/favicon', auth.verifyToken, resetFavicon);
 router.put   ('/api/settings', auth.verifyToken, setSettings);
-router.get   ('/api/token', auth.oidcAuth, auth.createOidcToken);
+router.get   ('/api/token', tegel.requireAuth(), auth.createOidcToken);
 router.get   ('/api/tokens', auth.verifyToken, auth.getTokens);
 router.post  ('/api/tokens', auth.verifyToken, auth.createToken);
 router.delete('/api/tokens/:token', auth.verifyToken, auth.delToken);
@@ -233,23 +279,8 @@ router.get   ('/api/files/*path', auth.verifyToken, files.get);
 router.post  ('/api/files/*path', auth.verifyToken, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), files.post);
 router.put   ('/api/files/*path', auth.verifyToken, files.put);
 router.delete('/api/files/*path', auth.verifyToken, files.del);
+router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });
 
-app.use('/api/healthcheck', function (req, res) { res.status(200).send(); });
-app.use(function (req, res, next) {
-    res.on('finish', function () {
-        const status = res.statusCode;
-        if (status < 200 || status >= 400) {
-            console.warn(req.method + ' ' + (req.originalUrl || req.url) + ' ' + status);
-        }
-    });
-    next();
-});
-app.use(cors({ origins: [ '*' ], allowCredentials: false }));
-app.use('/api', express.json());
-app.use('/api', express.urlencoded({ extended: false, limit: '100mb' }));
-app.use(session({ store: sessionStore, secret: 'surfin surfin', resave: false, saveUninitialized: true, cookie: { secure: !!process.env.CLOUDRON, sameSite: process.env.CLOUDRON ? 'strict' : 'lax' } }));
-app.use(auth.oidcMiddleware);
-app.use(router);
 app.use(webdav.v2.extensions.express('/_webdav', webdavServer));
 app.use('/_admin', express.static(import.meta.dirname + '/dist', { index: 'admin.html' }));
 app.use('/assets', express.static(import.meta.dirname + '/dist/assets'));
@@ -270,7 +301,7 @@ app.use('/', function (req, res, next) {
         if (error) return next(error);
 
         // use cached PUBLIC_NOSCRIPT_EJS when deployed otherwise reread from disk for development
-        let out = process.env.CLOUDRON ? PUBLIC_HTML : fs.readFileSync(import.meta.dirname + '/dist/public.html', 'utf8');;
+        let out = process.env.CLOUDRON ? PUBLIC_HTML : fs.readFileSync(import.meta.dirname + '/dist/public.html', 'utf8');
         out = out.replace('<noscript></noscript>', `<noscript>${ejs.render(PUBLIC_NOSCRIPT_EJS, result, {})}</noscript>`);
         out = out.replace('<withscript></withscript>', `<script>window.surfer = { entries: ${JSON.stringify(result.entries)}, stat: ${JSON.stringify(result.stat)} };</script>`);
 

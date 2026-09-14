@@ -285,10 +285,10 @@ async function loadDirectory(folderPath) {
 async function login() {
   try {
     const result = await fetcher.get('/api/token');
-    if (result.status !== 201) return window.location.replace('/api/oidc/login');
+    if (result.status !== 201) return window.location.replace('/auth/login?returnTo=/_admin');
     localStorage.accessToken = result.body.accessToken;
   } catch (e) {
-    return window.location.replace('/api/oidc/login');
+    return window.location.replace('/auth/login?returnTo=/_admin');
   }
 
   await initWithToken(localStorage.accessToken);
@@ -298,7 +298,7 @@ async function logout() {
   await fetcher.del('/api/tokens/' + localStorage.accessToken, {}, { access_token: localStorage.accessToken });
   username.value = '';
   delete localStorage.accessToken;
-  window.location.href = '/api/oidc/logout';
+  window.location.href = '/auth/logout';
 }
 
 async function refresh() {

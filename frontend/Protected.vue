@@ -10,7 +10,7 @@
       <Button @click="onLogin" id="loginButton" :loading="busy" :disabled="busy || !password">Log in</Button>
     </form>
     <div>
-      <Button :href="'/api/oidc/login?returnTo=' + returnTo" v-show="settings.accessRestriction !== 'password'" icon="fa-solid fa-arrow-right-to-bracket">Log in with Cloudron</Button>
+      <Button :href="'/auth/login?returnTo=' + returnTo" v-show="settings.accessRestriction !== 'password'" icon="fa-solid fa-arrow-right-to-bracket">Log in with Cloudron</Button>
     </div>
   </div>
 </template>

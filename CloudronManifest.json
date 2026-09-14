@@ -28,7 +28,7 @@
   "icon": "file://logo.png",
   "addons": {
     "oidc": {
-      "loginRedirectUri": "/api/oidc/callback"
+      "loginRedirectUri": "/auth/callback"
     },
     "localstorage": {
       "ftp": {
