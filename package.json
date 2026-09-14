@@ -26,7 +26,9 @@
     "content-disposition": "^3.0.0",
     "ejs": "^6.0.1",
     "multiparty": "^4.3.1",
-    "webdav-server": "^2.6.3"
+    "tar": "^7.5.22",
+    "webdav-server": "^2.6.3",
+    "yauzl": "^3.4.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

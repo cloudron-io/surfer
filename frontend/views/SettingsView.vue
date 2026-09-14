@@ -76,7 +76,7 @@
           <RadioButton v-model="settings.accessRestriction" value="" label="Public (everyone)"/>
           <RadioButton v-model="settings.accessRestriction" value="password" label="Password restricted"/>
           <div v-show="settings.accessRestriction === 'password'" class="access-password">
-            <PasswordInput v-model="accessPassword" :required="true"/>
+            <PasswordInput ref="passwordInputRef" v-model="accessPassword" :required="true"/>
             <small>Changing the password will require every user to re-login.</small>
           </div>
           <RadioButton v-model="settings.accessRestriction" value="user" label="Private (only logged in users)"/>
@@ -105,7 +105,7 @@
 
 <script setup>
 
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { Button, InputGroup, PasswordInput, RadioButton, SaveIndicator, SectionItem, SettingsItem, Switch, TextInput, fetcher } from '@cloudron/pankow';
 import { copyToClipboard } from '@cloudron/pankow/utils.js';
@@ -125,6 +125,7 @@ const faviconVersion = ref(Date.now());
 const faviconSrc = computed(() => '/api/favicon?' + faviconVersion.value);
 
 const accessPassword = ref('');
+const passwordInputRef = ref(null);
 
 const saving = reactive({
   title: false,
@@ -235,6 +236,12 @@ function onCopyToClipboard(value) {
   copyToClipboard(value);
   window.pankow.notify({ type: 'success', text: 'Copied to clipboard' });
 }
+
+watch(() => settings.accessRestriction, async (value) => {
+  if (value !== 'password') return;
+  await nextTick();
+  passwordInputRef.value?.$el.querySelector('input')?.focus();
+});
 
 onMounted(async () => {
   try {

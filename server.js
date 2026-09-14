@@ -16,6 +16,7 @@ import mime from './src/mime.js';
 import webdav from 'webdav-server';
 import files from './src/files.js';
 import zip from './src/zip.js';
+import extract from './src/extract.js';
 
 const ROOT_FOLDER = path.resolve(import.meta.dirname, process.argv[2] || 'files');
 const CONFIG_FILE = path.resolve(import.meta.dirname, process.argv[3] || '.config.json');
@@ -303,6 +304,8 @@ router.get   ('/api/files/*path', auth.verifyToken, files.get);
 router.post  ('/api/files/*path', auth.verifyToken, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), files.post);
 router.put   ('/api/files/*path', auth.verifyToken, files.put);
 router.delete('/api/files/*path', auth.verifyToken, files.del);
+router.post  ('/api/copy', auth.verifyToken, files.copy);
+router.post  ('/api/extract', auth.verifyToken, extract.extract);
 router.get   ('/api/zip', handleProtection, handleZipDownload);
 router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });
 

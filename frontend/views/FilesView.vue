@@ -46,17 +46,19 @@
               :show-new-folder="true"
               :show-upload-file="true"
               :show-upload-folder="true"
-              :show-cut="false"
-              :show-copy="false"
-              :show-paste="false"
-              :show-select-all="false"
-              :show-extract="false"
+              :show-cut="true"
+              :show-copy="true"
+              :show-paste="true"
+              :show-select-all="true"
+              :show-extract="true"
               :download-handler="onDownload"
               :delete-handler="onDelete"
               :new-folder-handler="openNewFolderDialog"
               :upload-file-handler="onUpload"
               :upload-folder-handler="onUploadFolder"
               :drop-handler="onDrop"
+              :paste-handler="onPaste"
+              :extract-handler="onExtract"
               :refresh-handler="refresh"
               :fallback-icon="'/_admin/mime-types/application-x-generic.svg'"
               @selection-changed="onSelectionChanged"
@@ -168,7 +170,7 @@ const previewEntry = computed(() => {
 });
 
 function error(header, message) {
-  window.pankow.notify({ type: 'danger', text: header + message });
+  window.pankow.notify({ type: 'danger', text: header + (message ? ': ' + message : '') });
   console.error(header, message);
 }
 
@@ -271,7 +273,11 @@ function uploadFiles(files, targetPath) {
   });
 }
 
-function onDrop(targetItemName, dataTransfer) {
+function onDrop(targetItemName, dataTransfer, selectedItems) {
+  if (selectedItems) {
+    return moveItems(selectedItems, sanitize(path.value + '/' + targetItemName));
+  }
+
   if (!dataTransfer || !dataTransfer.items[0]) return;
 
   const targetPath = targetItemName ? sanitize(path.value + '/' + targetItemName) : path.value;
@@ -414,6 +420,59 @@ async function onRenameRequested(entry) {
 
 function onDownload(entry) {
   download(entry);
+}
+
+async function moveItems(items, targetDir) {
+  for (const entry of items) {
+    const newFilePath = sanitize(targetDir + '/' + entry.fileName);
+
+    if (newFilePath === sanitize(entry.filePath)) continue;
+    if (entry.isDirectory && (newFilePath + '/').indexOf(sanitize(entry.filePath) + '/') === 0) continue;
+
+    try {
+      const result = await fetcher.put(`/api/files${encode(entry.filePath)}`, { newFilePath: newFilePath, overwrite: 'rename' }, { access_token: localStorage.accessToken });
+      if (result.status === 401) return logout();
+      if (result.status !== 200) return error('Error moving ' + entry.fileName);
+    } catch (e) {
+      return error(e.message);
+    }
+  }
+
+  await refresh();
+}
+
+async function onPaste(action, files, targetItem) {
+  const targetDir = targetItem ? sanitize(path.value + '/' + targetItem.name) : path.value;
+
+  if (action === 'cut') {
+    await moveItems(files, targetDir);
+    return;
+  }
+
+  if (action === 'copy') {
+    try {
+      const result = await fetcher.post('/api/copy', { sources: files.map(function (f) { return f.filePath; }), destination: targetDir }, { access_token: localStorage.accessToken });
+      if (result.status === 401) return logout();
+      if (result.status !== 201) return error('Error copying files');
+    } catch (e) {
+      return error(e.message);
+    }
+
+    await refresh();
+  }
+}
+
+async function onExtract(item) {
+  try {
+    const result = await fetcher.post('/api/extract', { path: item.filePath }, { access_token: localStorage.accessToken });
+    if (result.status === 401) return logout();
+    if (result.status !== 200) return error('Error extracting ' + item.fileName);
+  } catch (e) {
+    return error('Error extracting ' + item.fileName, e.message);
+  }
+
+  window.pankow.notify({ type: 'success', text: 'Extracted ' + item.fileName });
+  await refresh();
 }
 
 async function refreshAccessTokens() {

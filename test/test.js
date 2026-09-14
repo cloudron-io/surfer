@@ -166,6 +166,67 @@ describe('Application life cycle test', function () {
     it('can upload folder', uploadFile.bind(null, 'testfiles/*', '/test/'));
     it('folder exists', checkFolderExists);
 
+    it('can copy file', async function () {
+        const res = await superagent.post(`https://${app.fqdn}/api/copy`)
+            .query({ access_token: gApiToken })
+            .send({ sources: [ '/index.html' ], destination: '/' })
+            .ok(() => true);
+        assert.strictEqual(res.status, 201);
+
+        const list = await superagent.get(`https://${app.fqdn}/api/files/`).query({ access_token: gApiToken }).ok(() => true);
+        assert.ok(list.body.entries.some((e) => e.fileName === 'index (1).html'));
+    });
+
+    it('can move file', async function () {
+        const res = await superagent.put(`https://${app.fqdn}/api/files/${encodeURIComponent('/index (1).html')}`)
+            .query({ access_token: gApiToken })
+            .send({ newFilePath: '/index-moved.html', overwrite: false })
+            .ok(() => true);
+        assert.strictEqual(res.status, 200);
+
+        const list = await superagent.get(`https://${app.fqdn}/api/files/`).query({ access_token: gApiToken }).ok(() => true);
+        assert.ok(list.body.entries.some((e) => e.fileName === 'index-moved.html'));
+    });
+
+    it('cannot overwrite on move', async function () {
+        const res = await superagent.put(`https://${app.fqdn}/api/files/${encodeURIComponent('/index-moved.html')}`)
+            .query({ access_token: gApiToken })
+            .send({ newFilePath: '/index.html', overwrite: false })
+            .ok(() => true);
+        assert.strictEqual(res.status, 409);
+    });
+
+    it('can extract zip archive', async function () {
+        const res = await superagent.post(`https://${app.fqdn}/api/extract`)
+            .query({ access_token: gApiToken })
+            .send({ path: '/test/archive.zip' })
+            .ok(() => true);
+        assert.strictEqual(res.status, 200);
+
+        const file = await superagent.get(`https://${app.fqdn}/test/a.txt`).ok(() => true);
+        assert.strictEqual(file.status, 200);
+        assert.strictEqual(file.text, 'hello zip\n');
+    });
+
+    it('can extract tar archive', async function () {
+        const res = await superagent.post(`https://${app.fqdn}/api/extract`)
+            .query({ access_token: gApiToken })
+            .send({ path: '/test/archive.tar.gz' })
+            .ok(() => true);
+        assert.strictEqual(res.status, 200);
+
+        const file = await superagent.get(`https://${app.fqdn}/test/sub/b.txt`).ok(() => true);
+        assert.strictEqual(file.status, 200);
+        assert.strictEqual(file.text, 'hello sub\n');
+    });
+
+    it('can delete moved file', async function () {
+        const res = await superagent.del(`https://${app.fqdn}/api/files/${encodeURIComponent('/index-moved.html')}`)
+            .query({ access_token: gApiToken })
+            .ok(() => true);
+        assert.strictEqual(res.status, 200);
+    });
+
     it('can logout', logout);
 
     it('backup app', cloudronCli.createBackup);

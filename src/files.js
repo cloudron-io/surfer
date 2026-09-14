@@ -15,6 +15,7 @@ export default {
     get,
     put,
     post,
+    copy,
     del
 };
 
@@ -229,13 +230,75 @@ function put(req, res, next) {
     const absoluteNewFilePath = getAbsolutePath(newFilePath);
     if (!absoluteNewFilePath || isProtected(absoluteNewFilePath)) return next(new HttpError(403, 'Path not allowed'));
 
-    fs.rename(absoluteOldFilePath, absoluteNewFilePath, function (error) {
-        if (error) return next (new HttpError(500, error));
+    function doRename(targetFilePath) {
+        fs.rename(absoluteOldFilePath, targetFilePath, function (error) {
+            if (error) return next (new HttpError(500, error));
 
-        console.log('put: successful');
+            console.log('put: successful');
 
-        return next(new HttpSuccess(200, {}));
-    });
+            return next(new HttpSuccess(200, {}));
+        });
+    }
+
+    if (req.body.overwrite === false) {
+        return fs.stat(absoluteNewFilePath, function (error) {
+            if (!error) return next(new HttpError(409, 'destination exists'));
+            doRename(absoluteNewFilePath);
+        });
+    }
+
+    if (req.body.overwrite === 'rename') {
+        return getUniquePath(absoluteNewFilePath).then(function (targetPath) {
+            doRename(targetPath);
+        });
+    }
+
+    doRename(absoluteNewFilePath);
+}
+
+async function getUniquePath(targetPath) {
+    if (!fs.existsSync(targetPath)) return targetPath;
+
+    const dir = path.dirname(targetPath);
+    const ext = path.extname(targetPath);
+    const base = path.basename(targetPath, ext);
+
+    for (let i = 1; ; ++i) {
+        const candidate = path.join(dir, `${base} (${i})${ext}`);
+        if (!fs.existsSync(candidate)) return candidate;
+    }
+}
+
+function copy(req, res, next) {
+    const sources = req.body && req.body.sources;
+    const destination = req.body && req.body.destination;
+
+    if (!Array.isArray(sources) || !sources.length || !sources.every(function (p) { return typeof p === 'string'; })) return next(new HttpError(400, 'missing sources array'));
+    if (typeof destination !== 'string' || !destination) return next(new HttpError(400, 'missing destination string'));
+
+    const absoluteDestination = getAbsolutePath(destination);
+    if (!absoluteDestination || isProtected(absoluteDestination)) return next(new HttpError(403, 'Path not allowed'));
+
+    async function copyOne(sourceFilePath) {
+        const absoluteSource = getAbsolutePath(sourceFilePath);
+        if (!absoluteSource || isProtected(absoluteSource)) throw new HttpError(403, 'Path not allowed');
+
+        const targetPath = await getUniquePath(path.join(absoluteDestination, path.basename(absoluteSource)));
+
+        const [error] = await safe(fsPromises.cp(absoluteSource, targetPath, { recursive: true }));
+        if (error) throw new HttpError(500, error.message);
+    }
+
+    (async function () {
+        try {
+            for (const source of sources) await copyOne(source);
+        } catch (error) {
+            if (error instanceof HttpError) return next(error);
+            return next(new HttpError(500, error.message));
+        }
+
+        next(new HttpSuccess(201, {}));
+    })();
 }
 
 function del(req, res, next) {
