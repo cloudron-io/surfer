@@ -1,36 +1,5 @@
 
-import { filesize } from 'filesize';
 import { getMimeIcon } from './mimeicons.js';
-
-function prettyDate(value) {
-    const date = new Date(value),
-    diff = (((new Date()).getTime() - date.getTime()) / 1000),
-    day_diff = Math.floor(diff / 86400);
-
-    if (isNaN(day_diff) || day_diff < 0)
-        return;
-
-    return day_diff === 0 && (
-        diff < 60 && 'just now' ||
-        diff < 120 && '1 minute ago' ||
-        diff < 3600 && Math.floor( diff / 60 ) + ' minutes ago' ||
-        diff < 7200 && '1 hour ago' ||
-        diff < 86400 && Math.floor( diff / 3600 ) + ' hours ago') ||
-        day_diff === 1 && 'Yesterday' ||
-        day_diff < 7 && day_diff + ' days ago' ||
-        day_diff < 31 && Math.ceil( day_diff / 7 ) + ' weeks ago' ||
-        day_diff < 365 && Math.round( day_diff / 30 ) +  ' months ago' ||
-        Math.round( day_diff / 365 ) + ' years ago';
-}
-
-function prettyLongDate(value) {
-    const date = new Date(value);
-    return date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
-}
-
-function prettyFileSize(value) {
-    return filesize(value);
-}
 
 function sanitize(path) {
     path = '/' + path;
@@ -58,10 +27,10 @@ function download(entries) {
         return;
     }
 
-    const paths = entries.map(function (entry) { return encodeURIComponent(entry.filePath); }).join(',');
+    const paths = entries.map(function (entry) { return entry.filePath; });
     const name = entries.length === 1 ? (entries[0].fileName || 'download') : 'download';
 
-    window.location.href = '/api/zip?paths=' + paths + '&name=' + encodeURIComponent(name);
+    window.location.href = '/api/zip?paths=' + encodeURIComponent(JSON.stringify(paths)) + '&name=' + encodeURIComponent(name);
 }
 
 function getPreviewUrl(entry, basePath) {
@@ -85,12 +54,6 @@ function hasViewer(entry) {
     if (entry.mimeType.startsWith('text/')) return !NON_PREVIEW_TEXT_SUBTYPES.includes(entry.mimeType.slice('text/'.length).split(';')[0].toLowerCase());
 
     return false;
-}
-
-// simple extension detection, does not work with double extension like .tar.gz
-function getExtension(entry) {
-    if (entry.isFile) return entry.fileName.slice(entry.fileName.lastIndexOf('.') + 1);
-    return '';
 }
 
 function toDirectoryItems(entries, basePath, useHashNavigation) {
@@ -128,15 +91,6 @@ function makeCurrentFolderPreviewEntry(folderPath) {
     };
 }
 
-function copyToClipboard(value) {
-    const elem = document.createElement('input');
-    elem.value = value;
-    document.body.append(elem);
-    elem.select();
-    document.execCommand('copy');
-    elem.remove();
-}
-
 const PREVIEW_PANEL_WIDTH_VW_KEY = 'surfer.previewPanelWidthVw';
 const PREVIEW_PANEL_WIDTH_VW_DEFAULT = 30;
 const PREVIEW_PANEL_WIDTH_VW_MIN = 15;
@@ -165,19 +119,14 @@ function setPreviewPanelWidthVw(widthVw) {
 }
 
 export {
-    prettyDate,
-    prettyLongDate,
-    prettyFileSize,
     sanitize,
     encode,
     decode,
     download,
     getPreviewUrl,
     hasViewer,
-    getExtension,
     toDirectoryItems,
     makeCurrentFolderPreviewEntry,
-    copyToClipboard,
     getPreviewPanelWidthVw,
     setPreviewPanelWidthVw,
     clampPreviewPanelWidthVw

@@ -19,7 +19,6 @@ const breadcrumbItems = ref([]);
 const entries = ref([]);
 // holds settings values stored on backend
 const settings = ref({
-  folderListingEnabled: false,
   title: false
 });
 const activeEntry = ref({});
@@ -85,7 +84,6 @@ onMounted(async () => {
 
   try {
     const result = await fetcher.get(`${ORIGIN}/api/settings`);
-    settings.value.folderListingEnabled =  !!result.body.folderListingEnabled;
     settings.value.title =  result.body.title;
   } catch (error) {
     console.error(error);

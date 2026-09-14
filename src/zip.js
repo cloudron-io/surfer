@@ -26,6 +26,8 @@ async function zipPaths(absolutePaths, baseName, res) {
 
     archive.on('error', function (error) {
         console.error('zip error:', error);
+        if (res.headersSent) res.destroy();
+        else res.status(500).send('Failed to create zip');
     });
 
     res.attachment(`${baseName}.zip`);

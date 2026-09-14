@@ -253,7 +253,8 @@ const previewEntry = computed(() => {
 });
 
 function error(header, message) {
-  window.pankow.notify({ type: 'danger', text: header + message });
+  const text = message ? `${header} ${message}` : header;
+  window.pankow.notify({ type: 'danger', text });
   console.error(header, message);
 }
 

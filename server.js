@@ -198,10 +198,20 @@ function handleProtection(req, res, next) {
     res.status(401).sendFile(path.join(import.meta.dirname, '/dist/protected.html'));
 }
 
-function handleZipDownload(req, res, next) {
-    if (typeof req.query.paths !== 'string' || !req.query.paths) return next();
+const MAX_ZIP_PATHS = 100;
 
-    const filePaths = req.query.paths.split(',').map(decodeURIComponent);
+function handleZipDownload(req, res, next) {
+    if (typeof req.query.paths !== 'string' || !req.query.paths) return next(new HttpError(400, 'missing paths'));
+
+    let filePaths;
+    try {
+        filePaths = JSON.parse(req.query.paths);
+    } catch {
+        return next(new HttpError(400, 'invalid paths'));
+    }
+
+    if (!Array.isArray(filePaths) || !filePaths.length || !filePaths.every(function (p) { return typeof p === 'string'; })) return next(new HttpError(400, 'invalid paths'));
+    if (filePaths.length > MAX_ZIP_PATHS) return next(new HttpError(400, 'too many paths'));
 
     const absolutePaths = [];
     for (const filePath of filePaths) {
