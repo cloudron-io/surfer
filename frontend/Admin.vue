@@ -33,7 +33,40 @@
         @update:left-width="onSplitResize"
       >
         <template #left>
-          <EntryList :entries="entries" :busy="busy" :sort-folders-first="settings.sortFoldersFirst" use-hash-for-navigation @dropped="onDrop" @entry-activated="onEntryOpen" @entry-renamed="onRename" @entry-delete="onDelete" @selection-changed="onSelectionChanged" editable/>
+          <div class="directory-pane">
+            <DirectoryView
+              ref="directoryView"
+              :items="entries"
+              :busy="busy"
+              :editable="true"
+              :show-download="true"
+              :show-size="true"
+              :show-modified="true"
+              :show-rename="true"
+              :show-delete="true"
+              :show-new-file="false"
+              :show-new-folder="true"
+              :show-upload-file="true"
+              :show-upload-folder="true"
+              :show-cut="false"
+              :show-copy="false"
+              :show-paste="false"
+              :show-select-all="false"
+              :show-extract="false"
+              :download-handler="onDownload"
+              :delete-handler="onDelete"
+              :new-folder-handler="openNewFolderDialog"
+              :upload-file-handler="onUpload"
+              :upload-folder-handler="onUploadFolder"
+              :drop-handler="onDrop"
+              :refresh-handler="refresh"
+              :fallback-icon="'/_admin/mime-types/application-x-generic.svg'"
+              @selection-changed="onSelectionChanged"
+              @item-activated="onEntryOpen"
+              @rename-requested="onRenameRequested"
+            />
+            <div class="directory-view-busy" v-show="busy"><Spinner class="pankow-spinner-large"/></div>
+          </div>
         </template>
         <template #right>
           <Preview :entry="previewEntry"/>
@@ -61,7 +94,6 @@
     <div>
       <h3>Display</h3>
       <p>These settings only apply if public folder listing is enabled and no custom index file is present.</p>
-      <Checkbox id="sortShowFoldersFirst" v-model="settingsDialog.sortFoldersFirst" label="Always show folders first"/>
       <div>
         <label for="titleInput">Title</label>
         <TextInput id="titleInput" type="text" placeholder="Surfer" v-model="settingsDialog.title"/>
@@ -147,12 +179,11 @@
 <script setup>
 
 import { ref, reactive, computed, onMounted, provide } from 'vue';
-import { Breadcrumb, Button, Checkbox, Dialog, InputDialog, Notification, PasswordInput, ProgressBar, Radiobutton, Spinner, SplitLayout, TextInput, TopBar, fetcher } from '@cloudron/pankow';
+import { Breadcrumb, Button, Checkbox, Dialog, DirectoryView, InputDialog, Notification, PasswordInput, ProgressBar, Radiobutton, Spinner, SplitLayout, TextInput, TopBar, fetcher } from '@cloudron/pankow';
 import { eachLimit, each } from 'async';
-import { sanitize, encode, decode, getPreviewUrl, getExtension, makeCurrentFolderPreviewEntry, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from './utils.js';
+import { sanitize, encode, decode, download, toDirectoryItems, makeCurrentFolderPreviewEntry, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from './utils.js';
 import { copyToClipboard } from '@cloudron/pankow/utils.js';
 
-import EntryList from './components/EntryList.vue';
 import Preview from './components/Preview.vue';
 
 const upload = ref(null);
@@ -160,6 +191,7 @@ const uploadFolder = ref(null);
 const uploadFavicon = ref(null);
 const faviconImage = ref(null);
 const inputDialog = ref(null);
+const directoryView = ref(null);
 const settingsDialogRef = ref(null);
 const accessTokenDialog = ref(null);
 const aboutDialog = ref(null);
@@ -193,7 +225,6 @@ const leftWidthPercent = computed(() => 100 - previewWidthVw.value);
 const accessTokens = ref([]);
 const settings = reactive({
   folderListingEnabled: false,
-  sortFoldersFirst: false,
   title: 'Surfer',
   accessRestriction: '',
   accessPassword: '',
@@ -202,7 +233,6 @@ const settings = reactive({
 const settingsDialog = reactive({
   busy: false,
   folderListingEnabled: false,
-  sortFoldersFirst: false,
   title: '',
   faviconFile: null,
   accessRestriction: '',
@@ -253,7 +283,7 @@ async function initWithToken(accessToken) {
 }
 
 async function loadDirectory(folderPath) {
-  if (!folderPath) return window.location.hash = '/';
+  if (!folderPath) { window.location.hash = '/'; return; }
 
   busy.value = true;
   activeEntry.value = {};
@@ -266,14 +296,7 @@ async function loadDirectory(folderPath) {
 
     busy.value = false;
 
-    result.body.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
-    entries.value = result.body.entries.map(function (entry) {
-      entry.previewUrl = getPreviewUrl(entry, folderPath);
-      entry.extension = getExtension(entry);
-      entry.rename = false;
-      entry.filePathNew = entry.fileName;
-      return entry;
-    });
+    entries.value = toDirectoryItems(result.body.entries, folderPath, true);
   } catch (e) {
     return console.error(e);
   }
@@ -377,16 +400,17 @@ function uploadFiles(files, targetPath) {
   });
 }
 
-function onDrop(event, entry) {
-  if (!event.dataTransfer.items[0]) return;
+function onDrop(targetItemName, dataTransfer) {
+  if (!dataTransfer || !dataTransfer.items[0]) return;
+
+  const targetPath = targetItemName ? sanitize(path.value + '/' + targetItemName) : path.value;
 
   let folderItem;
-  const targetPath = entry ? entry.filePath : null;
   try {
-    folderItem = event.dataTransfer.items[0].webkitGetAsEntry();
-    if (folderItem.isFile) return uploadFiles(event.dataTransfer.files, targetPath);
+    folderItem = dataTransfer.items[0].webkitGetAsEntry();
+    if (folderItem.isFile) return uploadFiles(dataTransfer.files, targetPath);
   } catch (e) {
-    return uploadFiles(event.dataTransfer.files, targetPath);
+    return uploadFiles(dataTransfer.files, targetPath);
   }
 
   uploadStatus.busy = true;
@@ -453,7 +477,6 @@ function openAccessTokenDialog() {
 
 function openSettingsDialog() {
   settingsDialog.folderListingEnabled = settings.folderListingEnabled;
-  settingsDialog.sortFoldersFirst = settings.sortFoldersFirst;
   settingsDialog.title = settings.title;
   settingsDialog.faviconFile = null;
   settingsDialog.index = settings.index;
@@ -467,7 +490,6 @@ async function onSaveSettingsDialog() {
 
   const data = {
     folderListingEnabled: settingsDialog.folderListingEnabled,
-    sortFoldersFirst: settingsDialog.sortFoldersFirst,
     title: settingsDialog.title,
     index: settingsDialog.index,
     accessRestriction: settingsDialog.accessRestriction
@@ -488,7 +510,6 @@ async function onSaveSettingsDialog() {
   }
 
   settings.folderListingEnabled = data.folderListingEnabled;
-  settings.sortFoldersFirst = data.sortFoldersFirst;
   settings.title = data.title;
   settings.index = data.index;
   settings.accessRestriction = data.accessRestriction;
@@ -521,21 +542,48 @@ function onUploadFolder() {
   uploadFolder.value.click();
 }
 
-async function onDelete(entry) {
-  const filePath = encode(sanitize(path.value + '/' + entry.fileName));
+async function onDelete(items) {
+  if (!Array.isArray(items)) items = [ items ];
+  if (!items.length) return;
 
-  try {
-    const result = await fetcher.del(`/api/files${filePath}`, {}, { access_token: localStorage.accessToken, recursive: true });
-    if (result.status === 401) return logout();
-    if (result.status !== 200) return error('Error deleting file');
-  } catch (e) {
-    return error(e.message);
+  const names = items.map(function (e) { return e.fileName; }).join(', ');
+  const yes = await inputDialog.value.confirm({
+    message: `Really delete ${names}`,
+    confirmStyle: 'danger',
+    confirmLabel: 'Yes',
+    rejectLabel: 'No',
+    modal: false
+  });
+
+  if (!yes) return;
+
+  for (const entry of items) {
+    const filePath = encode(sanitize(path.value + '/' + entry.fileName));
+
+    try {
+      const result = await fetcher.del(`/api/files${filePath}`, {}, { access_token: localStorage.accessToken, recursive: true });
+      if (result.status === 401) return logout();
+      if (result.status !== 200) return error('Error deleting file');
+    } catch (e) {
+      return error(e.message);
+    }
   }
 
   await refresh();
 }
 
-async function onRename(entry, newFileName) {
+async function onRenameRequested(entry) {
+  const newFileName = await inputDialog.value.prompt({
+    message: 'New filename',
+    modal: false,
+    value: entry.fileName,
+    confirmStyle: 'success',
+    confirmLabel: 'Rename',
+    rejectLabel: 'Cancel'
+  });
+
+  if (!newFileName || newFileName === entry.fileName) return;
+
   const filePath = encode(sanitize(path.value + '/' + entry.fileName));
   const newFilePath = sanitize(path.value + '/' + newFileName);
 
@@ -547,9 +595,11 @@ async function onRename(entry, newFileName) {
     return error(e.message);
   }
 
-  entry.fileName = newFileName;
-  // FIXME setting this will correctly update the preview, which on some types might trigger a download on rename!
-  entry.filePath = newFilePath;
+  await refresh();
+}
+
+function onDownload(entry) {
+  download(entry);
 }
 
 async function refreshAccessTokens() {
@@ -602,16 +652,12 @@ async function onDeleteAccessToken(token) {
 }
 
 function onEntryOpen(entry) {
-  if (entry.rename) return;
-
-  const entryPath = sanitize(path.value + '/' + entry.fileName);
-
   if (entry.isDirectory) {
-    window.location.hash = entryPath;
+    window.location.hash = sanitize(path.value + '/' + entry.fileName);
     return;
   }
 
-  activeEntry.value = entry;
+  window.open(entry.href, '_blank');
 }
 
 function onSelectionChanged(selectedEntries) {
@@ -630,7 +676,6 @@ onMounted(async () => {
       console.error('Failed to fetch settings', result.status);
     } else {
       settings.folderListingEnabled = !!result.body.folderListingEnabled;
-      settings.sortFoldersFirst = !!result.body.sortFoldersFirst;
       settings.title = result.body.title;
       settings.index = result.body.index;
       settings.accessRestriction = result.body.accessRestriction;
@@ -666,6 +711,14 @@ onMounted(async () => {
     settingsDialog.faviconFile = uploadFavicon.value.files[0] || null;
     if (settingsDialog.faviconFile) faviconImage.value.src = URL.createObjectURL(settingsDialog.faviconFile);
   });
+
+  const model = directoryView.value?.contextMenuModel;
+  if (model) {
+    const downloadItem = model.find(function (item) { return item.id === 'download'; });
+    if (downloadItem) {
+      downloadItem.visible = () => !!(directoryView.value?.focusItem && directoryView.value.focusItem.isFile);
+    }
+  }
 });
 
 </script>
@@ -680,6 +733,20 @@ hr {
 .main-container-footer {
   display: flex;
   align-items: center;
+}
+
+.directory-pane {
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.directory-view-busy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (prefers-color-scheme: dark) {

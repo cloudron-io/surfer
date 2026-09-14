@@ -80,6 +80,28 @@ function getExtension(entry) {
     return '';
 }
 
+function toDirectoryItems(entries, basePath, useHashNavigation) {
+    return entries.map(function (entry) {
+        const previewUrl = getPreviewUrl(entry, basePath);
+        const href = entry.isDirectory
+            ? (useHashNavigation ? '#' + encode(entry.filePath) : encode(entry.filePath) + '/')
+            : encode(entry.filePath);
+
+        return {
+            ...entry,
+            id: entry.filePath,
+            name: entry.fileName,
+            icon: previewUrl,
+            previewUrl: previewUrl,
+            href: href,
+            size: entry.size,
+            modified: new Date(entry.mtime),
+            selected: false,
+            focused: false
+        };
+    });
+}
+
 function makeCurrentFolderPreviewEntry(folderPath) {
     folderPath = folderPath ? sanitize(folderPath) : '/';
     const segments = decode(folderPath).split('/').filter(function (e) { return !!e; });
@@ -140,6 +162,7 @@ export {
     getPreviewUrl,
     hasViewer,
     getExtension,
+    toDirectoryItems,
     makeCurrentFolderPreviewEntry,
     copyToClipboard,
     getPreviewPanelWidthVw,

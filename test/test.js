@@ -88,7 +88,7 @@ describe('Application life cycle test', function () {
     async function enablePublicFolderListing() {
         const res0 = await superagent.put(`https://${app.fqdn}/api/settings`)
             .query({ access_token: gApiToken })
-            .send({ folderListingEnabled: true, sortFoldersFirst: true, title: 'Surfer', index: '', accessRestriction: '' }).ok(() => true);
+            .send({ folderListingEnabled: true, title: 'Surfer', index: '', accessRestriction: '' }).ok(() => true);
         assert.strictEqual(res0.status, 201);
     }
 

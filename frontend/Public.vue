@@ -1,15 +1,15 @@
 <script setup>
 
 import { ref, onMounted, computed } from 'vue';
-import { Breadcrumb, Button, Notification, SplitLayout, TopBar, fetcher } from '@cloudron/pankow';
-import { sanitize, encode, decode, getPreviewUrl, getExtension, makeCurrentFolderPreviewEntry, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from './utils.js';
+import { Breadcrumb, Button, DirectoryView, Notification, SplitLayout, TopBar, fetcher } from '@cloudron/pankow';
+import { sanitize, encode, decode, download, toDirectoryItems, makeCurrentFolderPreviewEntry, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from './utils.js';
 
-import EntryList from './components/EntryList.vue';
 import Preview from './components/Preview.vue';
 
 const ORIGIN = window.location.origin;
 
 const ready = ref(false);
+const directoryView = ref(null);
 const path = ref('/');
 const breadcrumbHomeItem = ref({
   label: '',
@@ -21,7 +21,6 @@ const entries = ref([]);
 // holds settings values stored on backend
 const settings = ref({
   folderListingEnabled: false,
-  sortFoldersFirst: false,
   title: false
 });
 const activeEntry = ref({});
@@ -38,16 +37,7 @@ function loadDirectory(folderPath) {
 
   folderPath = folderPath ? sanitize(folderPath) : '/';
 
-  // this is injected via ejs in server.js
-  window.surfer.entries.sort(function (a, b) { return a.isDirectory && b.isFile ? -1 : 1; });
-
-  entries.value = window.surfer.entries.map(function (entry) {
-    entry.previewUrl = getPreviewUrl(entry, folderPath);
-    entry.extension = getExtension(entry);
-    entry.rename = false;
-    entry.filePathNew = entry.fileName;
-    return entry;
-  });
+  entries.value = toDirectoryItems(window.surfer.entries, folderPath, false);
   path.value = folderPath;
   breadcrumbItems.value = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
     return {
@@ -63,8 +53,11 @@ function onEntryOpen(entry) {
     return;
   }
 
-  // TODO open file viewer
-  console.error('To be implemented');
+  window.location.href = encode(entry.filePath);
+}
+
+function onDownload(entry) {
+  download(entry);
 }
 
 function onSelectionChanged(selectedEntries) {
@@ -90,7 +83,6 @@ onMounted(async () => {
   try {
     const result = await fetcher.get(`${ORIGIN}/api/settings`);
     settings.value.folderListingEnabled =  !!result.body.folderListingEnabled;
-    settings.value.sortFoldersFirst =  !!result.body.sortFoldersFirst;
     settings.value.title =  result.body.title;
   } catch (error) {
     console.error(error);
@@ -99,6 +91,12 @@ onMounted(async () => {
   window.document.title = settings.value.title;
 
   loadDirectory(decode(window.location.pathname));
+
+  const model = directoryView.value?.contextMenuModel;
+  const downloadItem = model?.find(function (item) { return item.id === 'download'; });
+  if (downloadItem) {
+    downloadItem.visible = () => !!(directoryView.value?.focusItem && directoryView.value.focusItem.isFile);
+  }
 
   ready.value = true;
 });
@@ -131,7 +129,31 @@ onMounted(async () => {
         @update:left-width="onSplitResize"
       >
         <template #left>
-          <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @selection-changed="onSelectionChanged" @entry-activated="onEntryOpen"/>
+          <div class="directory-pane">
+            <DirectoryView
+              ref="directoryView"
+              :items="entries"
+              :editable="false"
+              :show-download="true"
+              :show-size="true"
+              :show-modified="true"
+              :show-rename="false"
+              :show-delete="false"
+              :show-new-file="false"
+              :show-new-folder="false"
+              :show-upload-file="false"
+              :show-upload-folder="false"
+              :show-cut="false"
+              :show-copy="false"
+              :show-paste="false"
+              :show-select-all="false"
+              :show-extract="false"
+              :download-handler="onDownload"
+              :fallback-icon="'/_admin/mime-types/application-x-generic.svg'"
+              @selection-changed="onSelectionChanged"
+              @item-activated="onEntryOpen"
+            />
+          </div>
         </template>
         <template #right>
           <Preview :entry="previewEntry"/>
@@ -151,6 +173,11 @@ onMounted(async () => {
   bottom: 16px;
   right: 16px;
   z-index: 10;
+}
+
+.directory-pane {
+  overflow: hidden;
+  height: 100%;
 }
 
 @media only screen and (max-width: 767px) {

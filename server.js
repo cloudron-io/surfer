@@ -44,7 +44,6 @@ try {
 }
 
 if (typeof config.folderListingEnabled !== 'boolean') config.folderListingEnabled = false;
-if (typeof config.sortFoldersFirst !== 'boolean') config.sortFoldersFirst = true;
 if (typeof config.title !== 'string') config.title = 'Surfer';
 if (typeof config.accessRestriction !== 'string') config.accessRestriction = '';
 if (typeof config.accessPassword !== 'string') config.accessPassword = '';
@@ -111,7 +110,6 @@ const PUBLIC_NOSCRIPT_EJS = fs.readFileSync(import.meta.dirname + '/src/public.n
 function getSettings(req, res) {
     res.send({
         folderListingEnabled: !!config.folderListingEnabled,
-        sortFoldersFirst: !!config.sortFoldersFirst,
         title: config.title || 'Surfer',
         index: config.index || '',
         accessRestriction: config.accessRestriction || '',
@@ -121,7 +119,6 @@ function getSettings(req, res) {
 
 function setSettings(req, res, next) {
     if (typeof req.body.folderListingEnabled !== 'boolean') return next(new HttpError(400, 'missing folderListingEnabled boolean'));
-    if (typeof req.body.sortFoldersFirst !== 'boolean') return next(new HttpError(400, 'missing sortFoldersFirst boolean'));
     if (typeof req.body.title !== 'string') return next(new HttpError(400, 'missing title string'));
     if (req.body.index && typeof req.body.index !== 'string') return next(new HttpError(400, 'index must be falsy or a string'));
     if (typeof req.body.accessRestriction !== 'string') return next(new HttpError(400, 'missing accessRestriction string'));
@@ -145,7 +142,6 @@ function setSettings(req, res, next) {
     }
 
     config.folderListingEnabled = !!req.body.folderListingEnabled;
-    config.sortFoldersFirst = !!req.body.sortFoldersFirst;
     config.title = req.body.title;
     config.index = req.body.index;
 
