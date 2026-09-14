@@ -5,6 +5,7 @@ import fsPromises from 'node:fs/promises';
 import path from 'path';
 import safe from '@cloudron/safetydance';
 import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
+import { getMimeType } from './mime.js';
 
 const gBasePath = path.resolve(import.meta.dirname, '..', process.argv[2] || 'files');
 
@@ -71,7 +72,8 @@ function collectFiles(folderPath, recursive, callback) {
                     birthtime: stat.birthtime,
                     size: stat.size,
                     fileName: file,
-                    filePath: removeBasePath(filePath)
+                    filePath: removeBasePath(filePath),
+                    mimeType: stat.isDirectory() ? null : getMimeType(file)
                 });
 
                 if (stat.isDirectory() && recursive) {
@@ -113,7 +115,8 @@ function getFolderListing(filePath, callback) {
                 birthtime: stat.birthtime,
                 size: stat.size,
                 fileName: '',
-                filePath: removeBasePath(absoluteFilePath)
+                filePath: removeBasePath(absoluteFilePath),
+                mimeType: null
             };
 
             callback(null, { stat: tmp, entries: results });
@@ -148,7 +151,8 @@ function get(req, res, next) {
                 birthtime: stat.birthtime,
                 size: stat.size,
                 fileName: '',
-                filePath: removeBasePath(absoluteFilePath)
+                filePath: removeBasePath(absoluteFilePath),
+                mimeType: null
             };
 
             res.status(222).send({ stat: tmp, entries: results });

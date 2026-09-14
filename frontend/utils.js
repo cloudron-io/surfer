@@ -1,5 +1,6 @@
 
 import { filesize } from 'filesize';
+import { getMimeIcon } from './mimeicons.js';
 
 function prettyDate(value) {
     const date = new Date(value),
@@ -53,37 +54,22 @@ function download(entry) {
     window.location.href = encode(entry.filePath) + '?download';
 }
 
-const mimeTypes = {
-    images: [ '.png', '.jpg', '.jpeg', '.tiff', '.gif', '.webp' ],
-    text: [ '.txt', '.md' ],
-    pdf: [ '.pdf' ],
-    html: [ '.html', '.htm', '.php' ],
-    music: [ '.mp2', '.mp3', '.ogg', '.flac', '.wav', '.aac' ],
-    video: [ '.mp4', '.mpg', '.mpeg', '.mkv', '.avi', '.mov' ]
-};
-
 function getPreviewUrl(entry, basePath) {
     const path = '/_admin/mime-types/';
 
-    if (entry.isDirectory) return path + 'directory.png';
-    if (mimeTypes.images.some(function (e) { return entry.fileName.endsWith(e); })) return encode(sanitize(basePath + '/' + entry.fileName));
-    if (mimeTypes.text.some(function (e) { return entry.fileName.endsWith(e); })) return path +'text.png';
-    if (mimeTypes.pdf.some(function (e) { return entry.fileName.endsWith(e); })) return path + 'pdf.png';
-    if (mimeTypes.html.some(function (e) { return entry.fileName.endsWith(e); })) return path + 'html.png';
-    if (mimeTypes.music.some(function (e) { return entry.fileName.endsWith(e); })) return path + 'music.png';
-    if (mimeTypes.video.some(function (e) { return entry.fileName.endsWith(e); })) return path + 'video.png';
+    if (entry.isDirectory || !entry.mimeType) return path + 'inode-directory.svg';
+    if (entry.mimeType.startsWith('image/')) return encode(sanitize(basePath + '/' + entry.fileName));
 
-    return path + 'unknown.png';
+    return path + getMimeIcon(entry.mimeType);
 }
 
 function hasViewer(entry) {
-    if (entry.isDirectory) return false;
-    if (mimeTypes.images.some(function (e) { return entry.fileName.endsWith(e); })) return true;
-    if (mimeTypes.text.some(function (e) { return entry.fileName.endsWith(e); })) return true;
-    if (mimeTypes.pdf.some(function (e) { return entry.fileName.endsWith(e); })) return true;
-    if (mimeTypes.html.some(function (e) { return entry.fileName.endsWith(e); })) return true;
-    if (mimeTypes.music.some(function (e) { return entry.fileName.endsWith(e); })) return true;
-    if (mimeTypes.video.some(function (e) { return entry.fileName.endsWith(e); })) return true;
+    if (entry.isDirectory || !entry.mimeType) return false;
+    if (entry.mimeType.startsWith('image/')) return true;
+    if (entry.mimeType.startsWith('text/')) return true;
+    if (entry.mimeType.startsWith('audio/')) return true;
+    if (entry.mimeType.startsWith('video/')) return true;
+    if (entry.mimeType === 'application/pdf') return true;
 
     return false;
 }

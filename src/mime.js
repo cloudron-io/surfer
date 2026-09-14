@@ -4,25 +4,16 @@ import fs from 'fs';
 
 const GLOBS2_FILE = '/usr/share/mime/globs2';
 
-// to override OTHER text types to text/plain
-const COMMON_TEXT_TYPES = [
-    'text/calendar',
-    'text/comma',
-    'text/css',
-    'text/html',
-    'text/javascript',
-    'text/plain',
-    'text/richtext',
-    'text/rtf',
-    'text/xml'
-];
+let gTypes = null;
 
-export default function (express) {
+function init() {
+    if (gTypes) return;
+
     console.log(`Loading rich mime-types from ${GLOBS2_FILE}`);
 
-    let glob2;
-    const types = {};
+    gTypes = {};
 
+    let glob2;
     try {
         glob2 = fs.readFileSync(GLOBS2_FILE, 'utf8');
     } catch (e) {
@@ -37,18 +28,27 @@ export default function (express) {
         const f = line.split(':');
         if (f.length <= 1) return;
 
-        let type = f[1];
+        gTypes[f[2].slice(1)] = f[1];
+    });
+}
 
-        if (type.startsWith('text/') && COMMON_TEXT_TYPES.indexOf(type) === -1) type = 'text/plain';
+function getMimeType(filePath) {
+    if (!gTypes) init();
 
-        if (!types[type]) types[type] = [];
-        types[type].push(f[2].slice(2));
+    const typeKey = Object.keys(gTypes).find(function (type) {
+        return filePath.toLowerCase().endsWith(type);
     });
 
-    Object.keys(types).forEach(function (type) {
-        const obj = {};
-        obj[type] = types[type];
+    if (!typeKey) return 'application/octet-stream';
 
-        // express.static.mime.define(obj);
-    });
+    // ubuntu globs reports application/rtf but collabora wants the correct mimetype of text/rtf
+    if (typeKey === '.rtf') return 'text/rtf';
+
+    return gTypes[typeKey];
+}
+
+export {
+    getMimeType
 };
+
+export default init;
