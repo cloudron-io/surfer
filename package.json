@@ -18,6 +18,7 @@
     "@cloudron/connect-lastmile": "^3.0.0",
     "@cloudron/pankow": "^4.4.15",
     "@cloudron/safetydance": "^3.1.0",
+    "@cloudron/superagent": "^2.3.0",
     "@cloudron/tegel": "^1.6.1",
     "archiver": "^8.0.0",
     "async": "^3.2.6",
@@ -25,7 +26,6 @@
     "content-disposition": "^3.0.0",
     "ejs": "^6.0.1",
     "multiparty": "^4.3.1",
-    "@cloudron/superagent": "^2.3.0",
     "webdav-server": "^2.6.3"
   },
   "devDependencies": {
@@ -36,7 +36,8 @@
     "globals": "^17.12.0",
     "mocha": "^12.0.1",
     "vite": "^8.3.0",
-    "vue": "^3.5.42"
+    "vue": "^3.5.42",
+    "vue-router": "^5.3.1"
   },
   "bin": {
     "surfer": "./cli/surfer.js"

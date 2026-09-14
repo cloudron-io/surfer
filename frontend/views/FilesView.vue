@@ -1,13 +1,11 @@
 <template>
   <input type="file" ref="upload" style="display: none" multiple/>
   <input type="file" ref="uploadFolder" style="display: none" multiple webkitdirectory directory/>
-  <input type="file" ref="uploadFavicon" style="display: none"/>
 
   <!-- This is re-used and thus global -->
   <InputDialog ref="inputDialog"/>
-  <Notification/>
 
-  <div class="main-container" v-show="ready">
+  <div class="main-container">
     <div class="main-container-toolbar">
       <TopBar>
         <template #left>
@@ -82,68 +80,6 @@
     </div>
   </div>
 
-  <!-- Settings Dialog -->
-  <Dialog ref="settingsDialogRef" title="Settings" :modal="true" reject-label="Cancel" confirm-label="Save" confirm-style="success" :confirm-busy="settingsDialog.busy" @confirm="onSaveSettingsDialog">
-    <div>
-      <Checkbox v-model="settingsDialog.folderListingEnabled" label="Public folder listing"/>
-      <p>If enabled, all folders and files will be publicly listed. If a folder contains a file with an index document (see below), this will be displayed instead.</p>
-    </div>
-
-    <hr/>
-
-    <div>
-      <h3>Display</h3>
-      <p>These settings only apply if public folder listing is enabled and no custom index file is present.</p>
-      <div>
-        <label for="titleInput">Title</label>
-        <TextInput id="titleInput" type="text" placeholder="Surfer" v-model="settingsDialog.title"/>
-      </div>
-      <div>
-        <label>Favicon</label>
-        <img ref="faviconImage" :src="'/api/favicon?' + Date.now()" width="64" height="64" style="margin-top: 4px;"/>
-      </div>
-      <div style="display: flex; gap: 6px">
-        <Button icon="fa-solid fa-upload" @click="onUploadFavicon">Upload favicon</Button>
-        <Button outline icon="fa-solid fa-rotate-left" @click="onResetFavicon">Reset favicon</Button>
-      </div>
-    </div>
-
-    <div>
-      <h3>Index document</h3>
-      <p>By default files names index.html will be served up automatically in each folder. This settings allows to specify any filename as index document.</p>
-      <div class="p-fluid">
-        <div>
-          <label for="indexInput">Filename</label>
-          <TextInput id="indexInput" type="text" placeholder="index.html" v-model="settingsDialog.index"/>
-        </div>
-      </div>
-    </div>
-
-    <div>
-      <h3>Access</h3>
-      <p>This controls how the public folder listing or any served up site can be accessed.</p>
-      <Radiobutton v-model="settingsDialog.accessRestriction" value="" label="Public (everyone)" />
-      <Radiobutton v-model="settingsDialog.accessRestriction" value="password" label="Password restricted"/>
-      <div v-show="settingsDialog.accessRestriction === 'password'">
-        <PasswordInput v-model="settingsDialog.accessPassword" :required="settingsDialog.accessRestriction === 'password'"/>
-        <small>Changing the password will require every user to re-login.</small>
-      </div>
-      <Radiobutton v-model="settingsDialog.accessRestriction" value="user" label="Private (only logged in users)"/>
-    </div>
-
-    <div>
-      <h3>WebDAV access</h3>
-      <p>WebDAV provides a framework for users to create, change and move documents on a server.</p>
-      <p>To authenticate the password must be an API access token. The username is ignored.</p>
-      <ul>
-        <li><b>Windows:</b> Explorer > This PC > Map Network Drive > <code style="cursor: copy;" @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
-        <li><b>MacOS:</b> Finder > Go > Connect to Server... > <code style="cursor: copy;" @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
-        <li><b>Gnome:</b> Files > Other Locations > Connect to Server > <code style="cursor: copy;" @click="onCopyToClipboard('davs://' + domain + '/_webdav/')">davs://{{ domain }}/_webdav/</code></li>
-        <li><b>KDE:</b> Dolphin > Ctrl+L > <code style="cursor: copy;" @click="onCopyToClipboard('webdav://' + domain + '/_webdav/')">webdav://{{ domain }}/_webdav/</code></li>
-      </ul>
-    </div>
-  </Dialog>
-
   <!-- Access Token Dialog -->
   <Dialog ref="accessTokenDialog" :show-x="true" title="Access tokens">
     <p>
@@ -178,30 +114,25 @@
 
 <script setup>
 
-import { ref, reactive, computed, onMounted, provide } from 'vue';
-import { Breadcrumb, Button, Checkbox, Dialog, DirectoryView, InputDialog, Notification, PasswordInput, ProgressBar, Radiobutton, Spinner, SplitLayout, TextInput, TopBar, fetcher } from '@cloudron/pankow';
+import { ref, reactive, computed, onMounted, inject } from 'vue';
+import { useRouter } from 'vue-router';
+import { Breadcrumb, Button, Dialog, DirectoryView, InputDialog, ProgressBar, Spinner, SplitLayout, TopBar, fetcher } from '@cloudron/pankow';
 import { eachLimit, each } from 'async';
-import { sanitize, encode, decode, download, toDirectoryItems, makeCurrentFolderPreviewEntry, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from './utils.js';
+import { sanitize, encode, decode, download, toDirectoryItems, makeCurrentFolderPreviewEntry, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from '../utils.js';
 import { copyToClipboard } from '@cloudron/pankow/utils.js';
 
-import Preview from './components/Preview.vue';
+import Preview from '../components/Preview.vue';
+
+const router = useRouter();
+const logout = inject('logout');
 
 const upload = ref(null);
 const uploadFolder = ref(null);
-const uploadFavicon = ref(null);
-const faviconImage = ref(null);
 const inputDialog = ref(null);
-const settingsDialogRef = ref(null);
 const accessTokenDialog = ref(null);
 const aboutDialog = ref(null);
 
-provide('inputDialog', inputDialog);
-
-const ready = ref(false);
 const busy = ref(true);
-const origin = window.location.origin;
-const domain = window.location.host;
-const username = ref('');
 const uploadStatus = reactive({
   busy: false,
   count: 0,
@@ -222,25 +153,9 @@ const activeEntry = ref({});
 const previewWidthVw = ref(getPreviewPanelWidthVw());
 const leftWidthPercent = computed(() => 100 - previewWidthVw.value);
 const accessTokens = ref([]);
-const settings = reactive({
-  folderListingEnabled: false,
-  title: 'Surfer',
-  accessRestriction: '',
-  accessPassword: '',
-  index: ''
-});
-const settingsDialog = reactive({
-  busy: false,
-  folderListingEnabled: false,
-  title: '',
-  faviconFile: null,
-  accessRestriction: '',
-  accessPassword: '',
-  index: ''
-});
 
 const mainMenu = [
-  { label: 'Settings', icon: 'fa-solid fa-gear', action: openSettingsDialog },
+  { label: 'Settings', icon: 'fa-solid fa-gear', action: () => router.push('/settings') },
   { label: 'Access tokens', icon: 'fa-solid fa-key', action: openAccessTokenDialog },
   { separator: true },
   { label: 'About', icon: 'fa-solid fa-circle-info', action: () => aboutDialog.value.open() },
@@ -253,33 +168,8 @@ const previewEntry = computed(() => {
 });
 
 function error(header, message) {
-  const text = message ? `${header} ${message}` : header;
-  window.pankow.notify({ type: 'danger', text });
+  window.pankow.notify({ type: 'danger', text: header + message });
   console.error(header, message);
-}
-
-async function initWithToken(accessToken) {
-  if (!accessToken) return login();
-
-  try {
-    const result = await fetcher.get('/api/profile', { access_token: accessToken });
-    if (result.status !== 200) {
-      delete localStorage.accessToken;
-      return login();
-    }
-
-    username.value = result.body.username;
-  } catch (e) {
-    return console.error(e);
-  }
-
-  ready.value = true;
-
-  localStorage.accessToken = accessToken;
-
-  loadDirectory(decode(window.location.hash.slice(1)));
-
-  refreshAccessTokens();
 }
 
 async function loadDirectory(folderPath) {
@@ -310,25 +200,6 @@ async function loadDirectory(folderPath) {
   });
 
   window.location.hash = path.value;
-}
-
-async function login() {
-  try {
-    const result = await fetcher.get('/api/token');
-    if (result.status !== 201) return window.location.replace('/auth/login?returnTo=/_admin');
-    localStorage.accessToken = result.body.accessToken;
-  } catch (e) {
-    return window.location.replace('/auth/login?returnTo=/_admin');
-  }
-
-  await initWithToken(localStorage.accessToken);
-}
-
-async function logout() {
-  await fetcher.del('/api/tokens/' + localStorage.accessToken, {}, { access_token: localStorage.accessToken });
-  username.value = '';
-  delete localStorage.accessToken;
-  window.location.href = '/auth/logout';
 }
 
 async function refresh() {
@@ -475,63 +346,6 @@ function openAccessTokenDialog() {
   accessTokenDialog.value.open();
 }
 
-function openSettingsDialog() {
-  settingsDialog.folderListingEnabled = settings.folderListingEnabled;
-  settingsDialog.title = settings.title;
-  settingsDialog.faviconFile = null;
-  settingsDialog.index = settings.index;
-  settingsDialog.accessRestriction = settings.accessRestriction;
-
-  settingsDialogRef.value.open();
-}
-
-async function onSaveSettingsDialog() {
-  settingsDialog.busy = true;
-
-  const data = {
-    folderListingEnabled: settingsDialog.folderListingEnabled,
-    title: settingsDialog.title,
-    index: settingsDialog.index,
-    accessRestriction: settingsDialog.accessRestriction
-  };
-
-  if (settingsDialog.accessPassword) data.accessPassword = settingsDialog.accessPassword;
-
-  const query = { access_token: localStorage.accessToken };
-
-  await fetcher.put('/api/settings', data, query);
-
-  if (settingsDialog.faviconFile === 'reset') {
-    await fetcher.delete('/api/favicon', {}, query);
-  } else if (settingsDialog.faviconFile) {
-    const formData = new FormData();
-    formData.append('file', settingsDialog.faviconFile);
-    await fetcher.put('/api/favicon', formData, query);
-  }
-
-  settings.folderListingEnabled = data.folderListingEnabled;
-  settings.title = data.title;
-  settings.index = data.index;
-  settings.accessRestriction = data.accessRestriction;
-
-  document.querySelector('link[rel="icon"]').href = '/api/favicon?' + Date.now();
-  window.document.title = settings.title;
-
-  settingsDialog.busy = false;
-
-  settingsDialogRef.value.close();
-}
-
-function onUploadFavicon() {
-  uploadFavicon.value.value = '';
-  uploadFavicon.value.click();
-}
-
-function onResetFavicon() {
-  settingsDialog.faviconFile = 'reset';
-  faviconImage.value.src = '/_admin/logo.png';
-}
-
 function onUpload() {
   upload.value.value = '';
   upload.value.click();
@@ -611,11 +425,6 @@ async function refreshAccessTokens() {
   }
 }
 
-function onCopyToClipboard(value) {
-  copyToClipboard(value);
-  window.pankow.notify({ type:'success', text: 'Copied to clipboard' });
-}
-
 function onCopyAccessToken(value) {
   copyToClipboard(value);
   window.pankow.notify({ type:'success', text: 'Token copied to clipboard' });
@@ -669,25 +478,10 @@ function onSplitResize(leftWidth) {
   setPreviewPanelWidthVw(previewWidthVw.value);
 }
 
-onMounted(async () => {
-  try {
-    const result = await fetcher.get('/api/settings');
-    if (result.status !== 200) {
-      console.error('Failed to fetch settings', result.status);
-    } else {
-      settings.folderListingEnabled = !!result.body.folderListingEnabled;
-      settings.title = result.body.title;
-      settings.index = result.body.index;
-      settings.accessRestriction = result.body.accessRestriction;
-      settings.accessPassword = result.body.accessPassword;
-    }
-  } catch (e) {
-    console.error(e);
-  }
+onMounted(() => {
+  loadDirectory(decode(window.location.hash.slice(1)));
 
-  window.document.title = settings.title;
-
-  await initWithToken(localStorage.accessToken);
+  refreshAccessTokens();
 
   window.addEventListener('keyup', (e) => {
     if (e.key === 'Escape' && e.target.classList.length === 0) {
@@ -706,21 +500,11 @@ onMounted(async () => {
   uploadFolder.value.addEventListener('change', () => {
     uploadFiles(uploadFolder.value.files || []);
   });
-
-  uploadFavicon.value.addEventListener('change', () => {
-    settingsDialog.faviconFile = uploadFavicon.value.files[0] || null;
-    if (settingsDialog.faviconFile) faviconImage.value.src = URL.createObjectURL(settingsDialog.faviconFile);
-  });
 });
 
 </script>
 
 <style>
-
-hr {
-  border: none;
-  border-top: 1px solid #d0d0d0;
-}
 
 .main-container-footer {
   display: flex;
