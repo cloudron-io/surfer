@@ -27,7 +27,7 @@
           <SaveIndicator ref="titleIndicator">
             <InputGroup>
               <TextInput id="titleInput" v-model="settings.title" placeholder="Surfer" @keydown.enter.prevent="onSaveTitle"/>
-              <Button primary tool :disabled="saving.title" @click="onSaveTitle">Save</Button>
+              <Button primary tool :disabled="saving.title || !titleChanged" @click="onSaveTitle">Save</Button>
             </InputGroup>
           </SaveIndicator>
         </SettingsItem>
@@ -56,7 +56,7 @@
           <SaveIndicator ref="indexIndicator">
             <InputGroup>
               <TextInput id="indexInput" v-model="settings.index" placeholder="index.html" @keydown.enter.prevent="onSaveIndex"/>
-              <Button primary tool :disabled="saving.index" @click="onSaveIndex">Save</Button>
+              <Button primary tool :disabled="saving.index || !indexChanged" @click="onSaveIndex">Save</Button>
             </InputGroup>
           </SaveIndicator>
         </SettingsItem>
@@ -69,7 +69,7 @@
             <div>This controls how the public folder listing or any served up site can be accessed.</div>
           </div>
           <SaveIndicator ref="accessIndicator">
-            <Button primary :disabled="saving.access" @click="onSaveAccess">Save</Button>
+            <Button primary :disabled="saving.access || !accessChanged" @click="onSaveAccess">Save</Button>
           </SaveIndicator>
         </SettingsItem>
         <div class="access-options">
@@ -139,6 +139,16 @@ const settings = reactive({
   accessRestriction: '',
 });
 
+const loaded = reactive({
+  title: 'Surfer',
+  index: '',
+  accessRestriction: '',
+});
+
+const titleChanged = computed(() => settings.title !== loaded.title);
+const indexChanged = computed(() => settings.index !== loaded.index);
+const accessChanged = computed(() => settings.accessRestriction !== loaded.accessRestriction || !!accessPassword.value);
+
 async function putSettings(indicator) {
   const data = {
     folderListingEnabled: settings.folderListingEnabled,
@@ -156,6 +166,9 @@ async function putSettings(indicator) {
       settings.title = data.title;
       settings.index = data.index;
       settings.accessRestriction = data.accessRestriction;
+      loaded.title = settings.title;
+      loaded.index = settings.index;
+      loaded.accessRestriction = settings.accessRestriction;
       accessPassword.value = '';
       window.document.title = settings.title;
       indicator.value?.success();
@@ -231,6 +244,9 @@ onMounted(async () => {
       settings.title = result.body.title;
       settings.index = result.body.index;
       settings.accessRestriction = result.body.accessRestriction;
+      loaded.title = result.body.title;
+      loaded.index = result.body.index;
+      loaded.accessRestriction = result.body.accessRestriction;
     } else {
       console.error('Failed to fetch settings', result.status);
     }
