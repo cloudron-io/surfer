@@ -2,11 +2,28 @@
 
 set -eu
 
-# Create a new oidc client in your test cloudron with and fill in the blanks
-export OIDC_ISSUER_ORIGIN="https://my.nebulon.space/openid"
-export CLOUDRON_APP_ORIGIN="http://localhost:3000"
-export OIDC_CLIENT_ID="cid-1ab519f17e6136d3e5d0679ecf5a1119"
-export OIDC_CLIENT_SECRET="e588e41e3ab084694b198d8766f24cc4fac4085c8134eb10bc7512a05b4e9450"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "${SCRIPT_DIR}"
+
+if [[ ! -f .env.sh ]]; then
+    echo "=> Creating ${SCRIPT_DIR}/.env.sh — add an OpenID client on your Cloudron and set the OIDC variables"
+    cat << 'EOF' > .env.sh
+# OIDC for local development (@cloudron/tegel). Create a client at your Cloudron OpenID provider.
+export OIDC_ISSUER_ORIGIN="https://my.DOMAIN.TLD/openid"
+export OIDC_CLIENT_ID="YOUR_CLIENT_ID"
+export OIDC_CLIENT_SECRET="YOUR_CLIENT_SECRET"
+# Optional: label shown on the login screen (defaults to OpenID)
+# export CLOUDRON_OIDC_PROVIDER_NAME="My Cloudron"
+EOF
+fi
+
+BACKEND_PORT="${PORT:-3000}"
+
+echo "=> Using env from .env.sh"
+cat .env.sh
+source .env.sh
+
+export CLOUDRON_APP_ORIGIN="http://localhost:${BACKEND_PORT}"
 
 echo ""
 echo "┌────────────────────────────────────────────────────────────┐"
