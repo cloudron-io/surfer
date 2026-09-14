@@ -1,8 +1,8 @@
 <script setup>
 
 import { ref, onMounted, computed } from 'vue';
-import { Breadcrumb, Button, Notification, TopBar, fetcher } from '@cloudron/pankow';
-import { sanitize, encode, decode, getPreviewUrl, getExtension, makeCurrentFolderPreviewEntry, isPreviewPanelOpenPreference, setPreviewPanelOpenPreference } from './utils.js';
+import { Breadcrumb, Button, Notification, SplitLayout, TopBar, fetcher } from '@cloudron/pankow';
+import { sanitize, encode, decode, getPreviewUrl, getExtension, makeCurrentFolderPreviewEntry, isPreviewPanelOpenPreference, setPreviewPanelOpenPreference, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from './utils.js';
 
 import EntryList from './components/EntryList.vue';
 import Preview from './components/Preview.vue';
@@ -26,6 +26,8 @@ const settings = ref({
 });
 const activeEntry = ref({});
 const previewSuppressed = ref(!isPreviewPanelOpenPreference());
+const previewWidthVw = ref(getPreviewPanelWidthVw());
+const leftWidthPercent = computed(() => 100 - previewWidthVw.value);
 
 const previewEntry = computed(function () {
   if (previewSuppressed.value) return {};
@@ -81,6 +83,11 @@ function onPreviewOpen() {
   setPreviewPanelOpenPreference(true);
 }
 
+function onSplitResize(leftWidth) {
+  previewWidthVw.value = clampPreviewPanelWidthVw(100 - leftWidth);
+  setPreviewPanelWidthVw(previewWidthVw.value);
+}
+
 function clearSelection() {
   activeEntry.value = {};
 }
@@ -127,14 +134,24 @@ onMounted(async () => {
         </template>
       </TopBar>
     </div>
-    <div class="main-container-body">
-      <div class="main-container-content">
-        <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @selection-changed="onSelectionChanged" @entry-activated="onEntryOpen"/>
-      </div>
+    <div class="main-container-body" :class="{ 'preview-collapsed': previewSuppressed }">
       <div class="preview-open-chevron" v-if="previewSuppressed">
         <Button tool plain icon="fa-solid fa-chevron-left" v-tooltip="'Show preview'" @click="onPreviewOpen"/>
       </div>
-      <Preview :entry="previewEntry" @close="onPreviewClose"/>
+      <SplitLayout
+        orientation="horizontal"
+        :left-width="previewSuppressed ? 100 : leftWidthPercent"
+        :min-left-width="15"
+        :min-right-width="15"
+        @update:left-width="onSplitResize"
+      >
+        <template #left>
+          <EntryList :entries="entries" :sort-folders-first="settings.sortFoldersFirst" @selection-changed="onSelectionChanged" @entry-activated="onEntryOpen"/>
+        </template>
+        <template #right>
+          <Preview :entry="previewEntry" @close="onPreviewClose"/>
+        </template>
+      </SplitLayout>
     </div>
     <div class="login-fab-mobile">
       <Button href="/_admin" tool secondary icon="fa-solid fa-arrow-right-to-bracket"/>

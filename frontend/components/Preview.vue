@@ -1,18 +1,8 @@
 <template>
   <div
-    class="container preview-panel"
-    :class="{ 'visible': entry.filePath, 'resizing': resizeDragging }"
-    :style="containerStyle"
+    class="preview-panel"
+    :class="{ 'visible': entry.filePath }"
   >
-    <div
-      class="preview-resize-handle"
-      role="separator"
-      aria-orientation="vertical"
-      aria-label="Resize preview panel"
-      tabindex="0"
-      @mousedown.prevent="onResizePointerDown($event)"
-      @keydown="onResizeKeydown"
-    />
     <div class="preview-main-column">
       <div style="display: flex; padding-bottom: 10px;">
         <div class="header-filename">
@@ -49,7 +39,7 @@
 
 import { ref, computed, watch } from 'vue';
 import { Button, Icon } from '@cloudron/pankow';
-import { download, encode, getPreviewUrl, hasViewer, sanitize, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from '../utils.js';
+import { download, encode, getPreviewUrl, hasViewer, sanitize } from '../utils.js';
 import { copyToClipboard } from '@cloudron/pankow/utils';
 
 const props = defineProps({
@@ -63,13 +53,6 @@ const emit = defineEmits(['close']);
 
 const iFrameSource = ref('about:blank');
 const closeClicked = ref(false);
-const panelWidthVw = ref(getPreviewPanelWidthVw());
-const resizeDragging = ref(false);
-
-const containerStyle = computed(() => {
-  if (!props.entry.filePath) return { width: '0' };
-  return { width: panelWidthVw.value + 'vw' };
-});
 
 const showFilenameInHeader = computed(() => {
   return !!(props.entry.filePath && hasViewer(props.entry));
@@ -139,96 +122,17 @@ function onClose() {
   emit('close');
 }
 
-function onResizePointerDown(e) {
-  if (typeof window === 'undefined' || window.matchMedia('(max-width: 767px)').matches) return;
-
-  resizeDragging.value = true;
-
-  function applyFromClientX(clientX) {
-    const w = document.documentElement.clientWidth;
-    if (w <= 0) return;
-    panelWidthVw.value = clampPreviewPanelWidthVw(((w - clientX) / w) * 100);
-  }
-
-  applyFromClientX(e.clientX);
-
-  const prevCursor = document.body.style.cursor;
-  const prevUserSelect = document.body.style.userSelect;
-  document.body.style.cursor = 'col-resize';
-  document.body.style.userSelect = 'none';
-
-  function onMove(e) {
-    applyFromClientX(e.clientX);
-  }
-
-  function onUp() {
-    resizeDragging.value = false;
-    document.body.style.cursor = prevCursor;
-    document.body.style.userSelect = prevUserSelect;
-    setPreviewPanelWidthVw(panelWidthVw.value);
-    window.removeEventListener('mousemove', onMove);
-    window.removeEventListener('mouseup', onUp);
-  }
-
-  window.addEventListener('mousemove', onMove);
-  window.addEventListener('mouseup', onUp);
-}
-
-function onResizeKeydown(e) {
-  if (typeof window === 'undefined' || window.matchMedia('(max-width: 767px)').matches) return;
-  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-  e.preventDefault();
-  const delta = e.key === 'ArrowLeft' ? -1 : 1;
-  panelWidthVw.value = clampPreviewPanelWidthVw(panelWidthVw.value + delta);
-  setPreviewPanelWidthVw(panelWidthVw.value);
-}
-
 </script>
 
 <style scoped>
 
-.container {
+.preview-panel {
   display: flex;
-  flex-direction: row;
-  align-items: stretch;
+  flex-direction: column;
   height: 100%;
   overflow: hidden;
-  width: 0;
-  transition: width 200ms;
   background-color: var(--pankow-color-background);
   padding: 0;
-  flex-shrink: 0;
-}
-
-.container.resizing {
-  transition: none;
-}
-
-.preview-resize-handle {
-  flex: 0 0 6px;
-  width: 6px;
-  min-width: 6px;
-  cursor: col-resize;
-  touch-action: none;
-  align-self: stretch;
-  border-right: solid 1px #e6e6e6;
-  box-sizing: border-box;
-}
-
-.preview-resize-handle:hover,
-.container.resizing .preview-resize-handle {
-  background-color: rgba(0, 0, 0, 0.06);
-}
-
-@media (prefers-color-scheme: dark) {
-  .preview-resize-handle {
-    border-right: none;
-  }
-
-  .preview-resize-handle:hover,
-  .container.resizing .preview-resize-handle {
-    background-color: rgba(255, 255, 255, 0.08);
-  }
 }
 
 .preview-main-column {
@@ -240,7 +144,7 @@ function onResizeKeydown(e) {
   height: 100%;
 }
 
-.container.visible .preview-main-column {
+.preview-panel.visible .preview-main-column {
   padding: 10px 10px 0px 10px;
 }
 
@@ -294,10 +198,6 @@ function onResizeKeydown(e) {
   border: none;
   flex: 1;
   min-height: 0;
-}
-
-.container.resizing .preview-iframe {
-  pointer-events: none;
 }
 
 .actions {

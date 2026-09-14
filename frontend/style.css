@@ -26,12 +26,6 @@
   flex-grow: 1;
 }
 
-.main-container-content {
-  display: flex;
-  overflow: hidden;
-  flex-grow: 1;
-}
-
 /* Top-right, aligned with Preview header row and close (X) control */
 .preview-open-chevron {
   position: absolute;
@@ -40,9 +34,23 @@
   z-index: 2;
 }
 
+.main-container-body.preview-collapsed .pankow-resize-handle {
+  display: none;
+}
+
 @media only screen and (max-width: 767px) {
   .preview-open-chevron {
     display: none !important;
+  }
+
+  .main-container-body .pankow-resize-handle,
+  .main-container-body .pankow-split-layout-second {
+    display: none !important;
+  }
+
+  .main-container-body .pankow-split-layout-first {
+    flex: 1 0 auto !important;
+    max-width: 100% !important;
   }
 }
 
