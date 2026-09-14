@@ -9,7 +9,6 @@ import Preview from './components/Preview.vue';
 const ORIGIN = window.location.origin;
 
 const ready = ref(false);
-const directoryView = ref(null);
 const path = ref('/');
 const breadcrumbHomeItem = ref({
   label: '',
@@ -92,12 +91,6 @@ onMounted(async () => {
 
   loadDirectory(decode(window.location.pathname));
 
-  const model = directoryView.value?.contextMenuModel;
-  const downloadItem = model?.find(function (item) { return item.id === 'download'; });
-  if (downloadItem) {
-    downloadItem.visible = () => !!(directoryView.value?.focusItem && directoryView.value.focusItem.isFile);
-  }
-
   ready.value = true;
 });
 
@@ -131,10 +124,10 @@ onMounted(async () => {
         <template #left>
           <div class="directory-pane">
             <DirectoryView
-              ref="directoryView"
               :items="entries"
               :editable="false"
               :show-download="true"
+              :multi-download="true"
               :show-size="true"
               :show-modified="true"
               :show-rename="false"

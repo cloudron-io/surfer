@@ -35,11 +35,11 @@
         <template #left>
           <div class="directory-pane">
             <DirectoryView
-              ref="directoryView"
               :items="entries"
               :busy="busy"
               :editable="true"
               :show-download="true"
+              :multi-download="true"
               :show-size="true"
               :show-modified="true"
               :show-rename="true"
@@ -191,7 +191,6 @@ const uploadFolder = ref(null);
 const uploadFavicon = ref(null);
 const faviconImage = ref(null);
 const inputDialog = ref(null);
-const directoryView = ref(null);
 const settingsDialogRef = ref(null);
 const accessTokenDialog = ref(null);
 const aboutDialog = ref(null);
@@ -711,14 +710,6 @@ onMounted(async () => {
     settingsDialog.faviconFile = uploadFavicon.value.files[0] || null;
     if (settingsDialog.faviconFile) faviconImage.value.src = URL.createObjectURL(settingsDialog.faviconFile);
   });
-
-  const model = directoryView.value?.contextMenuModel;
-  if (model) {
-    const downloadItem = model.find(function (item) { return item.id === 'download'; });
-    if (downloadItem) {
-      downloadItem.visible = () => !!(directoryView.value?.focusItem && directoryView.value.focusItem.isFile);
-    }
-  }
 });
 
 </script>

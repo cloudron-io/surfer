@@ -49,9 +49,19 @@ function decode(path) {
     return path.split('/').map(decodeURIComponent).join('/');
 }
 
-function download(entry) {
-    if (entry.isDirectory) return;
-    window.location.href = encode(entry.filePath) + '?download';
+function download(entries) {
+    if (!Array.isArray(entries)) entries = [ entries ];
+    if (!entries.length) return;
+
+    if (entries.length === 1 && entries[0].isFile) {
+        window.location.href = encode(entries[0].filePath) + '?download';
+        return;
+    }
+
+    const paths = entries.map(function (entry) { return encodeURIComponent(entry.filePath); }).join(',');
+    const name = entries.length === 1 ? (entries[0].fileName || 'download') : 'download';
+
+    window.location.href = '/api/zip?paths=' + paths + '&name=' + encodeURIComponent(name);
 }
 
 function getPreviewUrl(entry, basePath) {

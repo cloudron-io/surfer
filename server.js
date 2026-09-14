@@ -15,6 +15,7 @@ import auth from './src/auth.js';
 import mime from './src/mime.js';
 import webdav from 'webdav-server';
 import files from './src/files.js';
+import zip from './src/zip.js';
 
 const ROOT_FOLDER = path.resolve(import.meta.dirname, process.argv[2] || 'files');
 const CONFIG_FILE = path.resolve(import.meta.dirname, process.argv[3] || '.config.json');
@@ -197,6 +198,23 @@ function handleProtection(req, res, next) {
     res.status(401).sendFile(path.join(import.meta.dirname, '/dist/protected.html'));
 }
 
+function handleZipDownload(req, res, next) {
+    if (typeof req.query.paths !== 'string' || !req.query.paths) return next();
+
+    const filePaths = req.query.paths.split(',').map(decodeURIComponent);
+
+    const absolutePaths = [];
+    for (const filePath of filePaths) {
+        const absoluteFilePath = path.resolve(path.join(ROOT_FOLDER, filePath));
+        if (absoluteFilePath !== ROOT_FOLDER && absoluteFilePath.indexOf(ROOT_FOLDER + path.sep) !== 0) return next(new HttpError(403, 'Path not allowed'));
+        absolutePaths.push(absoluteFilePath);
+    }
+
+    const name = (typeof req.query.name === 'string' && req.query.name) ? req.query.name : 'download';
+
+    zip.zipPaths(absolutePaths, name, res);
+}
+
 function protectedLogin(req, res, next) {
     if (config.accessRestriction === 'password') {
         const saltBinary = Buffer.from(config.accessPasswordSalt, 'hex');
@@ -275,6 +293,7 @@ router.get   ('/api/files/*path', auth.verifyToken, files.get);
 router.post  ('/api/files/*path', auth.verifyToken, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), files.post);
 router.put   ('/api/files/*path', auth.verifyToken, files.put);
 router.delete('/api/files/*path', auth.verifyToken, files.del);
+router.get   ('/api/zip', handleProtection, handleZipDownload);
 router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });
 
 app.use(webdav.v2.extensions.express('/_webdav', webdavServer));
