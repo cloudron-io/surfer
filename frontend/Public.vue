@@ -59,6 +59,10 @@ function onDownload(entry) {
   download(entry);
 }
 
+function refresh() {
+  window.location.reload();
+}
+
 function onSelectionChanged(selectedEntries) {
   activeEntry.value = selectedEntries[0] || {};
 }
@@ -142,6 +146,7 @@ onMounted(async () => {
               :show-select-all="false"
               :show-extract="false"
               :download-handler="onDownload"
+              :refresh-handler="refresh"
               :fallback-icon="'/_admin/mime-types/application-x-generic.svg'"
               @selection-changed="onSelectionChanged"
               @item-activated="onEntryOpen"
