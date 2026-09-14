@@ -116,8 +116,6 @@ function copyToClipboard(value) {
     elem.remove();
 }
 
-const PREVIEW_PANEL_OPEN_KEY = 'surfer.previewPanelOpen';
-
 const PREVIEW_PANEL_WIDTH_VW_KEY = 'surfer.previewPanelWidthVw';
 const PREVIEW_PANEL_WIDTH_VW_DEFAULT = 30;
 const PREVIEW_PANEL_WIDTH_VW_MIN = 15;
@@ -145,22 +143,6 @@ function setPreviewPanelWidthVw(widthVw) {
     } catch (e) { /* ignore quota / private mode */ }
 }
 
-function isPreviewPanelOpenPreference() {
-    try {
-        const v = localStorage.getItem(PREVIEW_PANEL_OPEN_KEY);
-        if (v === null) return true;
-        return v === '1' || v === 'true';
-    } catch (e) {
-        return true;
-    }
-}
-
-function setPreviewPanelOpenPreference(open) {
-    try {
-        localStorage.setItem(PREVIEW_PANEL_OPEN_KEY, open ? '1' : '0');
-    } catch (e) { /* ignore quota / private mode */ }
-}
-
 export {
     prettyDate,
     prettyLongDate,
@@ -174,8 +156,6 @@ export {
     getExtension,
     makeCurrentFolderPreviewEntry,
     copyToClipboard,
-    isPreviewPanelOpenPreference,
-    setPreviewPanelOpenPreference,
     getPreviewPanelWidthVw,
     setPreviewPanelWidthVw,
     clampPreviewPanelWidthVw

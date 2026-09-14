@@ -24,13 +24,10 @@
         </template>
       </TopBar>
     </div>
-    <div class="main-container-body" :class="{ 'preview-collapsed': previewSuppressed }">
-      <div class="preview-open-chevron" v-if="previewSuppressed">
-        <Button tool plain icon="fa-solid fa-chevron-left" v-tooltip="'Show preview'" @click="onPreviewOpen"/>
-      </div>
+    <div class="main-container-body">
       <SplitLayout
         orientation="horizontal"
-        :left-width="previewSuppressed ? 100 : leftWidthPercent"
+        :left-width="leftWidthPercent"
         :min-left-width="15"
         :min-right-width="15"
         @update:left-width="onSplitResize"
@@ -39,7 +36,7 @@
           <EntryList :entries="entries" :busy="busy" :sort-folders-first="settings.sortFoldersFirst" use-hash-for-navigation @dropped="onDrop" @entry-activated="onEntryOpen" @entry-renamed="onRename" @entry-delete="onDelete" @selection-changed="onSelectionChanged" editable/>
         </template>
         <template #right>
-          <Preview :entry="previewEntry" @close="onPreviewClose"/>
+          <Preview :entry="previewEntry"/>
         </template>
       </SplitLayout>
     </div>
@@ -152,7 +149,7 @@
 import { ref, reactive, computed, onMounted, provide } from 'vue';
 import { Breadcrumb, Button, Checkbox, Dialog, InputDialog, Notification, PasswordInput, ProgressBar, Radiobutton, Spinner, SplitLayout, TextInput, TopBar, fetcher } from '@cloudron/pankow';
 import { eachLimit, each } from 'async';
-import { sanitize, encode, decode, getPreviewUrl, getExtension, makeCurrentFolderPreviewEntry, isPreviewPanelOpenPreference, setPreviewPanelOpenPreference, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from './utils.js';
+import { sanitize, encode, decode, getPreviewUrl, getExtension, makeCurrentFolderPreviewEntry, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from './utils.js';
 import { copyToClipboard } from '@cloudron/pankow/utils.js';
 
 import EntryList from './components/EntryList.vue';
@@ -191,7 +188,6 @@ const breadcrumbHomeItem = ref({
 const breadcrumbItems = ref([]);
 const entries = ref([]);
 const activeEntry = ref({});
-const previewSuppressed = ref(!isPreviewPanelOpenPreference());
 const previewWidthVw = ref(getPreviewPanelWidthVw());
 const leftWidthPercent = computed(() => 100 - previewWidthVw.value);
 const accessTokens = ref([]);
@@ -223,7 +219,6 @@ const mainMenu = [
 ];
 
 const previewEntry = computed(() => {
-  if (previewSuppressed.value) return {};
   if (activeEntry.value.filePath) return activeEntry.value;
   return makeCurrentFolderPreviewEntry(path.value);
 });
@@ -617,27 +612,15 @@ function onEntryOpen(entry) {
   }
 
   activeEntry.value = entry;
-  previewSuppressed.value = false;
-  setPreviewPanelOpenPreference(true);
 }
 
 function onSelectionChanged(selectedEntries) {
   activeEntry.value = selectedEntries[0] || {};
 }
 
-function onPreviewOpen() {
-  previewSuppressed.value = false;
-  setPreviewPanelOpenPreference(true);
-}
-
 function onSplitResize(leftWidth) {
   previewWidthVw.value = clampPreviewPanelWidthVw(100 - leftWidth);
   setPreviewPanelWidthVw(previewWidthVw.value);
-}
-
-function onPreviewClose() {
-  previewSuppressed.value = true;
-  setPreviewPanelOpenPreference(false);
 }
 
 onMounted(async () => {

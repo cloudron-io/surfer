@@ -26,23 +26,7 @@
   flex-grow: 1;
 }
 
-/* Top-right, aligned with Preview header row and close (X) control */
-.preview-open-chevron {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 2;
-}
-
-.main-container-body.preview-collapsed .pankow-resize-handle {
-  display: none;
-}
-
 @media only screen and (max-width: 767px) {
-  .preview-open-chevron {
-    display: none !important;
-  }
-
   .main-container-body .pankow-resize-handle,
   .main-container-body .pankow-split-layout-second {
     display: none !important;

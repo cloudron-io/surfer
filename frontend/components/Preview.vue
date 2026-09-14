@@ -8,9 +8,6 @@
         <div class="header-filename">
           <span v-if="showFilenameInHeader">{{ entry.fileName }}</span>
         </div>
-        <div v-show="!closeClicked">
-          <Icon icon="fa-solid fa-xmark" style="font-size: 20px; margin-right: 16px; cursor: pointer;" @click="onClose"/>
-        </div>
       </div>
       <div class="preview-body">
         <div v-if="staticPreviewSrc" class="preview-folder">
@@ -38,7 +35,7 @@
 <script setup>
 
 import { ref, computed, watch } from 'vue';
-import { Button, Icon } from '@cloudron/pankow';
+import { Button } from '@cloudron/pankow';
 import { download, encode, getPreviewUrl, hasViewer, sanitize } from '../utils.js';
 import { copyToClipboard } from '@cloudron/pankow/utils';
 
@@ -49,10 +46,8 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['close']);
-
 const iFrameSource = ref('about:blank');
-const closeClicked = ref(false);
+let iframeSourceTimeout = null;
 
 const showFilenameInHeader = computed(() => {
   return !!(props.entry.filePath && hasViewer(props.entry));
@@ -70,8 +65,9 @@ const staticPreviewSrc = computed(() => {
 });
 
 watch(() => props.entry, (newEntry) => {
-  if (newEntry.filePath) {
-    closeClicked.value = false;
+  if (iframeSourceTimeout) {
+    clearTimeout(iframeSourceTimeout);
+    iframeSourceTimeout = null;
   }
 
   if (!newEntry.filePath) {
@@ -88,7 +84,7 @@ watch(() => props.entry, (newEntry) => {
 
   iFrameSource.value = newEntry.previewUrl || 'about:blank';
 
-  setTimeout(() => { iFrameSource.value = encode(newEntry.filePath); }, 100);
+  iframeSourceTimeout = setTimeout(() => { iFrameSource.value = encode(newEntry.filePath); }, 100);
 });
 
 function onIframeLoad(e) {
@@ -115,11 +111,6 @@ function onDownload(entry) {
 function onCopyLink(entry) {
   copyToClipboard(location.origin + encode(entry.filePath));
   window.pankow.notify({ type:'success', text: 'Link copied to clipboard' });
-}
-
-function onClose() {
-  closeClicked.value = true;
-  emit('close');
 }
 
 </script>
