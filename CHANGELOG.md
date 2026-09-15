@@ -363,3 +363,11 @@
 * Fix issue where files could not be downloaded
 * Default to smaller preview pane width
 
+[6.7.0]
+* Update surfer to 6.7.0
+* Rework the filemanager to provide more basic actions like copy/cut/paste/extract
+* Enable drag'n'drop
+* Various layout fixes
+* Use new icon set
+* Move settings from a dialog to a separate view
+
