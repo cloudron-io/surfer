@@ -16,7 +16,7 @@
   "main": "server.js",
   "dependencies": {
     "@cloudron/connect-lastmile": "^3.0.0",
-    "@cloudron/pankow": "^4.4.15",
+    "@cloudron/pankow": "^4.4.16",
     "@cloudron/safetydance": "^3.1.0",
     "@cloudron/superagent": "^2.3.0",
     "@cloudron/tegel": "^1.6.1",
@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@vitejs/plugin-vue": "^6.0.8",
+    "@vitejs/plugin-vue": "^6.0.9",
     "eslint": "^10.10.0",
     "eslint-plugin-vue": "^10.11.0",
     "globals": "^17.12.0",
