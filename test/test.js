@@ -17,11 +17,11 @@ describe('Application life cycle test', function () {
     const SPECIAL_FOLDER_NAME_1 = '? ! + #';
     let gApiToken;
 
-    before(function () {
+    before(async function () {
         if (process.env.CI) execSync('npm install', { cwd: APP_ROOT, stdio: 'inherit' });
         console.log('surfer cli script is', CLI_SCRIPT);
+        await setupBrowser();
     });
-    before(setupBrowser);
     after(teardownBrowser);
 
     afterEach(async function () {
