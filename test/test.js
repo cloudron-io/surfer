@@ -88,7 +88,7 @@ describe('Application life cycle test', function () {
     async function enablePublicFolderListing() {
         const res0 = await superagent.put(`https://${app.fqdn}/api/settings`)
             .query({ access_token: gApiToken })
-            .send({ folderListingEnabled: true, title: 'Surfer', index: '', accessRestriction: '' }).ok(() => true);
+            .send({ folderListingEnabled: true, sortFoldersFirst: true, title: 'Surfer', index: '', accessRestriction: '' }).ok(() => true);
         assert.strictEqual(res0.status, 201);
     }
 
@@ -173,7 +173,7 @@ describe('Application life cycle test', function () {
             .ok(() => true);
         assert.strictEqual(res.status, 201);
 
-        const list = await superagent.get(`https://${app.fqdn}/api/files/`).query({ access_token: gApiToken }).ok(() => true);
+        const list = await superagent.get(`https://${app.fqdn}/api/files/${encodeURIComponent('/')}`).query({ access_token: gApiToken }).ok(() => true);
         assert.ok(list.body.entries.some((e) => e.fileName === 'index (1).html'));
     });
 
@@ -184,7 +184,7 @@ describe('Application life cycle test', function () {
             .ok(() => true);
         assert.strictEqual(res.status, 200);
 
-        const list = await superagent.get(`https://${app.fqdn}/api/files/`).query({ access_token: gApiToken }).ok(() => true);
+        const list = await superagent.get(`https://${app.fqdn}/api/files/${encodeURIComponent('/')}`).query({ access_token: gApiToken }).ok(() => true);
         assert.ok(list.body.entries.some((e) => e.fileName === 'index-moved.html'));
     });
 
