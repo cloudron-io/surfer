@@ -1,5 +1,4 @@
-FROM cloudron/base:5.1.0@sha256:1c0666c9abe9e2090d33686826d4e97769b799124573118d41e0d7485135748e
-ENV PATH=/usr/local/node-24.19.0/bin:$PATH
+FROM cloudron/node-base:24-20260920@sha256:d984683ec59bf2379130bf41cf3c2b6bc0453f327297d7183525cb05424e7b34
 
 RUN mkdir -p /app/code
 WORKDIR /app/code
