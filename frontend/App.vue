@@ -4,7 +4,7 @@ import { ref, onMounted, provide } from 'vue';
 import { Notification, fetcher } from '@cloudron/pankow';
 
 const ready = ref(false);
-const username = ref('');
+const profile = ref({ username: '', name: '' });
 
 async function initWithToken(accessToken) {
   if (!accessToken) return login();
@@ -16,7 +16,10 @@ async function initWithToken(accessToken) {
       return login();
     }
 
-    username.value = result.body.username;
+    profile.value = {
+      username: result.body.username || '',
+      name: result.body.name || ''
+    };
   } catch (e) {
     return console.error(e);
   }
@@ -40,12 +43,13 @@ async function login() {
 
 async function logout() {
   await fetcher.del('/api/tokens/' + localStorage.accessToken, {}, { access_token: localStorage.accessToken });
-  username.value = '';
+  profile.value = { username: '', name: '' };
   delete localStorage.accessToken;
   window.location.href = '/auth/logout';
 }
 
 provide('logout', logout);
+provide('profile', profile);
 
 onMounted(async () => {
   await initWithToken(localStorage.accessToken);

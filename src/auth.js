@@ -65,13 +65,13 @@ function verifyToken(req, res, next) {
 }
 
 function getProfile(req, res, next) {
-    next(new HttpSuccess(200, { username: req.user.username }));
+    next(new HttpSuccess(200, { username: req.user.username, name: req.user.name || '' }));
 }
 
 function createOidcToken(req, res, next) {
     const accessToken = LOGIN_TOKEN_PREFIX + hat(128);
 
-    tokenStore.set(accessToken, { username: req.user.username }, function (error) {
+    tokenStore.set(accessToken, { username: req.user.username, name: req.user.name || req.user.displayName || '' }, function (error) {
         if (error) return next(new HttpError(500, error));
 
         next(new HttpSuccess(201, { accessToken }));

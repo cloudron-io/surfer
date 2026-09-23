@@ -17,7 +17,9 @@
             <Button tool icon="fa-solid fa-file-arrow-up" @click="onUpload"><span class="pankow-no-mobile">Upload file</span><span class="pankow-no-desktop">File</span></Button>
             <Button tool icon="fa-solid fa-upload" @click="onUploadFolder"><span class="pankow-no-mobile">Upload folder</span><span class="pankow-no-desktop">Folder</span></Button>
             <Button tool icon="fa-solid fa-plus" success @click="openNewFolderDialog"><span class="pankow-no-mobile">New folder</span><span class="pankow-no-desktop">Folder</span></Button>
-            <Button icon="fa-solid fa-ellipsis" tool outline :menu="mainMenu" title="Menu" :show-dropdown="false"/>
+            <Button :menu="mainMenu" tool secondary>
+              <span class="pankow-no-mobile">{{ profile.name || profile.username }}</span>
+            </Button>
           </div>
         </template>
       </TopBar>
@@ -116,6 +118,7 @@ import Preview from '../components/Preview.vue';
 
 const router = useRouter();
 const logout = inject('logout');
+const profile = inject('profile');
 
 const upload = ref(null);
 const uploadFolder = ref(null);
