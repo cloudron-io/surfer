@@ -15,7 +15,7 @@
         <template #right>
           <div style="display: flex; gap: 6px">
             <Button icon="fa-solid fa-plus" :menu="newMenu" tool><span class="pankow-no-mobile">New</span></Button>
-            <Button :menu="mainMenu" tool secondary>
+            <Button :menu="mainMenu" tool secondary title="Menu">
               <span class="pankow-no-mobile">{{ profile.name || profile.username }}</span>
             </Button>
           </div>

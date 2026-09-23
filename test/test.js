@@ -31,13 +31,13 @@ describe('Application life cycle test', function () {
     async function loginNoIndex() { // when no nidex page, the default page shows login
         await goto(`https://${app.fqdn}/`, /Log in/);
         await click(/Log in/);
-        await loginOIDC('Upload file');
+        await loginOIDC('New');
     }
 
     async function login() {
         await goto(`https://${app.fqdn}/_admin`, /Log in/);
         await click(/Log in/);
-        await loginOIDC('Upload file');
+        await loginOIDC('New');
     }
 
     async function logout() {
