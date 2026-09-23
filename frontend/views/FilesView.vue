@@ -14,9 +14,7 @@
 
         <template #right>
           <div style="display: flex; gap: 6px">
-            <Button tool icon="fa-solid fa-file-arrow-up" @click="onUpload"><span class="pankow-no-mobile">Upload file</span><span class="pankow-no-desktop">File</span></Button>
-            <Button tool icon="fa-solid fa-upload" @click="onUploadFolder"><span class="pankow-no-mobile">Upload folder</span><span class="pankow-no-desktop">Folder</span></Button>
-            <Button tool icon="fa-solid fa-plus" success @click="openNewFolderDialog"><span class="pankow-no-mobile">New folder</span><span class="pankow-no-desktop">Folder</span></Button>
+            <Button icon="fa-solid fa-plus" :menu="newMenu" tool><span class="pankow-no-mobile">New</span></Button>
             <Button :menu="mainMenu" tool secondary>
               <span class="pankow-no-mobile">{{ profile.name || profile.username }}</span>
             </Button>
@@ -146,6 +144,26 @@ const activeEntry = ref({});
 const previewWidthVw = ref(getPreviewPanelWidthVw());
 const leftWidthPercent = computed(() => 100 - previewWidthVw.value);
 const accessTokens = ref([]);
+
+const newMenu = [{
+  separator: true,
+  label: 'Upload',
+}, {
+  label: 'Upload file',
+  icon: 'fa-solid fa-file-arrow-up',
+  action: onUpload
+}, {
+  label: 'Upload folder',
+  icon: 'fa-regular fa-folder-open',
+  action: onUploadFolder
+}, {
+  separator: true,
+  label: 'Create new',
+}, {
+  label: 'New folder',
+  icon: 'fa-solid fa-folder-plus',
+  action: openNewFolderDialog
+}];
 
 const mainMenu = [
   { label: 'Settings', icon: 'fa-solid fa-gear', action: () => router.push('/settings') },
