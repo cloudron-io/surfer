@@ -101,17 +101,6 @@
       </div>
     </div>
   </Dialog>
-
-  <!-- About Dialog -->
-  <Dialog ref="aboutDialog" title="About Cloudron Surfer" :show-x="true" reject-label="Close">
-    <div>
-      Surfer is a static file server written by <a href="https://cloudron.io" target="_blank">Cloudron</a>.
-      <br/>
-      <br/>
-      The source code is licensed under MIT and available <a href="https://git.cloudron.io/cloudron/surfer" target="_blank">here</a>.
-      <br/><br/>
-    </div>
-  </Dialog>
 </template>
 
 <script setup>
@@ -132,7 +121,6 @@ const upload = ref(null);
 const uploadFolder = ref(null);
 const inputDialog = ref(null);
 const accessTokenDialog = ref(null);
-const aboutDialog = ref(null);
 
 const busy = ref(true);
 const uploadStatus = reactive({
@@ -160,7 +148,6 @@ const mainMenu = [
   { label: 'Settings', icon: 'fa-solid fa-gear', action: () => router.push('/settings') },
   { label: 'Access tokens', icon: 'fa-solid fa-key', action: openAccessTokenDialog },
   { separator: true },
-  { label: 'About', icon: 'fa-solid fa-circle-info', action: () => aboutDialog.value.open() },
   { label: 'Log out', icon: 'fa-solid fa-arrow-right-from-bracket', action: logout }
 ];
 
