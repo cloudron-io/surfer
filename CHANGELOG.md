@@ -371,3 +371,11 @@
 * Use new icon set
 * Move settings from a dialog to a separate view
 
+[6.8.0]
+* Update surfer to 6.7.1
+* rework welcome page to be like other apps
+* group the New buttons into a single menu
+* after folder create, navigate to it
+* show username in navbar dropdown
+* remove the about dialog
+
