@@ -5,7 +5,7 @@ WORKDIR /app/code
 
 # SURFER_COMMIT is a reference for renovate when building from master. The pipeline always builds from the branch it is run on
 # renovate: datasource=git-refs packageName=https://git.cloudron.io/s42/surfer branch=master
-ARG SURFER_COMMIT=d5f06cabe7cdfb3420b7864030fe9865e4a6b536
+ARG SURFER_COMMIT=6778784839df85b1d61eeb49619f43e18b9de084
 
 COPY . /app/code/
 
