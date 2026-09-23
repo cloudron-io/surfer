@@ -2,12 +2,14 @@
 
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import pankowPlugin from '@cloudron/pankow/vite-plugin';
 import fs from 'fs';
 import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
+    pankowPlugin({ versionCheck: true }),
     vue()
   ],
   server: {
@@ -19,9 +21,10 @@ export default defineConfig({
         changeOrigin: true,
         bypass(req) {
           const url = (req.url || '').split('?')[0].split('#')[0];
-          if (url.startsWith('/@') || url.startsWith('/node_modules/')) return url;
+          if (url.startsWith('/@') || url.startsWith('/node_modules/')) return req.url;
+          if (url === '/' && (req.headers.accept || '').includes('text/html')) return '/welcome.html';
           const filePath = path.join(import.meta.dirname, url);
-          if (url && url !== '/' && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) return url;
+          if (url && url !== '/' && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) return req.url;
           // return undefined -> proxy to backend
         }
       }
@@ -33,7 +36,8 @@ export default defineConfig({
       input: {
         admin: './admin.html',
         public: './public.html',
-        protected: './protected.html'
+        protected: './protected.html',
+        welcome: './welcome.html'
       }
     },
     outDir: '../dist',

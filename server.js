@@ -115,7 +115,8 @@ function getSettings(req, res) {
         title: config.title || 'Surfer',
         index: config.index || '',
         accessRestriction: config.accessRestriction || '',
-        accessPassword: config.accessPassword ? PASSWORD_PLACEHOLDER : '' // don't send the password, helps the UI to figure if a password was set at all
+        accessPassword: config.accessPassword ? PASSWORD_PLACEHOLDER : '', // don't send the password, helps the UI to figure if a password was set at all
+        oidcProviderName: process.env.CLOUDRON_OIDC_PROVIDER_NAME || 'Cloudron'
     });
 }
 
