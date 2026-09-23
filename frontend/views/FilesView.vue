@@ -335,7 +335,7 @@ async function openNewFolderDialog() {
     return window.pankow.notify({ type: 'danger', text: e.message });
   }
 
-  await refresh();
+  window.location.hash = sanitize(path.value + '/' + newFolderName);
 }
 
 function openAccessTokenDialog() {
