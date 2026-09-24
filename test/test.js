@@ -264,6 +264,9 @@ describe('Application life cycle test', function () {
     it('backup app', cloudronCli.createBackup);
     it('restore app', cloudronCli.restoreFromLatestBackup);
 
+    it('can create app password', ensureAppPassword);
+    it('can cli login', cliLogin);
+
     it('can login', login);
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
     it('file is served up', checkFileIsPresent);
