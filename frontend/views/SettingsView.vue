@@ -9,10 +9,22 @@
         <SettingsItem>
           <div>
             <label>Public folder listing</label>
-            <div>If enabled, all folders and files will be publicly listed. If a folder contains a file with an index document (see below), this will be displayed instead.</div>
+            <div>When enabled, folders and files are listed publicly. A folder with an index file is served as a website instead.</div>
           </div>
           <SaveIndicator ref="folderListingIndicator">
             <Switch v-model="settings.folderListingEnabled" @change="onSaveFolderListing"/>
+          </SaveIndicator>
+        </SettingsItem>
+        <SettingsItem>
+          <div>
+            <label for="indexInput">Index filename</label>
+            <div>File served when a folder is opened. Defaults to index.html.</div>
+          </div>
+          <SaveIndicator ref="indexIndicator">
+            <InputGroup>
+              <TextInput id="indexInput" v-model="settings.index" placeholder="index.html" @keydown.enter.prevent="onSaveIndex"/>
+              <Button primary tool :disabled="saving.index || !indexChanged" @click="onSaveIndex">Save</Button>
+            </InputGroup>
           </SaveIndicator>
         </SettingsItem>
       </SectionItem>
@@ -21,7 +33,7 @@
         <SettingsItem>
           <div>
             <label>Title</label>
-            <div>These settings only apply if public folder listing is enabled and no custom index file is present.</div>
+            <div>Page title for folder listings. Not used when an index file is served.</div>
           </div>
           <SaveIndicator ref="titleIndicator">
             <InputGroup>
@@ -34,24 +46,9 @@
         <SettingsItem>
           <div>
             <label>Favicon</label>
-            <div>Shown in the browser tab and when bookmarking the site.</div>
+            <div>Shown in the browser tab and in bookmarks.</div>
           </div>
           <ImagePicker mode="editable" :src="faviconSrc" :save-handler="onFaviconSave" :size="512" display-height="128px" fallback-src="/_admin/logo.png"/>
-        </SettingsItem>
-      </SectionItem>
-
-      <SectionItem title="Index document">
-        <SettingsItem>
-          <div>
-            <label for="indexInput">Filename</label>
-            <div>By default files named index.html will be served up automatically in each folder. This setting allows to specify any filename as index document.</div>
-          </div>
-          <SaveIndicator ref="indexIndicator">
-            <InputGroup>
-              <TextInput id="indexInput" v-model="settings.index" placeholder="index.html" @keydown.enter.prevent="onSaveIndex"/>
-              <Button primary tool :disabled="saving.index || !indexChanged" @click="onSaveIndex">Save</Button>
-            </InputGroup>
-          </SaveIndicator>
         </SettingsItem>
       </SectionItem>
 
@@ -59,17 +56,17 @@
         <SettingsItem>
           <div>
             <label>Access restriction</label>
-            <div>This controls how the public folder listing or any served up site can be accessed.</div>
+            <div>Who can open the site.</div>
           </div>
         </SettingsItem>
         <div class="access-options">
-          <RadioButton v-model="settings.accessRestriction" value="" label="Public (everyone)"/>
-          <RadioButton v-model="settings.accessRestriction" value="password" label="Password restricted"/>
+          <RadioButton v-model="settings.accessRestriction" value="" label="Public"/>
+          <RadioButton v-model="settings.accessRestriction" value="password" label="Password"/>
           <div v-show="settings.accessRestriction === 'password'" class="access-password">
             <PasswordInput ref="passwordInputRef" v-model="accessPassword" :required="true"/>
-            <small>Changing the password will require every user to re-login.</small>
+            <small>Changing the password signs out existing sessions</small>
           </div>
-          <RadioButton v-model="settings.accessRestriction" value="user" label="Private (only logged in users)"/>
+          <RadioButton v-model="settings.accessRestriction" value="user" label="Logged-in users"/>
           <SaveIndicator ref="accessIndicator" class="access-save">
             <Button primary :disabled="saving.access || !accessChanged" @click="onSaveAccess">Save</Button>
           </SaveIndicator>
