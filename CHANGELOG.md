@@ -379,3 +379,7 @@
 * show username in navbar dropdown
 * remove the about dialog
 
+[6.9.0]
+* Update surfer to 6.9.0
+* Various UI fixes
+
