@@ -5,9 +5,10 @@
         <h1>Deploys</h1>
       </div>
 
-      <TableView :columns="columns" :model="deploys" :busy="busy" placeholder="No deploys yet" default-sort-by="at" default-sort-order="desc">
+      <TableView v-if="busy || deploys.length" :columns="columns" :model="deploys" :busy="busy" default-sort-by="at" default-sort-order="desc">
         <template #at="{ item }">{{ formatWhen(item.at) }}</template>
       </TableView>
+      <RouterLink v-else class="deploys-empty" :to="{ path: '/usage', hash: '#command-line' }">No deploys yet</RouterLink>
     </div>
   </div>
 </template>
@@ -15,6 +16,7 @@
 <script setup>
 
 import { onMounted, ref } from 'vue';
+import { RouterLink } from 'vue-router';
 import { TableView, fetcher } from '@cloudron/pankow';
 
 const columns = {
@@ -81,6 +83,13 @@ function formatWhen(iso) {
 .header h1 {
   margin: 0;
   font-size: 24px;
+}
+
+.deploys-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 150px;
 }
 
 </style>

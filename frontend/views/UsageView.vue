@@ -20,7 +20,7 @@
         </ul>
       </SectionItem>
 
-      <SectionItem title="Command line">
+      <SectionItem ref="commandLine" id="command-line" title="Command line">
         <p class="usage-intro">
           Upload files with the Surfer CLI. To authenticate, create an
           <a v-if="appPasswordsUrl" class="usage-link" :href="appPasswordsUrl" target="_blank" rel="noopener">App password</a>
@@ -40,9 +40,13 @@
 
 <script setup>
 
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, useTemplateRef, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { SectionItem, fetcher } from '@cloudron/pankow';
 import { copyToClipboard } from '@cloudron/pankow/utils.js';
+
+const route = useRoute();
+const commandLine = useTemplateRef('commandLine');
 
 const origin = window.location.origin;
 const domain = window.location.host;
@@ -53,6 +57,7 @@ const deployCommand = 'surfer deploy ./dist';
 const appPasswordsUrl = ref('');
 
 onMounted(async () => {
+  scrollToCommandLine();
   try {
     const result = await fetcher.get('/api/settings');
     if (result.status === 200 && result.body?.appPasswordsUrl) appPasswordsUrl.value = result.body.appPasswordsUrl;
@@ -60,6 +65,13 @@ onMounted(async () => {
     // the instructions still work without the dashboard link
   }
 });
+
+watch(() => route.hash, scrollToCommandLine);
+
+function scrollToCommandLine() {
+  if (route.hash !== '#command-line') return;
+  commandLine.value?.$el?.scrollIntoView();
+}
 
 function onCopyToClipboard(value) {
   copyToClipboard(value);
