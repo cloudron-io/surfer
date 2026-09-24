@@ -45,3 +45,9 @@ Put some files:
 surfer put [file]
 ```
 
+Replace the whole site with the contents of a directory:
+
+```bash
+surfer deploy ./dist
+```
+

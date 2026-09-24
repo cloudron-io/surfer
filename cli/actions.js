@@ -6,9 +6,12 @@ import readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 import safe from '@cloudron/safetydance';
 import async from 'async';
+import crypto from 'node:crypto';
 import fs from 'fs';
+import os from 'node:os';
 import path from 'path';
 import { Readable } from 'node:stream';
+import * as tar from 'tar';
 const API = '/api/files/';
 
 let gServer = '';
@@ -277,9 +280,55 @@ async function put(filePaths, options) {
     console.log('Done');
 }
 
+async function deploy(dir, options) {
+    checkConfig(options);
+
+    const absoluteDir = path.resolve(process.cwd(), dir);
+    const stat = safe.fs.statSync(absoluteDir);
+    if (!stat) return exit(`No such directory ${dir}`);
+    if (!stat.isDirectory()) return exit('Deploy source must be a directory');
+
+    const archivePath = path.join(os.tmpdir(), `surfer-deploy-${crypto.randomBytes(8).toString('hex')}.tar.gz`);
+
+    console.log(`Deploying ${absoluteDir} -> ${gServer}`);
+
+    const [tarError] = await safe(tar.c({
+        gzip: true,
+        cwd: absoluteDir,
+        file: archivePath,
+    }, ['.']));
+    if (tarError) {
+        safe.fs.unlinkSync(archivePath);
+        return exit(tarError);
+    }
+
+    const archiveStat = fs.statSync(archivePath);
+    const [error, response] = await safe(fetch(`${gServer}/api/deploy`, {
+        method: 'POST',
+        headers: {
+            Authorization: gAuthHeader,
+            'Content-Type': 'application/gzip',
+            'Content-Length': String(archiveStat.size),
+        },
+        body: Readable.toWeb(fs.createReadStream(archivePath)),
+        duplex: 'half',
+    }));
+
+    safe.fs.unlinkSync(archivePath);
+
+    if (error) return exit(error);
+
+    const body = await response.text();
+    if (response.status === 401) return exit('Invalid username or password');
+    if (response.status !== 201) return exit(`Deploy failed. ${response.status} ${body}`);
+
+    console.log('Done');
+}
+
 export default {
     configure,
     put,
     get,
     del,
+    deploy,
 };

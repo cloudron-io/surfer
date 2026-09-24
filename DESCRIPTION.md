@@ -27,3 +27,7 @@ Configure the CLI with your app domain and a Cloudron app password (created in t
 Put some files:
 
     surfer put [file]
+
+Replace the whole site with the contents of a directory:
+
+    surfer deploy ./dist

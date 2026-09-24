@@ -316,5 +316,19 @@ describe('Application life cycle test', function () {
    it('special folder names allow public listings', checkFilesInSpecialFolder);
    it('can logout', logout);
 
+   it('can deploy a directory', function () {
+       runCli(`deploy ${JSON.stringify(path.join(import.meta.dirname, 'deploy-site'))}`, { stdio: 'inherit' });
+   });
+   it('deployed site is served', async function () {
+       const deployed = await superagent.get(`https://${app.fqdn}/deployed.txt`).ok(() => true);
+       assert.strictEqual(deployed.status, 200);
+       assert.strictEqual(deployed.text, 'deployed\n');
+
+       const hidden = await superagent.get(`https://${app.fqdn}/.well-known/ping.txt`).ok(() => true);
+       assert.strictEqual(hidden.status, 200);
+       assert.strictEqual(hidden.text, 'pong\n');
+   });
+   it('deploy removes previous files', async () => checkFileIsGone(SPECIAL_FOLDER_NAME_0));
+
    it('uninstall app', cloudronCli.uninstall);
 });

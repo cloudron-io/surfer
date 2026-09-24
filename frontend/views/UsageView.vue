@@ -31,6 +31,7 @@
           <li><code @click="onCopyToClipboard(installCommand)">{{ installCommand }}</code></li>
           <li><code @click="onCopyToClipboard(configCommand)">{{ configCommand }}</code></li>
           <li><code @click="onCopyToClipboard(putCommand)">{{ putCommand }}</code></li>
+          <li><code @click="onCopyToClipboard(deployCommand)">{{ deployCommand }}</code> replaces the site</li>
         </ul>
       </SectionItem>
     </div>
@@ -48,6 +49,7 @@ const domain = window.location.host;
 const installCommand = 'npm install -g cloudron-surfer';
 const configCommand = `surfer config --server ${origin} --username <username> --password <app password>`;
 const putCommand = 'surfer put file.txt /';
+const deployCommand = 'surfer deploy ./dist';
 const appPasswordsUrl = ref('');
 
 onMounted(async () => {

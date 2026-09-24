@@ -41,6 +41,20 @@ program.command('put <file|dir...>')
         console.log();
     });
 
+program.command('deploy <dir>')
+    .description('Replace the site with the contents of a directory')
+    .option('-s, --server <domain>', 'Surfer server domain (optional)')
+    .option('-u, --username <username>', 'Cloudron username (optional)')
+    .option('-p, --password <app password>', 'Cloudron app password (optional)')
+    .action(actions.deploy)
+    .on('--help', function() {
+        console.log();
+        console.log('  Examples:');
+        console.log();
+        console.log('    $ surfer deploy ./dist            # contents of ./dist become the site root');
+        console.log();
+    });
+
 program.command('get [file|dir]')
     .description('Get a file or directory listing')
     .option('-s, --server <domain>', 'Surfer server domain (optional)')

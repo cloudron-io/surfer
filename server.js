@@ -17,6 +17,7 @@ import webdav from 'webdav-server';
 import files from './src/files.js';
 import zip from './src/zip.js';
 import extract from './src/extract.js';
+import deploy from './src/deploy.js';
 
 const ROOT_FOLDER = path.resolve(import.meta.dirname, process.argv[2] || 'files');
 const CONFIG_FILE = path.resolve(import.meta.dirname, process.argv[3] || '.config.json');
@@ -30,6 +31,9 @@ const CRYPTO_SALT_SIZE = 64; // 512-bit salt
 const CRYPTO_ITERATIONS = 10000; // iterations
 const CRYPTO_KEY_LENGTH = 512; // bits
 const CRYPTO_DIGEST = 'sha1'; // used to be the default in node 4.1.1 cannot change since it will affect existing db records
+
+// A crashed deploy can leave the live folder renamed aside. Restore it before creating an empty one.
+deploy.recover();
 
 // Ensure the root folder exists
 fs.mkdirSync(ROOT_FOLDER, { recursive: true });
@@ -342,6 +346,7 @@ router.put   ('/api/files/*path', auth.requireAuth, files.put);
 router.delete('/api/files/*path', auth.requireAuth, files.del);
 router.post  ('/api/copy', auth.requireAuth, files.copy);
 router.post  ('/api/extract', auth.requireAuth, extract.extract);
+router.post  ('/api/deploy', auth.requireAuth, deploy.deploy);
 router.get   ('/api/zip', handleProtection, handleZipDownload);
 router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });
 
