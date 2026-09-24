@@ -5,19 +5,14 @@
         <h1>Usage</h1>
       </div>
 
-      <SectionItem title="WebDAV access">
-        <SettingsItem wrap>
-          <div>
-            <p>WebDAV provides a framework for users to create, change and move documents on a server.</p>
-            <p class="webdav-subtext">To authenticate the password must be an API access token. The username is ignored.</p>
-            <ul class="webdav-instructions">
-              <li><b>Windows:</b> Explorer &gt; This PC &gt; Map Network Drive &gt; <code @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
-              <li><b>MacOS:</b> Finder &gt; Go &gt; Connect to Server... &gt; <code @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
-              <li><b>Gnome:</b> Files &gt; Other Locations &gt; Connect to Server &gt; <code @click="onCopyToClipboard('davs://' + domain + '/_webdav/')">davs://{{ domain }}/_webdav/</code></li>
-              <li><b>KDE:</b> Dolphin &gt; Ctrl+L &gt; <code @click="onCopyToClipboard('webdav://' + domain + '/_webdav/')">webdav://{{ domain }}/_webdav/</code></li>
-            </ul>
-          </div>
-        </SettingsItem>
+      <SectionItem title="WebDAV">
+        <p class="webdav-intro">Mount the site as a network folder. Sign in with an API access token as the password. The username is ignored.</p>
+        <ul class="webdav-instructions">
+          <li><b>Windows:</b> Explorer &gt; This PC &gt; Map Network Drive &gt; <code @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
+          <li><b>macOS:</b> Finder &gt; Go &gt; Connect to Server... &gt; <code @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
+          <li><b>GNOME:</b> Files &gt; Other Locations &gt; Connect to Server &gt; <code @click="onCopyToClipboard('davs://' + domain + '/_webdav/')">davs://{{ domain }}/_webdav/</code></li>
+          <li><b>KDE:</b> Dolphin &gt; Ctrl+L &gt; <code @click="onCopyToClipboard('webdav://' + domain + '/_webdav/')">webdav://{{ domain }}/_webdav/</code></li>
+        </ul>
       </SectionItem>
     </div>
   </div>
@@ -25,7 +20,7 @@
 
 <script setup>
 
-import { SectionItem, SettingsItem } from '@cloudron/pankow';
+import { SectionItem } from '@cloudron/pankow';
 import { copyToClipboard } from '@cloudron/pankow/utils.js';
 
 const origin = window.location.origin;
@@ -66,8 +61,9 @@ function onCopyToClipboard(value) {
   font-size: 24px;
 }
 
-.webdav-subtext {
-  margin-bottom: 8px;
+.webdav-intro {
+  margin: 0 0 16px;
+  font-size: 14px;
 }
 
 .webdav-instructions {
