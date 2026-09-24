@@ -19,7 +19,7 @@
     "@cloudron/pankow": "^4.4.16",
     "@cloudron/safetydance": "^3.1.0",
     "@cloudron/superagent": "^2.3.0",
-    "@cloudron/tegel": "^1.6.1",
+    "@cloudron/tegel": "^1.7.0",
     "archiver": "^8.0.0",
     "async": "^3.2.6",
     "commander": "^15.0.0",

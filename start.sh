@@ -3,7 +3,6 @@
 set -eu
 
 export NODE_ENV=production
-export TOKENSTORE_FILE=/app/data/tokens.json
 
 [[ -d /app/data/surfer_root ]] && mv /app/data/surfer_root /app/data/public
 mkdir -p /app/data/public

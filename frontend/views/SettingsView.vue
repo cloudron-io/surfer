@@ -126,7 +126,7 @@ async function putSettings(indicator) {
   if (accessPassword.value) data.accessPassword = accessPassword.value;
 
   try {
-    const result = await fetcher.put('/api/settings', data, { access_token: localStorage.accessToken });
+    const result = await fetcher.put('/api/settings', data);
     if (result.status === 201) {
       settings.folderListingEnabled = data.folderListingEnabled;
       settings.title = data.title;
@@ -188,7 +188,7 @@ async function onFaviconSave(file) {
   formData.append('file', file);
 
   try {
-    const result = await fetcher.put('/api/favicon', formData, { access_token: localStorage.accessToken });
+    const result = await fetcher.put('/api/favicon', formData);
     if (result.status !== 201) {
       window.pankow.notify({ type: 'danger', text: 'Could not set favicon' });
       return new Error('Could not set favicon');

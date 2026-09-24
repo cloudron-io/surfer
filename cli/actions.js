@@ -12,7 +12,7 @@ import { Readable } from 'node:stream';
 const API = '/api/files/';
 
 let gServer = '';
-let gQuery = {};
+let gAuthHeader = '';
 
 function exit(error) {
     if (error instanceof Error) console.log(error.message);
@@ -22,13 +22,19 @@ function exit(error) {
 }
 
 function requestError(response) {
-    if (response.status === 401) return 'Invalid token';
+    if (response.status === 401) return 'Invalid username or password';
 
     return `${response.status} message: ${response.body.message || JSON.stringify(String(response.body))}`; // body is sometimes just a string like in 401
 }
 
+function basicAuthHeader(username, password) {
+    return 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+}
+
 function checkConfig(options) {
-    if ((!options.server && !config.server()) || (!options.token && !config.accessToken())) exit(`Run surfer config first, or provide --server <domain> --token <access token>`);
+    const username = options.username || config.username();
+    const password = options.password || config.password();
+    if ((!options.server && !config.server()) || !username || !password) exit('Run surfer config first, or provide --server <domain> --username <user> --password <app password>');
 
     if (options.server) {
         let tmp;
@@ -42,7 +48,7 @@ function checkConfig(options) {
         gServer = config.server();
     }
 
-    gQuery = { access_token: options.token || config.accessToken() };
+    gAuthHeader = basicAuthHeader(username, password);
 
     console.error(`Using server ${gServer}`);
 }
@@ -92,7 +98,7 @@ async function putOne(file, destination) {
         console.log(`Uploading ${file.filePath} -> ${gServer + destinationPath}`);
 
         const response = await superagent.post(`${gServer}${API}${encodeURIComponent(destinationPath)}`)
-            .query(gQuery)
+            .set('Authorization', gAuthHeader)
             .attach('file', file.absoluteFilePath)
             .field('mtime', file.mtime)
             .ok(() => true);
@@ -102,10 +108,10 @@ async function putOne(file, destination) {
     } else if (file.isDirectory) {
         console.log(`Creating directory ${destinationPath}`);
 
-        const query = safe.JSON.parse(safe.JSON.stringify(gQuery));
-        query.directory = true;
-
-        const response = await superagent.post(`${gServer}${API}${encodeURIComponent(destinationPath)}`).query(query).ok(() => true);
+        const response = await superagent.post(`${gServer}${API}${encodeURIComponent(destinationPath)}`)
+            .set('Authorization', gAuthHeader)
+            .query({ directory: true })
+            .ok(() => true);
         if (response.status === 409) return; // already exists, fine
         if (response.status === 403) throw new Error(`Destination ${destinationPath} not allowed`);
         if (response.status !== 201) new Error(`Error creating directory. ${requestError(response)}`);
@@ -115,10 +121,10 @@ async function putOne(file, destination) {
 }
 
 async function delOne(file) {
-    const query = safe.JSON.parse(safe.JSON.stringify(gQuery));
+    const query = {};
     if (file.isDirectory) query.recursive = true;
 
-    const [error, response] = await safe(superagent.del(`${gServer}${API}${encodeURIComponent(file.filePath)}`).query(query).ok(() => true));
+    const [error, response] = await safe(superagent.del(`${gServer}${API}${encodeURIComponent(file.filePath)}`).set('Authorization', gAuthHeader).query(query).ok(() => true));
     if (error) return exit(error);
     if (response.status === 404) return; // file already removed
     if (response.status === 403) throw new Error('Failed. Target is a directory. Use --recursive to delete directories.');
@@ -128,12 +134,13 @@ async function delOne(file) {
 async function configure(options) {
     checkConfig(options);
 
-    const [error, response] = await safe(superagent.get(`${gServer}/api/profile`).query(gQuery).ok(() => true));
+    const [error, response] = await safe(superagent.get(`${gServer}/api/profile`).set('Authorization', gAuthHeader).ok(() => true));
     if (error) return exit(`Failed to connect to server: ${error}`);
-    if (response.status !== 200) return exit(`Access failed: ${response.status}. Provide an api access token with --token`);
+    if (response.status !== 200) return exit(`Access failed: ${response.status}. Provide a Cloudron username and app password`);
 
     config.set('server', gServer);
-    config.set('accessToken', gQuery.access_token);
+    config.set('username', options.username);
+    config.set('password', options.password);
 
     console.log('Default server successfully set');
 }
@@ -145,11 +152,10 @@ async function get(filePath, options) {
     filePath = filePath || '/';
 
     const url = new URL(gServer + path.join(API, encodeURIComponent(filePath)));
-    url.search = new URLSearchParams(gQuery).toString();
 
-    const [error, response] = await safe(fetch(url, {}));
+    const [error, response] = await safe(fetch(url, { headers: { Authorization: gAuthHeader } }));
     if (error) return exit(error);
-    if (response.status === 401) return exit('Invalid token');
+    if (response.status === 401) return exit('Invalid username or password');
     if (response.status === 404) return exit(`No such file or directory ${filePath}`);
 
     // 222 indicates directory listing
@@ -217,13 +223,10 @@ async function put(filePaths, options) {
 
     let remoteFiles = [];
 
-    const query = safe.JSON.parse(safe.JSON.stringify(gQuery));
-    query.recursive = true;
-
     // check if destination is a directory. because path contains trailing /, it won't download any file
-    const [error, response] = await safe(superagent.get(`${gServer}${API}${absoluteDestPath}`).query(query).ok(() => true));
+    const [error, response] = await safe(superagent.get(`${gServer}${API}${absoluteDestPath}`).set('Authorization', gAuthHeader).query({ recursive: true }).ok(() => true));
     if (error) return exit(error);
-    if (response.status === 401) return exit('Invalid token');
+    if (response.status === 401) return exit('Invalid username or password');
     if (response.status === 404) { // 404 means remote not found so upload all
         remoteFiles = [];
     } else if (response.status === 222) { // directory listing

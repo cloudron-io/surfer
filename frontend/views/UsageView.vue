@@ -6,7 +6,12 @@
       </div>
 
       <SectionItem title="WebDAV">
-        <p class="usage-intro">Mount the site as a network folder. Sign in with an API access token as the password. The username is ignored.</p>
+        <p class="usage-intro">
+          Mount the site as a network folder. Sign in with your Cloudron username and an
+          <a v-if="appPasswordsUrl" class="usage-link" :href="appPasswordsUrl" target="_blank" rel="noopener">App password</a>
+          <template v-else>App password</template>
+          created in the Cloudron dashboard.
+        </p>
         <ul class="usage-list">
           <li><b>Windows:</b> Explorer &gt; This PC &gt; Map Network Drive &gt; <code @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
           <li><b>macOS:</b> Finder &gt; Go &gt; Connect to Server... &gt; <code @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
@@ -16,7 +21,12 @@
       </SectionItem>
 
       <SectionItem title="Command line">
-        <p class="usage-intro">Upload files with the Surfer CLI. Create an API access token from the profile menu.</p>
+        <p class="usage-intro">
+          Upload files with the Surfer CLI. To authenticate, create an
+          <a v-if="appPasswordsUrl" class="usage-link" :href="appPasswordsUrl" target="_blank" rel="noopener">App password</a>
+          <template v-else>App password</template>
+          in the Cloudron dashboard.
+        </p>
         <ul class="usage-list">
           <li><code @click="onCopyToClipboard(installCommand)">{{ installCommand }}</code></li>
           <li><code @click="onCopyToClipboard(configCommand)">{{ configCommand }}</code></li>
@@ -29,14 +39,25 @@
 
 <script setup>
 
-import { SectionItem } from '@cloudron/pankow';
+import { onMounted, ref } from 'vue';
+import { SectionItem, fetcher } from '@cloudron/pankow';
 import { copyToClipboard } from '@cloudron/pankow/utils.js';
 
 const origin = window.location.origin;
 const domain = window.location.host;
 const installCommand = 'npm install -g cloudron-surfer';
-const configCommand = `surfer config --server ${origin} --token <token>`;
+const configCommand = `surfer config --server ${origin} --username <username> --password <app password>`;
 const putCommand = 'surfer put file.txt /';
+const appPasswordsUrl = ref('');
+
+onMounted(async () => {
+  try {
+    const result = await fetcher.get('/api/settings');
+    if (result.status === 200 && result.body?.appPasswordsUrl) appPasswordsUrl.value = result.body.appPasswordsUrl;
+  } catch {
+    // the instructions still work without the dashboard link
+  }
+});
 
 function onCopyToClipboard(value) {
   copyToClipboard(value);

@@ -8,6 +8,11 @@ a {
   text-decoration: none;
 }
 
+a.usage-link {
+  color: var(--pankow-color-primary, #1a76bf);
+  text-decoration: underline;
+}
+
 .directory-view .open-action:hover {
   text-decoration: none !important;
 }

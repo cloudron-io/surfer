@@ -151,7 +151,7 @@ async function loadDirectory(folderPath) {
   activeEntry.value = {};
 
   try {
-    const result = await fetcher.get('/api/files/' + encode(folderPath), { access_token: localStorage.accessToken });
+    const result = await fetcher.get('/api/files/' + encode(folderPath));
     if (serial !== loadSerial) return;
     if (result.status === 401) return logout();
 
@@ -228,7 +228,7 @@ function uploadFiles(files, targetPath) {
         uploadStatus.percentDone = tmp > 100 ? 100 : tmp;
       });
 
-      xhr.open('POST', `/api/files${filePath}?access_token=${localStorage.accessToken}`);
+      xhr.open('POST', `/api/files${filePath}`);
       xhr.send(formData);
     });
 
@@ -312,7 +312,7 @@ async function openNewFolderDialog() {
   const folderPath = encode(sanitize(path.value + '/' + newFolderName));
 
   try {
-    const result = await fetcher.post(`/api/files${folderPath}`, {}, { access_token: localStorage.accessToken, directory: true });
+    const result = await fetcher.post(`/api/files${folderPath}`, {}, { directory: true });
     if (result.status === 401) return logout();
     if (result.status === 403) return window.pankow.notify({ type: 'danger', text: 'Folder name not allowed' });
     if (result.status === 409) return window.pankow.notify({ type: 'danger', text: 'Folder already exists' });
@@ -354,7 +354,7 @@ async function onDelete(items) {
     const filePath = encode(sanitize(path.value + '/' + entry.fileName));
 
     try {
-      const result = await fetcher.del(`/api/files${filePath}`, {}, { access_token: localStorage.accessToken, recursive: true });
+      const result = await fetcher.del(`/api/files${filePath}`, {}, { recursive: true });
       if (result.status === 401) return logout();
       if (result.status !== 200) return error('Error deleting file');
     } catch (e) {
@@ -382,7 +382,7 @@ async function onRenameRequested(entry) {
   const newFilePath = sanitize(path.value + '/' + newFileName);
 
   try {
-    const result = await fetcher.put(`/api/files${filePath}`, { newFilePath: newFilePath }, { access_token: localStorage.accessToken });
+    const result = await fetcher.put(`/api/files${filePath}`, { newFilePath: newFilePath });
     if (result.status === 401) return logout();
     if (result.status !== 200) return error('Error renaming file');
   } catch (e) {
@@ -404,7 +404,7 @@ async function moveItems(items, targetDir) {
     if (entry.isDirectory && (newFilePath + '/').indexOf(sanitize(entry.filePath) + '/') === 0) continue;
 
     try {
-      const result = await fetcher.put(`/api/files${encode(entry.filePath)}`, { newFilePath: newFilePath, overwrite: 'rename' }, { access_token: localStorage.accessToken });
+      const result = await fetcher.put(`/api/files${encode(entry.filePath)}`, { newFilePath: newFilePath, overwrite: 'rename' });
       if (result.status === 401) return logout();
       if (result.status !== 200) return error('Error moving ' + entry.fileName);
     } catch (e) {
@@ -425,7 +425,7 @@ async function onPaste(action, files, targetItem) {
 
   if (action === 'copy') {
     try {
-      const result = await fetcher.post('/api/copy', { sources: files.map(function (f) { return f.filePath; }), destination: targetDir }, { access_token: localStorage.accessToken });
+      const result = await fetcher.post('/api/copy', { sources: files.map(function (f) { return f.filePath; }), destination: targetDir });
       if (result.status === 401) return logout();
       if (result.status !== 201) return error('Error copying files');
     } catch (e) {
@@ -438,7 +438,7 @@ async function onPaste(action, files, targetItem) {
 
 async function onExtract(item) {
   try {
-    const result = await fetcher.post('/api/extract', { path: item.filePath }, { access_token: localStorage.accessToken });
+    const result = await fetcher.post('/api/extract', { path: item.filePath });
     if (result.status === 401) return logout();
     if (result.status !== 200) return error('Error extracting ' + item.fileName);
   } catch (e) {

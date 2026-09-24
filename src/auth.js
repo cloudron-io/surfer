@@ -1,113 +1,76 @@
 'use strict';
 
-import path from 'path';
-import fs from 'fs';
 import crypto from 'crypto';
+import safe from '@cloudron/safetydance';
+import * as tegel from '@cloudron/tegel';
 import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
 import webdavServer from 'webdav-server';
 
 const webdavErrors = webdavServer.v2.Errors;
+const requireSession = tegel.requireAuth();
 
-const TOKENSTORE_FILE = path.resolve(process.env.TOKENSTORE_FILE || './.tokens.json');
-const LOGIN_TOKEN_PREFIX = 'login-';
-const API_TOKEN_PREFIX = 'api'; // keep this base64 for CI systems. see gitlab masked variables requirements
+function parseBasicAuth(authHeader) {
+    if (!authHeader || typeof authHeader !== 'string') return null;
+    if (!authHeader.toLowerCase().startsWith('basic ')) return null;
 
-const tokenStore = {
-    data: {},
-    save: function () {
-        try {
-            fs.writeFileSync(TOKENSTORE_FILE, JSON.stringify(tokenStore.data), 'utf-8');
-        } catch (e) {
-            console.error(`Unable to save tokenstore file at ${TOKENSTORE_FILE}`, e);
-        }
-    },
-    get: function (token, callback) {
-        callback(tokenStore.data[token] ? null : 'not found', tokenStore.data[token]);
-    },
-    getApiTokens: function (callback) {
-        callback(null, Object.keys(tokenStore.data).filter(function (t) { return t.indexOf(API_TOKEN_PREFIX) === 0; }));
-    },
-    set: function (token, user, callback) {
-        tokenStore.data[token] = user;
-        tokenStore.save();
-        callback(null);
-    },
-    del: function (token, callback) {
-        delete tokenStore.data[token];
-        tokenStore.save();
-        callback(null);
+    const decoded = safe(() => Buffer.from(authHeader.slice(6).trim(), 'base64').toString('utf8'));
+    if (!decoded) return null;
+
+    const colon = decoded.indexOf(':');
+    if (colon <= 0) return null;
+
+    return {
+        username: decoded.slice(0, colon),
+        password: decoded.slice(colon + 1),
+    };
+}
+
+// Returns the Cloudron user, null for a bad password, and throws if the app bridge fails.
+async function verifyCloudronCredentials(identifier, password) {
+    if (!process.env.CLOUDRON) return null;
+    if (!identifier || !password) return null;
+
+    try {
+        return await tegel.appBridge.verifyAppPassword({ identifier, password });
+    } catch (error) {
+        if (error.status === 401) return null;
+        throw error;
     }
-};
-
-// load token store data if any
-try {
-    console.log(`Using tokenstore file at: ${TOKENSTORE_FILE}`);
-    tokenStore.data = JSON.parse(fs.readFileSync(TOKENSTORE_FILE, 'utf-8'));
-// eslint-disable-next-line no-unused-vars
-} catch (e) {
-    // start with empty token store
 }
 
-function hat(bits) {
-    return crypto.randomBytes(bits / 8).toString('hex');
+function sessionUser(user) {
+    return {
+        username: user.username,
+        name: user.name || user.displayName || '',
+    };
 }
 
-function verifyToken(req, res, next) {
-    const accessToken = req.query.access_token || req.body.accessToken;
+// OIDC session cookie, or Authorization: Basic with a Cloudron username and app password.
+async function requireAuth(req, res, next) {
+    const basic = parseBasicAuth(req.headers.authorization);
+    if (basic) {
+        const [error, user] = await safe(verifyCloudronCredentials(basic.username, basic.password));
+        if (error) {
+            console.error('App password verification failed:', error.message || error);
+            return next(new HttpError(500, 'Failed to verify app password'));
+        }
+        if (!user || !user.username) return next(new HttpError(401, 'Invalid username or password'));
 
-    tokenStore.get(accessToken, function (error, user) {
-        if (error) return next(new HttpError(401, 'Invalid access token'));
+        req.user = sessionUser(user);
+        return next();
+    }
 
-        req.user = user;
-
-        next();
-    });
+    return requireSession(req, res, next);
 }
 
 function getProfile(req, res, next) {
-    next(new HttpSuccess(200, { username: req.user.username, name: req.user.name || '' }));
+    next(new HttpSuccess(200, { username: req.user.username, name: req.user.name || req.user.displayName || '' }));
 }
-
-function createOidcToken(req, res, next) {
-    const accessToken = LOGIN_TOKEN_PREFIX + hat(128);
-
-    tokenStore.set(accessToken, { username: req.user.username, name: req.user.name || req.user.displayName || '' }, function (error) {
-        if (error) return next(new HttpError(500, error));
-
-        next(new HttpSuccess(201, { accessToken }));
-    });
-}
-
-function getTokens(req, res, next) {
-    tokenStore.getApiTokens(function (error, result) {
-        if (error) return next(new HttpError(500, error));
-
-        next(new HttpSuccess(200, { accessTokens: result }));
-    });
-}
-
-function createToken(req, res, next) {
-    const accessToken = API_TOKEN_PREFIX + hat(128);
-
-    tokenStore.set(accessToken, req.user, function (error) {
-        if (error) return next(new HttpError(500, error));
-
-        next(new HttpSuccess(201, { accessToken: accessToken }));
-    });
-}
-
-function delToken(req, res, next) {
-    tokenStore.del(req.params.token, function (error) {
-        if (error) console.error(error);
-
-        next(new HttpSuccess(200, {}));
-    });
-};
 
 // This implements the required interface only for the Basic Authentication for webdav-server
 function WebdavUserManager() {
     this._authCache = {
-        // key: TimeToDie as ms
+        // key: { expires, user }
     };
 }
 
@@ -124,39 +87,32 @@ WebdavUserManager.prototype.getDefaultUser = function (callback) {
     callback(user);
 };
 
-// password is the access token, username is ignored
 WebdavUserManager.prototype.getUserByNamePassword = function (username, password, callback) {
     const that = this;
+    const cacheKey = crypto.createHash('sha256').update(String(username) + '\0' + String(password)).digest('hex');
+    const cached = that._authCache[cacheKey];
+    if (cached && cached.expires > Date.now()) return callback(null, cached.user);
 
-    const cacheKey = 'key-' + password;
+    verifyCloudronCredentials(username, password).then(function (user) {
+        if (!user || !user.username) return callback(webdavErrors.UserNotFound);
 
-    tokenStore.get(password, function (error, result) {
-        if (error) return callback(webdavErrors.UserNotFound);
-
-        const user = {
-            username: result.username,
+        const webdavUser = {
+            username: user.username,
             isAdministrator: true,
             isDefaultUser: false,
-            uid: result.username
+            uid: user.username
         };
 
-        if (that._authCache[cacheKey] && that._authCache[cacheKey] > Date.now()) return callback(null, user);
-
-        // delete in case it expired
-        delete that._authCache[cacheKey];
-
-        that._authCache[cacheKey] = Date.now() + (60 * 1000); // cache for up to 1 min
-
-        callback(null, user);
+        that._authCache[cacheKey] = { expires: Date.now() + (60 * 1000), user: webdavUser };
+        callback(null, webdavUser);
+    }).catch(function (error) {
+        console.error('WebDAV app password verification failed:', error.message || error);
+        callback(webdavErrors.UserNotFound);
     });
 };
 
 export default {
     getProfile,
-    verifyToken,
-    createOidcToken,
-    getTokens,
-    createToken,
-    delToken,
+    requireAuth,
     WebdavUserManager,
 };

@@ -60,5 +60,6 @@ export default {
 
     // convenience
     server: function () { return get('server'); },
-    accessToken: function () { return get('accessToken'); }
+    username: function () { return get('username'); },
+    password: function () { return get('password'); }
 };

@@ -109,14 +109,31 @@ webdavServer.setFileSystem('/', new webdav.v2.PhysicalFileSystem(ROOT_FOLDER), f
 const PUBLIC_HTML = fs.readFileSync(import.meta.dirname + '/dist/public.html', 'utf8');
 const PUBLIC_NOSCRIPT_EJS = fs.readFileSync(import.meta.dirname + '/src/public.noscript.ejs', 'utf8');
 
+function webadminOrigin() {
+    if (process.env.CLOUDRON_WEBADMIN_ORIGIN) return process.env.CLOUDRON_WEBADMIN_ORIGIN.replace(/\/$/, '');
+
+    // Local development has no platform env. The OIDC issuer is the dashboard origin plus /openid.
+    const issuer = process.env.OIDC_ISSUER_ORIGIN || '';
+    if (!issuer) return '';
+
+    try {
+        return new URL(issuer).origin;
+    } catch {
+        return '';
+    }
+}
+
 function getSettings(req, res) {
+    const origin = webadminOrigin();
+
     res.send({
         folderListingEnabled: !!config.folderListingEnabled,
         title: config.title || 'Surfer',
         index: config.index || '',
         accessRestriction: config.accessRestriction || '',
         accessPassword: config.accessPassword ? PASSWORD_PLACEHOLDER : '', // don't send the password, helps the UI to figure if a password was set at all
-        oidcProviderName: process.env.CLOUDRON_OIDC_PROVIDER_NAME || 'Cloudron'
+        oidcProviderName: process.env.CLOUDRON_OIDC_PROVIDER_NAME || 'Cloudron',
+        appPasswordsUrl: origin ? `${origin}/#/profile` : ''
     });
 }
 
@@ -293,20 +310,16 @@ router.get   ('/auth/logout', tegel.logout('/'));
 router.post  ('/api/protectedLogin', protectedLogin);
 router.get   ('/api/settings', getSettings);
 router.get   ('/api/favicon', getFavicon);
-router.put   ('/api/favicon', auth.verifyToken, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), setFavicon);
-router.delete('/api/favicon', auth.verifyToken, resetFavicon);
-router.put   ('/api/settings', auth.verifyToken, setSettings);
-router.get   ('/api/token', tegel.requireAuth(), auth.createOidcToken);
-router.get   ('/api/tokens', auth.verifyToken, auth.getTokens);
-router.post  ('/api/tokens', auth.verifyToken, auth.createToken);
-router.delete('/api/tokens/:token', auth.verifyToken, auth.delToken);
-router.get   ('/api/profile', auth.verifyToken, auth.getProfile);
-router.get   ('/api/files/*path', auth.verifyToken, files.get);
-router.post  ('/api/files/*path', auth.verifyToken, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), files.post);
-router.put   ('/api/files/*path', auth.verifyToken, files.put);
-router.delete('/api/files/*path', auth.verifyToken, files.del);
-router.post  ('/api/copy', auth.verifyToken, files.copy);
-router.post  ('/api/extract', auth.verifyToken, extract.extract);
+router.put   ('/api/favicon', auth.requireAuth, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), setFavicon);
+router.delete('/api/favicon', auth.requireAuth, resetFavicon);
+router.put   ('/api/settings', auth.requireAuth, setSettings);
+router.get   ('/api/profile', auth.requireAuth, auth.getProfile);
+router.get   ('/api/files/*path', auth.requireAuth, files.get);
+router.post  ('/api/files/*path', auth.requireAuth, multipart({ maxFieldsSize: 2 * 1024, limit: '512mb' }), files.post);
+router.put   ('/api/files/*path', auth.requireAuth, files.put);
+router.delete('/api/files/*path', auth.requireAuth, files.del);
+router.post  ('/api/copy', auth.requireAuth, files.copy);
+router.post  ('/api/extract', auth.requireAuth, extract.extract);
 router.get   ('/api/zip', handleProtection, handleZipDownload);
 router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });
 

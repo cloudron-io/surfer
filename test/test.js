@@ -2,11 +2,13 @@
 
 import assert from 'node:assert/strict';
 import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 import superagent from '@cloudron/superagent';
 
-import { app, clearCache, click, cloudronCli, getText, goto, loginOIDC, setupBrowser, takeScreenshot, teardownBrowser, waitFor } from '@cloudron/charlie';
+import { app, clearCache, click, cloudronCli, goto, loginOIDC, setupBrowser, takeScreenshot, teardownBrowser, waitFor } from '@cloudron/charlie';
 
 describe('Application life cycle test', function () {
     const APP_ROOT = path.resolve(import.meta.dirname, '..');
@@ -15,7 +17,8 @@ describe('Application life cycle test', function () {
     const TEST_FILE_NAME_1 = 'test.txt';
     const SPECIAL_FOLDER_NAME_0 = 'Tâm Tình Với Bạn';
     const SPECIAL_FOLDER_NAME_1 = '? ! + #';
-    let gApiToken;
+    let gUsername = '';
+    let gAppPassword = '';
 
     before(async function () {
         if (process.env.CI) execSync('npm install', { cwd: APP_ROOT, stdio: 'inherit' });
@@ -70,13 +73,68 @@ describe('Application life cycle test', function () {
         assert.strictEqual(result.status, 200);
     }
 
+    function authed(request) {
+        return request.auth(gUsername, gAppPassword).ok(() => true);
+    }
+
+    function cloudronClient() {
+        const token = process.env.CLOUDRON_CLI_AUTH_TOKEN;
+        const cfg = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.cloudron.json'), 'utf8'));
+        const endpoint = cfg.cloudrons.default;
+        const section = cfg.cloudrons[endpoint];
+        return {
+            adminFqdn: section.apiEndpoint,
+            token: token || section.token
+        };
+    }
+
+    async function cloudronApi(method, apiPath, body) {
+        const { adminFqdn, token } = cloudronClient();
+        let request = superagent(method, `https://${adminFqdn}${apiPath}`).query({ access_token: token }).ok(() => true);
+        if (body) request = request.send(body);
+        return await request;
+    }
+
+    async function ensureAppPassword() {
+        const inspect = JSON.parse(execSync('cloudron inspect', { cwd: APP_ROOT, encoding: 'utf8' }));
+        const installed = inspect.apps.find(function (entry) { return entry.fqdn === app.fqdn; });
+        if (!installed) throw new Error(`No inspected app for ${app.fqdn}`);
+
+        const profile = await cloudronApi('GET', '/api/v1/profile');
+        let username;
+        let targetUserId = '';
+        if (profile.status === 200 && profile.body.username && profile.body.id !== 'uid-api-token') {
+            username = profile.body.username;
+        } else {
+            const listed = await cloudronApi('GET', '/api/v1/users?per_page=100');
+            if (listed.status !== 200) throw new Error(`Could not list Cloudron users: ${listed.status} ${JSON.stringify(listed.body)}`);
+            const user = (listed.body.users || []).find(function (entry) { return entry.username && entry.active; });
+            if (!user) throw new Error('No Cloudron user available for an app password');
+            username = user.username;
+            targetUserId = user.id;
+        }
+
+        const body = {
+            name: 'surfer-test-' + Date.now(),
+            identifier: installed.id,
+            expirationTime: null
+        };
+        if (targetUserId) body.targetUserId = targetUserId;
+
+        const created = await cloudronApi('POST', '/api/v1/app_passwords', body);
+        if (created.status !== 201) throw new Error(`Could not create app password: ${created.status} ${JSON.stringify(created.body)}`);
+
+        gUsername = username;
+        gAppPassword = created.body.password;
+    }
+
     async function createSpecialFolders() {
-        const res0 = await superagent.post(`https://${app.fqdn}/api/files/${encodeURIComponent(SPECIAL_FOLDER_NAME_0)}`)
-            .query({ access_token: gApiToken, directory: true }).send({}).ok(() => true);
+        const res0 = await authed(superagent.post(`https://${app.fqdn}/api/files/${encodeURIComponent(SPECIAL_FOLDER_NAME_0)}`))
+            .query({ directory: true }).send({});
         assert.strictEqual(res0.status, 201);
 
-        const res1 = await superagent.post(`https://${app.fqdn}/api/files/${encodeURIComponent(SPECIAL_FOLDER_NAME_0)}/${encodeURIComponent(SPECIAL_FOLDER_NAME_1)}`)
-            .query({ access_token: gApiToken, directory: true }).ok(() => true);
+        const res1 = await authed(superagent.post(`https://${app.fqdn}/api/files/${encodeURIComponent(SPECIAL_FOLDER_NAME_0)}/${encodeURIComponent(SPECIAL_FOLDER_NAME_1)}`))
+            .query({ directory: true });
         assert.strictEqual(res1.status, 201);
     }
 
@@ -86,9 +144,8 @@ describe('Application life cycle test', function () {
     }
 
     async function enablePublicFolderListing() {
-        const res0 = await superagent.put(`https://${app.fqdn}/api/settings`)
-            .query({ access_token: gApiToken })
-            .send({ folderListingEnabled: true, title: 'Surfer', index: '', accessRestriction: '' }).ok(() => true);
+        const res0 = await authed(superagent.put(`https://${app.fqdn}/api/settings`))
+            .send({ folderListingEnabled: true, title: 'Surfer', index: '', accessRestriction: '' });
         assert.strictEqual(res0.status, 201);
     }
 
@@ -102,29 +159,15 @@ describe('Application life cycle test', function () {
     }
 
     function cliLogin() {
-        runCli(`config --server https://${app.fqdn} --token ${gApiToken}`, { stdio: 'inherit' });
-    }
-
-    async function createApiToken() {
-        await goto(`https://${app.fqdn}/_admin`);
-
-        await click('tooltip=Menu');
-        await click(/Access tokens/);
-        await click('Create new access token');
-
-        await waitFor(/^api/);
-        gApiToken = await getText(/^api/);
-
-        assert.strictEqual(typeof gApiToken, 'string');
-        assert.ok(gApiToken.length > 0);
+        runCli(`config --server https://${app.fqdn} --username ${JSON.stringify(gUsername)} --password ${JSON.stringify(gAppPassword)}`, { stdio: 'inherit' });
     }
 
     function uploadFile(name, target = '/') {
         runCli(`put ${path.join(import.meta.dirname, name)} ${target}`, { stdio: 'inherit' });
     }
 
-    function uploadFileWithToken(name) {
-        runCli(`put --token ${gApiToken} ${path.join(import.meta.dirname, name)} /`, { stdio: 'inherit' });
+    function uploadFileWithPassword(name) {
+        runCli(`put --username ${JSON.stringify(gUsername)} --password ${JSON.stringify(gAppPassword)} ${path.join(import.meta.dirname, name)} /`, { stdio: 'inherit' });
     }
 
     function uploadFolder() {
@@ -146,7 +189,7 @@ describe('Application life cycle test', function () {
     it('install app', cloudronCli.install);
 
     it('can login', loginNoIndex);
-    it('can create api token', createApiToken);
+    it('can create app password', ensureAppPassword);
     it('can cli login', cliLogin);
     it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
@@ -157,7 +200,7 @@ describe('Application life cycle test', function () {
     it('can create special folder names', createSpecialFolders);
     it('can enable public folder listing', enablePublicFolderListing);
     it('special folder names allow public listings', checkFilesInSpecialFolder);
-    it('can upload second file with token', uploadFileWithToken.bind(null, TEST_FILE_NAME_1));
+    it('can upload second file with app password', uploadFileWithPassword.bind(null, TEST_FILE_NAME_1));
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_1));
     it('can delete second file with cli', function () {
         runCli(`del ${TEST_FILE_NAME_1}`, { stdio: 'inherit' });
@@ -167,40 +210,32 @@ describe('Application life cycle test', function () {
     it('folder exists', checkFolderExists);
 
     it('can copy file', async function () {
-        const res = await superagent.post(`https://${app.fqdn}/api/copy`)
-            .query({ access_token: gApiToken })
-            .send({ sources: [ '/index.html' ], destination: '/' })
-            .ok(() => true);
+        const res = await authed(superagent.post(`https://${app.fqdn}/api/copy`))
+            .send({ sources: [ '/index.html' ], destination: '/' });
         assert.strictEqual(res.status, 201);
 
-        const list = await superagent.get(`https://${app.fqdn}/api/files/${encodeURIComponent('/')}`).query({ access_token: gApiToken }).ok(() => true);
+        const list = await authed(superagent.get(`https://${app.fqdn}/api/files/${encodeURIComponent('/')}`));
         assert.ok(list.body.entries.some((e) => e.fileName === 'index (1).html'));
     });
 
     it('can move file', async function () {
-        const res = await superagent.put(`https://${app.fqdn}/api/files/${encodeURIComponent('/index (1).html')}`)
-            .query({ access_token: gApiToken })
-            .send({ newFilePath: '/index-moved.html', overwrite: false })
-            .ok(() => true);
+        const res = await authed(superagent.put(`https://${app.fqdn}/api/files/${encodeURIComponent('/index (1).html')}`))
+            .send({ newFilePath: '/index-moved.html', overwrite: false });
         assert.strictEqual(res.status, 200);
 
-        const list = await superagent.get(`https://${app.fqdn}/api/files/${encodeURIComponent('/')}`).query({ access_token: gApiToken }).ok(() => true);
+        const list = await authed(superagent.get(`https://${app.fqdn}/api/files/${encodeURIComponent('/')}`));
         assert.ok(list.body.entries.some((e) => e.fileName === 'index-moved.html'));
     });
 
     it('cannot overwrite on move', async function () {
-        const res = await superagent.put(`https://${app.fqdn}/api/files/${encodeURIComponent('/index-moved.html')}`)
-            .query({ access_token: gApiToken })
-            .send({ newFilePath: '/index.html', overwrite: false })
-            .ok(() => true);
+        const res = await authed(superagent.put(`https://${app.fqdn}/api/files/${encodeURIComponent('/index-moved.html')}`))
+            .send({ newFilePath: '/index.html', overwrite: false });
         assert.strictEqual(res.status, 409);
     });
 
     it('can extract zip archive', async function () {
-        const res = await superagent.post(`https://${app.fqdn}/api/extract`)
-            .query({ access_token: gApiToken })
-            .send({ path: '/test/archive.zip' })
-            .ok(() => true);
+        const res = await authed(superagent.post(`https://${app.fqdn}/api/extract`))
+            .send({ path: '/test/archive.zip' });
         assert.strictEqual(res.status, 200);
 
         const file = await superagent.get(`https://${app.fqdn}/test/a.txt`).ok(() => true);
@@ -209,10 +244,8 @@ describe('Application life cycle test', function () {
     });
 
     it('can extract tar archive', async function () {
-        const res = await superagent.post(`https://${app.fqdn}/api/extract`)
-            .query({ access_token: gApiToken })
-            .send({ path: '/test/archive.tar.gz' })
-            .ok(() => true);
+        const res = await authed(superagent.post(`https://${app.fqdn}/api/extract`))
+            .send({ path: '/test/archive.tar.gz' });
         assert.strictEqual(res.status, 200);
 
         const file = await superagent.get(`https://${app.fqdn}/test/sub/b.txt`).ok(() => true);
@@ -221,9 +254,7 @@ describe('Application life cycle test', function () {
     });
 
     it('can delete moved file', async function () {
-        const res = await superagent.del(`https://${app.fqdn}/api/files/${encodeURIComponent('/index-moved.html')}`)
-            .query({ access_token: gApiToken })
-            .ok(() => true);
+        const res = await authed(superagent.del(`https://${app.fqdn}/api/files/${encodeURIComponent('/index-moved.html')}`));
         assert.strictEqual(res.status, 200);
     });
 
@@ -263,7 +294,7 @@ describe('Application life cycle test', function () {
    it('can install app for update', cloudronCli.appstoreInstall);
 
    it('can login', loginNoIndex);
-   it('can create api token', createApiToken);
+   it('can create app password', ensureAppPassword);
    it('can cli login', cliLogin);
    it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
    it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));

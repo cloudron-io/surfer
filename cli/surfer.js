@@ -17,14 +17,16 @@ program.command('config')
     .description('Configure default server')
     .alias('configure')
     .requiredOption('-s, --server <domain>', 'Surfer server domain')
-    .requiredOption('-t, --token <access token>', 'Server access token')
+    .requiredOption('-u, --username <username>', 'Cloudron username')
+    .requiredOption('-p, --password <app password>', 'Cloudron app password')
     .action(actions.configure);
 
 program.command('put <file|dir...>')
     .option('-a --all', 'Also include hidden files and folders.', false)
     .option('-d --delete', 'Delete extraneous files from dest dirs.', false)
     .option('-s, --server <domain>', 'Surfer server domain (optional)')
-    .option('-t, --token <access token>', 'Server access token (optional)')
+    .option('-u, --username <username>', 'Cloudron username (optional)')
+    .option('-p, --password <app password>', 'Cloudron app password (optional)')
     .description('Uploads a list of files or dirs to the destination. The last argument is destination dir')
     .action(actions.put)
     .on('--help', function() {
@@ -42,14 +44,16 @@ program.command('put <file|dir...>')
 program.command('get [file|dir]')
     .description('Get a file or directory listing')
     .option('-s, --server <domain>', 'Surfer server domain (optional)')
-    .option('-t, --token <access token>', 'Server access token (optional)')
+    .option('-u, --username <username>', 'Cloudron username (optional)')
+    .option('-p, --password <app password>', 'Cloudron app password (optional)')
     .action(actions.get);
 
 program.command('del <file>')
     .option('-r --recursive', 'Recursive delete directories.', false)
     .option('-y --yes', 'Answer questions always with yes.', false)
     .option('-s, --server <domain>', 'Surfer server domain (optional)')
-    .option('-t, --token <access token>', 'Server access token (optional)')
+    .option('-u, --username <username>', 'Cloudron username (optional)')
+    .option('-p, --password <app password>', 'Cloudron app password (optional)')
     .description('Delete a file or directory')
     .action(actions.del);
 
