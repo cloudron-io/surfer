@@ -383,3 +383,7 @@
 * Update surfer to 6.9.0
 * Various UI fixes
 
+[6.9.1]
+* Update surfer to 6.9.1
+* Fix navigation
+
