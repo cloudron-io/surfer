@@ -36,13 +36,7 @@
             <label>Favicon</label>
             <div>Shown in the browser tab and when bookmarking the site.</div>
           </div>
-          <div class="favicon-controls">
-            <img :src="faviconSrc" width="64" height="64"/>
-            <div style="display: flex; gap: 6px">
-              <Button icon="fa-solid fa-upload" @click="onUploadFavicon">Upload favicon</Button>
-              <Button outline icon="fa-solid fa-rotate-left" @click="onResetFavicon">Reset favicon</Button>
-            </div>
-          </div>
+          <ImagePicker mode="editable" :src="faviconSrc" :save-handler="onFaviconSave" :size="512" display-height="128px" fallback-src="/_admin/logo.png"/>
         </SettingsItem>
       </SectionItem>
 
@@ -82,17 +76,14 @@
         </div>
       </SectionItem>
     </div>
-
-    <input ref="uploadFavicon" type="file" accept="image/*" style="display: none"/>
   </div>
 </template>
 
 <script setup>
 
 import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
-import { Button, InputGroup, PasswordInput, RadioButton, SaveIndicator, SectionItem, SettingsItem, Switch, TextInput, fetcher } from '@cloudron/pankow';
+import { Button, ImagePicker, InputGroup, PasswordInput, RadioButton, SaveIndicator, SectionItem, SettingsItem, Switch, TextInput, fetcher } from '@cloudron/pankow';
 
-const uploadFavicon = ref(null);
 const folderListingIndicator = ref(null);
 const titleIndicator = ref(null);
 const indexIndicator = ref(null);
@@ -195,17 +186,22 @@ function refreshFavicon() {
   document.querySelector('link[rel="icon"]').href = '/api/favicon?' + faviconVersion.value;
 }
 
-function onUploadFavicon() {
-  uploadFavicon.value.value = '';
-  uploadFavicon.value.click();
-}
+async function onFaviconSave(file) {
+  const formData = new FormData();
+  formData.append('file', file);
 
-async function onResetFavicon() {
   try {
-    await fetcher.delete('/api/favicon', {}, { access_token: localStorage.accessToken });
+    const result = await fetcher.put('/api/favicon', formData, { access_token: localStorage.accessToken });
+    if (result.status !== 201) {
+      window.pankow.notify({ type: 'danger', text: 'Could not set favicon' });
+      return new Error('Could not set favicon');
+    }
     refreshFavicon();
+    return null;
   } catch (e) {
-    console.error('Failed to reset favicon', e);
+    console.error('Failed to upload favicon', e);
+    window.pankow.notify({ type: 'danger', text: 'Could not set favicon' });
+    return e;
   }
 }
 
@@ -234,21 +230,6 @@ onMounted(async () => {
   }
 
   window.document.title = settings.title;
-
-  uploadFavicon.value.addEventListener('change', async () => {
-    const file = uploadFavicon.value.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      await fetcher.put('/api/favicon', formData, { access_token: localStorage.accessToken });
-      refreshFavicon();
-    } catch (e) {
-      console.error('Failed to upload favicon', e);
-    }
-  });
 });
 
 </script>
@@ -279,12 +260,6 @@ onMounted(async () => {
 .header h1 {
   margin: 0;
   font-size: 24px;
-}
-
-.favicon-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 
 .access-options {
