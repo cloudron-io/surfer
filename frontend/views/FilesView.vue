@@ -106,7 +106,6 @@
 <script setup>
 
 import { ref, reactive, computed, onMounted, inject } from 'vue';
-import { useRouter } from 'vue-router';
 import { Breadcrumb, Button, Dialog, DirectoryView, InputDialog, ProgressBar, Spinner, SplitLayout, TopBar, fetcher } from '@cloudron/pankow';
 import { eachLimit, each } from 'async';
 import { sanitize, encode, decode, download, toDirectoryItems, makeCurrentFolderPreviewEntry, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from '../utils.js';
@@ -114,7 +113,6 @@ import { copyToClipboard } from '@cloudron/pankow/utils.js';
 
 import Preview from '../components/Preview.vue';
 
-const router = useRouter();
 const logout = inject('logout');
 const profile = inject('profile');
 
@@ -166,7 +164,6 @@ const newMenu = [{
 }];
 
 const mainMenu = [
-  { label: 'Settings', icon: 'fa-solid fa-gear', action: () => router.push('/settings') },
   { label: 'Access tokens', icon: 'fa-solid fa-key', action: openAccessTokenDialog },
   { separator: true },
   { label: 'Log out', icon: 'fa-solid fa-arrow-right-from-bracket', action: logout }

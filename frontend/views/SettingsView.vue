@@ -2,7 +2,6 @@
   <div class="settings-view">
     <div class="settings-content">
       <div class="header">
-        <Button plain tool icon="fa-solid fa-arrow-left" aria-label="Back to files" @click="router.push('/')"/>
         <h1>Settings</h1>
       </div>
 
@@ -82,21 +81,6 @@
           <RadioButton v-model="settings.accessRestriction" value="user" label="Private (only logged in users)"/>
         </div>
       </SectionItem>
-
-      <SectionItem title="WebDAV access">
-        <SettingsItem wrap>
-          <div>
-            <p>WebDAV provides a framework for users to create, change and move documents on a server.</p>
-            <p class="webdav-subtext">To authenticate the password must be an API access token. The username is ignored.</p>
-            <ul class="webdav-instructions">
-              <li><b>Windows:</b> Explorer &gt; This PC &gt; Map Network Drive &gt; <code style="cursor: copy;" @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
-              <li><b>MacOS:</b> Finder &gt; Go &gt; Connect to Server... &gt; <code style="cursor: copy;" @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
-              <li><b>Gnome:</b> Files &gt; Other Locations &gt; Connect to Server &gt; <code style="cursor: copy;" @click="onCopyToClipboard('davs://' + domain + '/_webdav/')">davs://{{ domain }}/_webdav/</code></li>
-              <li><b>KDE:</b> Dolphin &gt; Ctrl+L &gt; <code style="cursor: copy;" @click="onCopyToClipboard('webdav://' + domain + '/_webdav/')">webdav://{{ domain }}/_webdav/</code></li>
-            </ul>
-          </div>
-        </SettingsItem>
-      </SectionItem>
     </div>
 
     <input ref="uploadFavicon" type="file" accept="image/*" style="display: none"/>
@@ -106,14 +90,7 @@
 <script setup>
 
 import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
 import { Button, InputGroup, PasswordInput, RadioButton, SaveIndicator, SectionItem, SettingsItem, Switch, TextInput, fetcher } from '@cloudron/pankow';
-import { copyToClipboard } from '@cloudron/pankow/utils.js';
-
-const router = useRouter();
-
-const origin = window.location.origin;
-const domain = window.location.host;
 
 const uploadFavicon = ref(null);
 const folderListingIndicator = ref(null);
@@ -232,11 +209,6 @@ async function onResetFavicon() {
   }
 }
 
-function onCopyToClipboard(value) {
-  copyToClipboard(value);
-  window.pankow.notify({ type: 'success', text: 'Copied to clipboard' });
-}
-
 watch(() => settings.accessRestriction, async (value) => {
   if (value !== 'password') return;
   await nextTick();
@@ -293,7 +265,7 @@ onMounted(async () => {
 }
 
 .settings-content {
-  max-width: 720px;
+  max-width: 1100px;
   width: 100%;
 }
 
@@ -330,19 +302,6 @@ onMounted(async () => {
 
 .access-password small {
   color: var(--pankow-color-text-secondary);
-}
-
-.webdav-subtext {
-  margin-bottom: 8px;
-}
-
-.webdav-instructions {
-  margin: 0;
-  padding-left: 20px;
-}
-
-.webdav-instructions li {
-  margin-bottom: 6px;
 }
 
 </style>
