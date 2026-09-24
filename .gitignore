@@ -26,5 +26,8 @@ pnpm-debug.log*
 /files
 /.deploy
 .config.json
+/db.sqlite
+/db.sqlite-wal
+/db.sqlite-shm
 .users.json
 favicon.png

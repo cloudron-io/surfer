@@ -22,6 +22,7 @@
     "@cloudron/tegel": "^1.7.0",
     "archiver": "^8.0.0",
     "async": "^3.2.6",
+    "better-sqlite3": "^13.0.3",
     "commander": "^15.0.0",
     "content-disposition": "^3.0.0",
     "ejs": "^6.0.1",

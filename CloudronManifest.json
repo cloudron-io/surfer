@@ -34,6 +34,11 @@
       "ftp": {
         "uid": 1000,
         "uname": "cloudron"
+      },
+      "sqlite": {
+        "paths": [
+          "/app/data/db.sqlite"
+        ]
       }
     }
   },

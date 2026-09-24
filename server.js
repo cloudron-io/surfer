@@ -6,6 +6,7 @@ import path from 'path';
 import ejs from 'ejs';
 import fs from 'fs';
 import crypto from 'crypto';
+import safe from '@cloudron/safetydance';
 import * as tegel from '@cloudron/tegel';
 import cors from './src/cors.js';
 import { create as createContentDisposition } from 'content-disposition';
@@ -18,9 +19,10 @@ import files from './src/files.js';
 import zip from './src/zip.js';
 import extract from './src/extract.js';
 import deploy from './src/deploy.js';
+import settings from './src/settings.js';
 
 const ROOT_FOLDER = path.resolve(import.meta.dirname, process.argv[2] || 'files');
-const CONFIG_FILE = path.resolve(import.meta.dirname, process.argv[3] || '.config.json');
+const DB_FILE = path.resolve(import.meta.dirname, process.argv[3] || 'db.sqlite');
 const FAVICON_FILE = path.resolve(import.meta.dirname, process.argv[4] || 'favicon.png');
 const FAVICON_FALLBACK_FILE = path.resolve(import.meta.dirname, 'dist', 'logo.png');
 
@@ -38,22 +40,9 @@ deploy.recover();
 // Ensure the root folder exists
 fs.mkdirSync(ROOT_FOLDER, { recursive: true });
 
-// Load the config file
-let config = {};
-
-try {
-    console.log(`Using config file at: ${CONFIG_FILE}`);
-    config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-} catch (e) {
-    if (e.code === 'ENOENT') console.log(`Config file ${CONFIG_FILE} not found`);
-    else console.log(`Cannot load config file ${CONFIG_FILE}`, e);
-}
-
-if (typeof config.folderListingEnabled !== 'boolean') config.folderListingEnabled = false;
-if (typeof config.title !== 'string') config.title = 'Surfer';
-if (typeof config.accessRestriction !== 'string') config.accessRestriction = '';
-if (typeof config.accessPassword !== 'string') config.accessPassword = '';
-if (typeof config.index !== 'string') config.index = '';
+console.log(`Using database at: ${DB_FILE}`);
+settings.init(DB_FILE);
+const config = settings.load();
 
 const ASSET_MAX_AGE = 3600;
 
@@ -198,11 +187,13 @@ function setSettings(req, res, next) {
     updatePasswordIfNeeded(function (error) {
         if (error) return next(new HttpError(500, 'failed to set password'));
 
-        fs.writeFile(CONFIG_FILE, JSON.stringify(config), function (error) {
-            if (error) return next(new HttpError(500, 'unable to save settings'));
+        safe(function () { settings.save(config); });
+        if (safe.error) {
+            console.error('unable to save settings', safe.error);
+            return next(new HttpError(500, 'unable to save settings'));
+        }
 
-            next(new HttpSuccess(201, {}));
-        });
+        next(new HttpSuccess(201, {}));
     });
 }
 

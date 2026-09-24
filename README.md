@@ -20,7 +20,7 @@ export CLOUDRON_APP_ORIGIN="http://localhost:3000"
 export OIDC_CLIENT_ID="surfer"
 export OIDC_CLIENT_SECRET="secret"
 
-node ./server.js /path/to/staticfolder /path/to/config.json /path/to/favicon.png
+node ./server.js /path/to/staticfolder /path/to/db.sqlite /path/to/favicon.png
 ```
 
 # File management
