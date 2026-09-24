@@ -3,14 +3,14 @@
     <LoginView
       v-if="settings.accessRestriction !== 'password'"
       icon-url="/_admin/logo.png"
-      :title="settings.title || 'Surfer'"
+      title="Surfer"
       message="Static file server"
       :login-label="`Log in with ${providerName}`"
       footer="Powered by Cloudron"
       @login="onOidcLogin"
     />
     <div v-else class="login-container">
-      <h1>Log in to {{ settings.title }}</h1>
+      <h1>Log in to Surfer</h1>
       <form @submit.prevent="onLogin">
         <div style="margin-bottom: 10px;">
           <label for="passwordInput">Password</label>
@@ -37,8 +37,7 @@ const returnTo = ref('/');
 const password = ref('');
 const providerName = ref('Cloudron');
 const settings = ref({
-  accessRestriction: '',
-  title: ''
+  accessRestriction: ''
 });
 
 function onOidcLogin() {
@@ -67,13 +66,12 @@ onMounted(async () => {
   try {
     const result = await fetcher.get(`${ORIGIN}/api/settings`);
     settings.value.accessRestriction = result.body.accessRestriction;
-    settings.value.title = result.body.title;
     providerName.value = result.body.oidcProviderName || 'Cloudron';
   } catch (e) {
     console.error(e);
   }
 
-  window.document.title = settings.value.title || 'Surfer';
+  window.document.title = 'Surfer';
 
   ready.value = true;
 

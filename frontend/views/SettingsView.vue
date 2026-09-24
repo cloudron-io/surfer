@@ -29,11 +29,11 @@
         </SettingsItem>
       </SectionItem>
 
-      <SectionItem title="Display">
+      <SectionItem title="Public site">
         <SettingsItem>
           <div>
-            <label>Title</label>
-            <div>Page title for folder listings. Not used when an index file is served.</div>
+            <label>Page title</label>
+            <div>Browser tab title on folder listings. An index file uses its own title.</div>
           </div>
           <SaveIndicator ref="titleIndicator">
             <InputGroup>
@@ -46,7 +46,7 @@
         <SettingsItem>
           <div>
             <label>Favicon</label>
-            <div>Shown in the browser tab and in bookmarks.</div>
+            <div>Icon on public folder listings, in the browser tab and in bookmarks. An index file uses its own icon.</div>
           </div>
           <ImagePicker mode="editable" :src="faviconSrc" :save-handler="onFaviconSave" :size="512" display-height="128px" fallback-src="/_admin/logo.png"/>
         </SettingsItem>
@@ -136,7 +136,6 @@ async function putSettings(indicator) {
       loaded.index = settings.index;
       loaded.accessRestriction = settings.accessRestriction;
       accessPassword.value = '';
-      window.document.title = settings.title;
       indicator.value?.success();
     } else {
       indicator.value?.error();
@@ -180,7 +179,6 @@ async function onSaveAccess() {
 
 function refreshFavicon() {
   faviconVersion.value = Date.now();
-  document.querySelector('link[rel="icon"]').href = '/api/favicon?' + faviconVersion.value;
 }
 
 async function onFaviconSave(file) {
@@ -225,8 +223,6 @@ onMounted(async () => {
   } catch (e) {
     console.error(e);
   }
-
-  window.document.title = settings.title;
 });
 
 </script>

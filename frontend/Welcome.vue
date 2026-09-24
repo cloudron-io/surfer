@@ -2,7 +2,7 @@
   <div class="login-wrapper" v-show="ready">
     <LoginView
       icon-url="/_admin/logo.png"
-      :title="title"
+      title="Surfer"
       message="Static file server"
       :login-label="`Log in with ${providerName}`"
       footer="Powered by Cloudron"
@@ -17,7 +17,6 @@ import { ref, onMounted } from 'vue';
 import { LoginView, fetcher } from '@cloudron/pankow';
 
 const ready = ref(false);
-const title = ref('Surfer');
 const providerName = ref('Cloudron');
 
 function onLogin() {
@@ -27,15 +26,12 @@ function onLogin() {
 onMounted(async () => {
   try {
     const result = await fetcher.get('/api/settings');
-    if (result.status === 200) {
-      title.value = result.body.title || 'Surfer';
-      providerName.value = result.body.oidcProviderName || 'Cloudron';
-    }
+    if (result.status === 200) providerName.value = result.body.oidcProviderName || 'Cloudron';
   } catch (e) {
     console.error(e);
   }
 
-  window.document.title = title.value;
+  window.document.title = 'Surfer';
   ready.value = true;
 });
 
