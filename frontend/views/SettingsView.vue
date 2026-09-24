@@ -52,13 +52,7 @@
         </SettingsItem>
       </SectionItem>
 
-      <SectionItem title="Access">
-        <SettingsItem>
-          <div>
-            <label>Access restriction</label>
-            <div>Who can open the site.</div>
-          </div>
-        </SettingsItem>
+      <SectionItem title="Access restriction">
         <div class="access-options">
           <RadioButton v-model="settings.accessRestriction" value="" label="Public"/>
           <RadioButton v-model="settings.accessRestriction" value="password" label="Password"/>
