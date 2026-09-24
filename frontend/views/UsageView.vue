@@ -6,12 +6,21 @@
       </div>
 
       <SectionItem title="WebDAV">
-        <p class="webdav-intro">Mount the site as a network folder. Sign in with an API access token as the password. The username is ignored.</p>
-        <ul class="webdav-instructions">
+        <p class="usage-intro">Mount the site as a network folder. Sign in with an API access token as the password. The username is ignored.</p>
+        <ul class="usage-list">
           <li><b>Windows:</b> Explorer &gt; This PC &gt; Map Network Drive &gt; <code @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
           <li><b>macOS:</b> Finder &gt; Go &gt; Connect to Server... &gt; <code @click="onCopyToClipboard(origin + '/_webdav/')">{{ origin }}/_webdav/</code></li>
           <li><b>GNOME:</b> Files &gt; Other Locations &gt; Connect to Server &gt; <code @click="onCopyToClipboard('davs://' + domain + '/_webdav/')">davs://{{ domain }}/_webdav/</code></li>
           <li><b>KDE:</b> Dolphin &gt; Ctrl+L &gt; <code @click="onCopyToClipboard('webdav://' + domain + '/_webdav/')">webdav://{{ domain }}/_webdav/</code></li>
+        </ul>
+      </SectionItem>
+
+      <SectionItem title="Command line">
+        <p class="usage-intro">Upload files with the Surfer CLI. Create an API access token from the profile menu.</p>
+        <ul class="usage-list">
+          <li><code @click="onCopyToClipboard(installCommand)">{{ installCommand }}</code></li>
+          <li><code @click="onCopyToClipboard(configCommand)">{{ configCommand }}</code></li>
+          <li><code @click="onCopyToClipboard(putCommand)">{{ putCommand }}</code></li>
         </ul>
       </SectionItem>
     </div>
@@ -25,6 +34,9 @@ import { copyToClipboard } from '@cloudron/pankow/utils.js';
 
 const origin = window.location.origin;
 const domain = window.location.host;
+const installCommand = 'npm install -g cloudron-surfer';
+const configCommand = `surfer config --server ${origin} --token <token>`;
+const putCommand = 'surfer put file.txt /';
 
 function onCopyToClipboard(value) {
   copyToClipboard(value);
@@ -61,21 +73,21 @@ function onCopyToClipboard(value) {
   font-size: 24px;
 }
 
-.webdav-intro {
+.usage-intro {
   margin: 0 0 16px;
   font-size: 14px;
 }
 
-.webdav-instructions {
+.usage-list {
   margin: 0;
   padding-left: 20px;
 }
 
-.webdav-instructions li {
+.usage-list li {
   margin-bottom: 6px;
 }
 
-.webdav-instructions code {
+.usage-list code {
   cursor: copy;
 }
 
