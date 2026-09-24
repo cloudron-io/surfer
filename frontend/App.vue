@@ -104,6 +104,9 @@ onMounted(loadProfile);
       <RouterLink class="side-bar-entry" :class="{ active: route.name === 'files' }" :to="filesPath" @click="onCloseSidebar">
         <i class="fa-solid fa-folder"></i> Files
       </RouterLink>
+      <RouterLink class="side-bar-entry" :class="{ active: route.name === 'deploys' }" to="/deploys" @click="onCloseSidebar">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Deploys
+      </RouterLink>
       <RouterLink class="side-bar-entry" :class="{ active: route.name === 'settings' }" to="/settings" @click="onCloseSidebar">
         <i class="fa-solid fa-gear"></i> Settings
       </RouterLink>

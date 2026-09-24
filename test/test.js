@@ -329,6 +329,12 @@ describe('Application life cycle test', function () {
        assert.strictEqual(hidden.text, 'pong\n');
    });
    it('deploy removes previous files', async () => checkFileIsGone(SPECIAL_FOLDER_NAME_0));
+   it('deploy is recorded', async function () {
+       const res = await authed(superagent.get(`https://${app.fqdn}/api/deploys`));
+       assert.strictEqual(res.status, 200);
+       assert.ok(Array.isArray(res.body));
+       assert.ok(res.body.some(function (entry) { return entry.username === gUsername; }));
+   });
 
    it('uninstall app', cloudronCli.uninstall);
 });

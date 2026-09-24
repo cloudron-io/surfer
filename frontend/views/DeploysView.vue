@@ -1,0 +1,86 @@
+<template>
+  <div class="deploys-view">
+    <div class="deploys-content">
+      <div class="header">
+        <h1>Deploys</h1>
+      </div>
+
+      <TableView :columns="columns" :model="deploys" :busy="busy" placeholder="No deploys yet" default-sort-by="at" default-sort-order="desc">
+        <template #at="{ item }">{{ formatWhen(item.at) }}</template>
+      </TableView>
+    </div>
+  </div>
+</template>
+
+<script setup>
+
+import { onMounted, ref } from 'vue';
+import { TableView, fetcher } from '@cloudron/pankow';
+
+const columns = {
+  at: { label: 'When', sort: true },
+  who: { label: 'Who', sort: true },
+};
+
+const deploys = ref([]);
+const busy = ref(true);
+
+onMounted(load);
+
+async function load() {
+  busy.value = true;
+  try {
+    const result = await fetcher.get('/api/deploys');
+    if (result.status !== 200 || !Array.isArray(result.body)) return;
+    deploys.value = result.body.map(function (entry) {
+      return { at: entry.at, who: who(entry) };
+    });
+  } catch {
+    deploys.value = [];
+  } finally {
+    busy.value = false;
+  }
+}
+
+function who(entry) {
+  if (entry.name && entry.username && entry.name !== entry.username) return entry.name + ' (' + entry.username + ')';
+  return entry.name || entry.username || '';
+}
+
+function formatWhen(iso) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleString();
+}
+
+</script>
+
+<style scoped>
+
+.deploys-view {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 40px 24px;
+  overflow-y: auto;
+}
+
+.deploys-content {
+  max-width: 1100px;
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+</style>

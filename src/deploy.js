@@ -9,6 +9,7 @@ import { pipeline } from 'node:stream/promises';
 import * as tar from 'tar';
 import safe from '@cloudron/safetydance';
 import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
+import deploys from './deploys.js';
 
 const gRootFolder = path.resolve(import.meta.dirname, '..', process.argv[2] || 'files');
 const gDeployFolder = path.join(path.dirname(gRootFolder), '.deploy');
@@ -180,6 +181,9 @@ function deploy(req, res, next) {
             if (error.code === 'EBADARCHIVE') return next(new HttpError(400, error.message));
             return next(new HttpError(500, error.message));
         }
+
+        safe(function () { deploys.add(req); });
+        if (safe.error) console.error('deploy: failed to record deploy', safe.error);
 
         next(new HttpSuccess(201, {}));
     })();

@@ -20,6 +20,7 @@ import zip from './src/zip.js';
 import extract from './src/extract.js';
 import deploy from './src/deploy.js';
 import settings from './src/settings.js';
+import deploys from './src/deploys.js';
 
 const ROOT_FOLDER = path.resolve(import.meta.dirname, process.argv[2] || 'files');
 const DB_FILE = path.resolve(import.meta.dirname, process.argv[3] || 'db.sqlite');
@@ -42,6 +43,7 @@ fs.mkdirSync(ROOT_FOLDER, { recursive: true });
 
 console.log(`Using database at: ${DB_FILE}`);
 settings.init(DB_FILE);
+deploys.init();
 const config = settings.load();
 
 const ASSET_MAX_AGE = 3600;
@@ -338,6 +340,7 @@ router.delete('/api/files/*path', auth.requireAuth, files.del);
 router.post  ('/api/copy', auth.requireAuth, files.copy);
 router.post  ('/api/extract', auth.requireAuth, extract.extract);
 router.post  ('/api/deploy', auth.requireAuth, deploy.deploy);
+router.get   ('/api/deploys', auth.requireAuth, deploys.get);
 router.get   ('/api/zip', handleProtection, handleZipDownload);
 router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });
 
