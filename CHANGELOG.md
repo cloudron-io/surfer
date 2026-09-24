@@ -387,3 +387,13 @@
 * Update surfer to 6.9.1
 * Fix navigation
 
+[7.0.0]
+* Update surfer to 7.0.0
+* **Breaking change:**: API tokens are deprecated, use app passwords instead.
+* **Breaking change:**: CLI tool is now `@cloudron/surfer` . The older one `cloudron-surfer` is deprecated and will not receive updates
+* [Forum post for discussion](https://forum.cloudron.io/topic/16009/surfer-v7-new-cli-deploys-app-passwords)
+* Store settings in sqlite
+* Offer reload on update
+* Deploy via `surfer deploy`
+* Add deploy view to show deploy history
+
