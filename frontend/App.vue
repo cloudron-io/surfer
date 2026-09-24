@@ -120,6 +120,9 @@ onMounted(loadProfile);
           <Button v-if="route.name === 'files'" icon="fa-solid fa-plus" :menu="newMenu" tool><span class="pankow-no-mobile">New</span></Button>
         </template>
         <template #right>
+          <Button class="view-site" outline primary href="/" target="_blank" rel="noopener" icon="fa-solid fa-arrow-up-right-from-square">
+            <span class="pankow-no-mobile">View site</span>
+          </Button>
           <Button :menu="profileMenu" tool secondary title="Menu">
             <span class="pankow-no-mobile">{{ profile.name || profile.username }}</span>
           </Button>
@@ -156,6 +159,10 @@ onMounted(loadProfile);
   flex: 1;
   min-height: 0;
   overflow: hidden;
+}
+
+.view-site {
+  margin-right: 8px;
 }
 
 .pankow-sidebar-container {
