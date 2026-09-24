@@ -2,7 +2,7 @@
 
 import { ref, onMounted, provide, useTemplateRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { Button, Notification, SideBar, TopBar, fetcher } from '@cloudron/pankow';
+import { Button, SideBar, TopBar, fetcher } from '@cloudron/pankow';
 
 const ready = ref(false);
 const profile = ref({ username: '', name: '' });
@@ -91,7 +91,6 @@ onMounted(loadProfile);
 </script>
 
 <template>
-  <Notification/>
   <div v-if="ready" class="main">
     <SideBar ref="sidebar">
       <div class="sidebar-title">

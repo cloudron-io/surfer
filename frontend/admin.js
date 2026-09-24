@@ -1,6 +1,6 @@
 import { createApp } from 'vue';
 
-import tooltip from '@cloudron/pankow/tooltip';
+import pankow from '@cloudron/pankow';
 
 import './style.css';
 
@@ -10,6 +10,6 @@ import router from './router.js';
 const app = createApp(App);
 
 app.use(router);
-app.directive('tooltip', tooltip);
+app.use(pankow);
 
 app.mount('#app');

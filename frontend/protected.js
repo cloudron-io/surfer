@@ -1,6 +1,6 @@
 import { createApp } from 'vue';
 
-import tooltip from '@cloudron/pankow/tooltip';
+import pankow from '@cloudron/pankow';
 
 import './style.css';
 
@@ -8,6 +8,6 @@ import Protected from './Protected.vue';
 
 const app = createApp(Protected);
 
-app.directive('tooltip', tooltip);
+app.use(pankow);
 
 app.mount('#app');

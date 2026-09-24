@@ -344,6 +344,12 @@ router.get   ('/api/deploys', auth.requireAuth, deploys.get);
 router.get   ('/api/zip', handleProtection, handleZipDownload);
 router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });
 
+app.get('/build.json', function (req, res, next) {
+    const buildFile = path.join(import.meta.dirname, 'dist', 'build.json');
+    if (!fs.existsSync(buildFile)) return next();
+    res.sendFile(buildFile);
+});
+
 app.use(webdav.v2.extensions.express('/_webdav', webdavServer));
 app.use('/_admin', express.static(import.meta.dirname + '/dist', { index: 'admin.html' }));
 app.use('/assets', express.static(import.meta.dirname + '/dist/assets'));

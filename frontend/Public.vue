@@ -1,7 +1,7 @@
 <script setup>
 
 import { ref, onMounted, computed } from 'vue';
-import { Breadcrumb, Button, DirectoryView, Notification, SplitLayout, TopBar, fetcher } from '@cloudron/pankow';
+import { Breadcrumb, Button, DirectoryView, SplitLayout, TopBar, fetcher } from '@cloudron/pankow';
 import { sanitize, encode, decode, download, toDirectoryItems, makeCurrentFolderPreviewEntry, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from './utils.js';
 
 import Preview from './components/Preview.vue';
@@ -99,8 +99,6 @@ onMounted(async () => {
 </script>
 
 <template>
-  <Notification/>
-
   <div class="main-container" v-show="ready">
     <div class="main-container-toolbar">
       <TopBar>
