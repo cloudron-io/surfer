@@ -1,6 +1,6 @@
 <script setup>
 
-import { ref, onMounted, provide, useTemplateRef } from 'vue';
+import { ref, onMounted, provide, useTemplateRef, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { Button, Dialog, InputDialog, Notification, SideBar, TopBar, fetcher } from '@cloudron/pankow';
 import { copyToClipboard } from '@cloudron/pankow/utils.js';
@@ -14,6 +14,11 @@ const inputDialog = ref(null);
 const accessTokens = ref([]);
 const route = useRoute();
 const logoUrl = '/_admin/logo.png';
+const filesPath = ref('/');
+
+watch(function () { return route.fullPath; }, function () {
+  if (route.name === 'files') filesPath.value = route.fullPath || '/';
+}, { immediate: true });
 
 function onUpload() {
   viewRef.value?.onUpload();
@@ -175,7 +180,7 @@ onMounted(async () => {
         </RouterLink>
       </div>
 
-      <RouterLink class="side-bar-entry" :class="{ active: route.name === 'files' }" to="/" @click="onCloseSidebar">
+      <RouterLink class="side-bar-entry" :class="{ active: route.name === 'files' }" :to="filesPath" @click="onCloseSidebar">
         <i class="fa-solid fa-folder"></i> Files
       </RouterLink>
       <RouterLink class="side-bar-entry" :class="{ active: route.name === 'settings' }" to="/settings" @click="onCloseSidebar">

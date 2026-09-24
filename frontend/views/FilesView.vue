@@ -72,7 +72,8 @@
 
 <script setup>
 
-import { ref, reactive, computed, onMounted, inject } from 'vue';
+import { ref, reactive, computed, onMounted, inject, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { Breadcrumb, DirectoryView, InputDialog, ProgressBar, Spinner, SplitLayout, fetcher } from '@cloudron/pankow';
 import { eachLimit, each } from 'async';
 import { sanitize, encode, decode, download, toDirectoryItems, makeCurrentFolderPreviewEntry, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from '../utils.js';
@@ -80,6 +81,8 @@ import { sanitize, encode, decode, download, toDirectoryItems, makeCurrentFolder
 import Preview from '../components/Preview.vue';
 
 const logout = inject('logout');
+const route = useRoute();
+const router = useRouter();
 
 const upload = ref(null);
 const uploadFolder = ref(null);
@@ -98,7 +101,8 @@ const path = ref('/');
 const breadcrumbHomeItem = ref({
   label: '',
   icon: 'fa-solid fa-house',
-  route: '#/'
+  route: '#/',
+  action: onHomeCrumb
 });
 const breadcrumbItems = ref([]);
 const entries = ref([]);
@@ -116,34 +120,63 @@ function error(header, message) {
   console.error(header, message);
 }
 
+function openPath(folderPath) {
+  const next = sanitize(folderPath || '/');
+  if (sanitize(decode(route.fullPath)) === next) {
+    loadDirectory(next);
+    return;
+  }
+
+  router.push(next).catch(function () {
+    loadDirectory(next);
+  });
+}
+
+function crumbAction(folderPath, event) {
+  if (event) event.preventDefault();
+  openPath(folderPath);
+}
+
+function onHomeCrumb(item, event) {
+  crumbAction('/', event);
+}
+
+let loadSerial = 0;
+
 async function loadDirectory(folderPath) {
-  if (!folderPath) { window.location.hash = '/'; return; }
+  folderPath = sanitize(folderPath || '/');
+  const serial = ++loadSerial;
 
   busy.value = true;
   activeEntry.value = {};
 
-  folderPath = folderPath ? sanitize(folderPath) : '/';
-
   try {
     const result = await fetcher.get('/api/files/' + encode(folderPath), { access_token: localStorage.accessToken });
+    if (serial !== loadSerial) return;
     if (result.status === 401) return logout();
 
     busy.value = false;
 
     entries.value = toDirectoryItems(result.body.entries, folderPath, true);
   } catch (e) {
+    if (serial !== loadSerial) return;
     return console.error(e);
   }
 
+  if (serial !== loadSerial) return;
+
   path.value = folderPath;
   breadcrumbItems.value = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
+    const itemPath = sanitize('/' + a.slice(0, i).join('/') + '/' + e);
+    function action(item, event) {
+      crumbAction(itemPath, event);
+    }
     return {
       label: e,
-      route: '#' + sanitize('/' + a.slice(0, i).join('/') + '/' + e)
+      route: '#' + itemPath,
+      action: action
     };
   });
-
-  window.location.hash = path.value;
 }
 
 async function refresh() {
@@ -288,7 +321,7 @@ async function openNewFolderDialog() {
     return window.pankow.notify({ type: 'danger', text: e.message });
   }
 
-  window.location.hash = sanitize(path.value + '/' + newFolderName);
+  openPath(path.value + '/' + newFolderName);
 }
 
 function onUpload() {
@@ -418,7 +451,7 @@ async function onExtract(item) {
 
 function onEntryOpen(entry) {
   if (entry.isDirectory) {
-    window.location.hash = sanitize(path.value + '/' + entry.fileName);
+    openPath(path.value + '/' + entry.fileName);
     return;
   }
 
@@ -436,18 +469,17 @@ function onSplitResize(leftWidth) {
 
 defineExpose({ onUpload, onUploadFolder, openNewFolderDialog });
 
-onMounted(() => {
-  loadDirectory(decode(window.location.hash.slice(1)));
+watch(function () { return route.fullPath; }, function (fullPath) {
+  if (route.name !== 'files') return;
+  loadDirectory(decode(fullPath));
+}, { immediate: true });
 
+onMounted(() => {
   window.addEventListener('keyup', (e) => {
     if (e.key === 'Escape' && e.target.classList.length === 0) {
       activeEntry.value = {};
     }
   });
-
-  window.addEventListener('hashchange', () => {
-    loadDirectory(decode(window.location.hash.slice(1)));
-  }, false);
 
   upload.value.addEventListener('change', () => {
     uploadFiles(upload.value.files || []);
