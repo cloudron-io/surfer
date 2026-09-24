@@ -333,7 +333,8 @@ async function openNewFolderDialog() {
     value: '',
     confirmStyle: 'success',
     confirmLabel: 'Create',
-    rejectLabel: 'Cancel'
+    rejectLabel: 'Cancel',
+    rejectStyle: 'secondary'
   });
 
   if (!newFolderName) return;
@@ -377,6 +378,7 @@ async function onDelete(items) {
     confirmStyle: 'danger',
     confirmLabel: 'Yes',
     rejectLabel: 'No',
+    rejectStyle: 'secondary',
     modal: false
   });
 
@@ -404,7 +406,8 @@ async function onRenameRequested(entry) {
     value: entry.fileName,
     confirmStyle: 'success',
     confirmLabel: 'Rename',
-    rejectLabel: 'Cancel'
+    rejectLabel: 'Cancel',
+    rejectStyle: 'secondary'
   });
 
   if (!newFileName || newFileName === entry.fileName) return;
@@ -510,6 +513,7 @@ async function onDeleteAccessToken(token) {
     confirmStyle: 'danger',
     confirmLabel: 'Yes',
     rejectLabel: 'No',
+    rejectStyle: 'secondary',
     modal: false
   });
 
