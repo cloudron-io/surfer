@@ -2,13 +2,11 @@
 
 import assert from 'node:assert/strict';
 import { execSync } from 'node:child_process';
-import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 
 import superagent from '@cloudron/superagent';
 
-import { app, clearCache, click, cloudronCli, goto, loginOIDC, setupBrowser, takeScreenshot, teardownBrowser, waitFor } from '@cloudron/charlie';
+import { app, clearCache, click, cloudronCli, createAppPassword, goto, loginOIDC, setupBrowser, takeScreenshot, teardownBrowser, waitFor } from '@cloudron/charlie';
 
 describe('Application life cycle test', function () {
     const APP_ROOT = path.resolve(import.meta.dirname, '..');
@@ -77,46 +75,10 @@ describe('Application life cycle test', function () {
         return request.auth(gUsername, gAppPassword).ok(() => true);
     }
 
-    function cloudronClient() {
-        const token = process.env.CLOUDRON_CLI_AUTH_TOKEN;
-        const cfg = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.cloudron.json'), 'utf8'));
-        const endpoint = cfg.cloudrons.default;
-        const section = cfg.cloudrons[endpoint];
-        return {
-            adminFqdn: section.apiEndpoint,
-            token: token || section.token
-        };
-    }
-
-    async function cloudronApi(method, apiPath, body) {
-        const { adminFqdn, token } = cloudronClient();
-        let request = superagent.request(method, `https://${adminFqdn}${apiPath}`).query({ access_token: token }).ok(() => true);
-        if (body) request = request.send(body);
-        return await request;
-    }
-
     async function ensureAppPassword() {
-        const inspect = JSON.parse(execSync('cloudron inspect', { cwd: APP_ROOT, encoding: 'utf8' }));
-        const installed = inspect.apps.find(function (entry) { return entry.fqdn === app.fqdn; });
-        if (!installed) throw new Error(`No inspected app for ${app.fqdn}`);
-
-        const profile = await cloudronApi('GET', '/api/v1/profile');
-        const username = profile.body.username;
-        const targetUserId = profile.body.id;
-
-        const body = {
-            name: 'surfer-test-' + Date.now(),
-            identifier: installed.id,
-            expirationTime: null,
-            targetUserId
-        };
-        console.log('creating app password', JSON.stringify(body));
-
-        const created = await cloudronApi('POST', '/api/v1/app_passwords', body);
-        if (created.status !== 201) throw new Error(`Could not create app password: ${created.status} ${JSON.stringify(created.body)}`);
-
-        gUsername = username;
-        gAppPassword = created.body.password;
+        const created = await createAppPassword('surfer-test-' + Date.now());
+        gUsername = created.username;
+        gAppPassword = created.password;
     }
 
     async function createSpecialFolders() {
