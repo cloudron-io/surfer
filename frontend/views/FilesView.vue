@@ -6,21 +6,8 @@
   <InputDialog ref="inputDialog"/>
 
   <div class="main-container">
-    <div class="main-container-toolbar">
-      <TopBar>
-        <template #left>
-          <Breadcrumb :home="breadcrumbHomeItem" :items="breadcrumbItems"/>
-        </template>
-
-        <template #right>
-          <div style="display: flex; gap: 6px">
-            <Button icon="fa-solid fa-plus" :menu="newMenu" tool><span class="pankow-no-mobile">New</span></Button>
-            <Button :menu="mainMenu" tool secondary title="Menu">
-              <span class="pankow-no-mobile">{{ profile.name || profile.username }}</span>
-            </Button>
-          </div>
-        </template>
-      </TopBar>
+    <div class="breadcrumb-bar">
+      <Breadcrumb :home="breadcrumbHomeItem" :items="breadcrumbItems"/>
     </div>
     <div class="main-container-body">
       <SplitLayout
@@ -81,45 +68,22 @@
       <ProgressBar :value="uploadStatus.percentDone" style="flex-grow: 1;" v-show="!uploadStatus.uploadListCount">{{ uploadStatus.percentDone }}%</ProgressBar>
     </div>
   </div>
-
-  <!-- Access Token Dialog -->
-  <Dialog ref="accessTokenDialog" :show-x="true" title="Access tokens">
-    <p>
-      These tokens are useful to programmatically deploy assets for example within a CI/CD pipeline. They are also used for WebDAV login as the password.<br/>
-      <br/>
-      <em>Tokens are shared between <b>all</b> users.</em>
-    </p>
-    <div>
-      <h3 style="display: flex; justify-content: space-between; align-items: center;">
-        <span v-show="accessTokens.length">Issued tokens:</span>
-        <Button success @click="onCreateAccessToken()">Create new access token</Button>
-      </h3>
-      <div v-for="accessToken in accessTokens" :key="accessToken.value">
-        <span @click="onCopyAccessToken(accessToken.value)" style="cursor: copy; font-family: monospace;">{{ accessToken.value }}</span>
-        <Button style="margin: 0 6px" primary tool plain icon="fa-regular fa-copy" v-tooltip="'Copy token to clipboard'" @click="onCopyAccessToken(accessToken.value)"/>
-        <Button danger tool plain icon="fa-solid fa-trash" v-tooltip="'Revoke token'" @click="onDeleteAccessToken(accessToken.value)"/>
-      </div>
-    </div>
-  </Dialog>
 </template>
 
 <script setup>
 
 import { ref, reactive, computed, onMounted, inject } from 'vue';
-import { Breadcrumb, Button, Dialog, DirectoryView, InputDialog, ProgressBar, Spinner, SplitLayout, TopBar, fetcher } from '@cloudron/pankow';
+import { Breadcrumb, DirectoryView, InputDialog, ProgressBar, Spinner, SplitLayout, fetcher } from '@cloudron/pankow';
 import { eachLimit, each } from 'async';
 import { sanitize, encode, decode, download, toDirectoryItems, makeCurrentFolderPreviewEntry, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from '../utils.js';
-import { copyToClipboard } from '@cloudron/pankow/utils.js';
 
 import Preview from '../components/Preview.vue';
 
 const logout = inject('logout');
-const profile = inject('profile');
 
 const upload = ref(null);
 const uploadFolder = ref(null);
 const inputDialog = ref(null);
-const accessTokenDialog = ref(null);
 
 const busy = ref(true);
 const uploadStatus = reactive({
@@ -141,33 +105,6 @@ const entries = ref([]);
 const activeEntry = ref({});
 const previewWidthVw = ref(getPreviewPanelWidthVw());
 const leftWidthPercent = computed(() => 100 - previewWidthVw.value);
-const accessTokens = ref([]);
-
-const newMenu = [{
-  separator: true,
-  label: 'Upload',
-}, {
-  label: 'Upload file',
-  icon: 'fa-solid fa-file-arrow-up',
-  action: onUpload
-}, {
-  label: 'Upload folder',
-  icon: 'fa-regular fa-folder-open',
-  action: onUploadFolder
-}, {
-  separator: true,
-  label: 'Create new',
-}, {
-  label: 'New folder',
-  icon: 'fa-solid fa-folder-plus',
-  action: openNewFolderDialog
-}];
-
-const mainMenu = [
-  { label: 'Access tokens', icon: 'fa-solid fa-key', action: openAccessTokenDialog },
-  { separator: true },
-  { label: 'Log out', icon: 'fa-solid fa-arrow-right-from-bracket', action: logout }
-];
 
 const previewEntry = computed(() => {
   if (activeEntry.value.filePath) return activeEntry.value;
@@ -354,10 +291,6 @@ async function openNewFolderDialog() {
   window.location.hash = sanitize(path.value + '/' + newFolderName);
 }
 
-function openAccessTokenDialog() {
-  accessTokenDialog.value.open();
-}
-
 function onUpload() {
   upload.value.value = '';
   upload.value.click();
@@ -483,51 +416,6 @@ async function onExtract(item) {
   await refresh();
 }
 
-async function refreshAccessTokens() {
-  try {
-    const result = await fetcher.get('/api/tokens', { access_token: localStorage.accessToken });
-    accessTokens.value = result.body.accessTokens.map(function (t) { return { value: t }; });
-  } catch (e) {
-    error(e.message);
-  }
-}
-
-function onCopyAccessToken(value) {
-  copyToClipboard(value);
-  window.pankow.notify({ type:'success', text: 'Token copied to clipboard' });
-}
-
-async function onCreateAccessToken() {
-  try {
-    await fetcher.post('/api/tokens', {}, { access_token: localStorage.accessToken });
-  } catch (e) {
-    return error(e.message);
-  }
-
-  await refreshAccessTokens();
-}
-
-async function onDeleteAccessToken(token) {
-  const yes = await inputDialog.value.confirm({
-    message: 'Really revoke this access token? Any actions currently using this token will fail.',
-    confirmStyle: 'danger',
-    confirmLabel: 'Yes',
-    rejectLabel: 'No',
-    rejectStyle: 'secondary',
-    modal: false
-  });
-
-  if (!yes) return;
-
-  try {
-    await fetcher.delete(`/api/tokens/${token}`, {}, { access_token: localStorage.accessToken });
-  } catch (e) {
-    return error(e.message);
-  }
-
-  await refreshAccessTokens();
-}
-
 function onEntryOpen(entry) {
   if (entry.isDirectory) {
     window.location.hash = sanitize(path.value + '/' + entry.fileName);
@@ -546,10 +434,10 @@ function onSplitResize(leftWidth) {
   setPreviewPanelWidthVw(previewWidthVw.value);
 }
 
+defineExpose({ onUpload, onUploadFolder, openNewFolderDialog });
+
 onMounted(() => {
   loadDirectory(decode(window.location.hash.slice(1)));
-
-  refreshAccessTokens();
 
   window.addEventListener('keyup', (e) => {
     if (e.key === 'Escape' && e.target.classList.length === 0) {
@@ -573,6 +461,13 @@ onMounted(() => {
 </script>
 
 <style>
+
+.breadcrumb-bar {
+  display: flex;
+  gap: 4px;
+  padding: 4px 10px;
+  align-items: center;
+}
 
 .main-container-footer {
   display: flex;
