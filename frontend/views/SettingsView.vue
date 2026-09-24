@@ -48,7 +48,7 @@
             <label>Favicon</label>
             <div>Icon on public folder listings, in the browser tab and in bookmarks. An index file uses its own icon.</div>
           </div>
-          <ImagePicker mode="editable" :src="faviconSrc" :save-handler="onFaviconSave" :size="512" display-height="128px" fallback-src="/_admin/logo.png"/>
+          <ImagePicker mode="editable" :src="faviconSrc" :save-handler="onFaviconSave" :size="512" display-height="64px" fallback-src="/_admin/logo.png"/>
         </SettingsItem>
       </SectionItem>
 
