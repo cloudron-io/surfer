@@ -1,5 +1,5 @@
 {
-  "name": "cloudron-surfer",
+  "name": "@cloudron/surfer",
   "version": "6.4.1",
   "description": "Simple file server cli",
   "type": "module",
