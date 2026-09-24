@@ -51,9 +51,31 @@ if (typeof config.accessRestriction !== 'string') config.accessRestriction = '';
 if (typeof config.accessPassword !== 'string') config.accessPassword = '';
 if (typeof config.index !== 'string') config.index = '';
 
+const ASSET_MAX_AGE = 3600;
+
+function cacheControlFor(filePath) {
+    const name = path.basename(filePath).toLowerCase();
+    const indexName = path.basename(config.index || 'index.html').toLowerCase();
+    const revalidate = name.endsWith('.html') || name.endsWith('.htm') || name === indexName;
+    const visibility = config.accessRestriction ? 'private' : 'public';
+
+    return visibility + ', max-age=' + (revalidate ? 0 : ASSET_MAX_AGE);
+}
+
 function setServMiddlewareHeaders (res, filePath) {
     // handle ?download in query
     if ('download' in res.req.query) res.setHeader('Content-Disposition', createContentDisposition(path.basename(filePath)));
+
+    const cacheControl = cacheControlFor(filePath);
+    res.setHeader('Cache-Control', cacheControl);
+
+    // tegel sets Cache-Control: no-store when Content-Type contains text/html, and that write happens after this hook
+    const setHeader = res.setHeader;
+    res.setHeader = function (name, value) {
+        const result = setHeader.call(this, name, value);
+        if (String(name).toLowerCase() === 'content-type') setHeader.call(this, 'Cache-Control', cacheControl);
+        return result;
+    };
 }
 
 function getCookie(req, name) {
