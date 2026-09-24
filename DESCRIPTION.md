@@ -16,7 +16,7 @@ Additionaly, the public site can be password or user protected.
 
 First, install the surfer cli tool using npm.
 
-    sudo npm -g install cloudron-surfer
+    sudo npm -g install @cloudron/surfer
 
 
 Configure the CLI with your app domain and a Cloudron app password (created in the Cloudron dashboard profile):

@@ -50,7 +50,7 @@ const commandLine = useTemplateRef('commandLine');
 
 const origin = window.location.origin;
 const domain = window.location.host;
-const installCommand = 'npm install -g cloudron-surfer';
+const installCommand = 'npm install -g @cloudron/surfer';
 const configCommand = `surfer config --server ${origin} --username <username> --password <app password>`;
 const putCommand = 'surfer put file.txt /';
 const deployCommand = 'surfer deploy ./dist';

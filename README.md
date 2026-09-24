@@ -30,7 +30,7 @@ The admin interface is available under the `/_admin` location or you can upload 
 First, install the surfer cli tool using npm.
 
 ```bash
-npm -g install cloudron-surfer
+npm -g install @cloudron/surfer
 ```
 
 Configure the CLI with your app domain and a Cloudron app password (created in the Cloudron dashboard profile):
