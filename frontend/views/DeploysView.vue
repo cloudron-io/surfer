@@ -3,6 +3,7 @@
     <div class="deploys-content">
       <div class="header">
         <h1>Deploys</h1>
+        <p class="deploys-intro">Publish a directory with the Surfer CLI. See <RouterLink class="usage-link" :to="{ path: '/usage', hash: '#command-line' }">Usage</RouterLink>.</p>
       </div>
 
       <TableView v-if="busy || deploys.length" :columns="columns" :model="deploys" :busy="busy" default-sort-by="at" default-sort-order="desc">
@@ -74,15 +75,17 @@ function formatWhen(iso) {
 }
 
 .header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
   margin-bottom: 32px;
 }
 
 .header h1 {
-  margin: 0;
+  margin: 0 0 8px;
   font-size: 24px;
+}
+
+.deploys-intro {
+  margin: 0;
+  font-size: 14px;
 }
 
 .deploys-empty {
