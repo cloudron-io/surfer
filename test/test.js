@@ -90,7 +90,7 @@ describe('Application life cycle test', function () {
 
     async function cloudronApi(method, apiPath, body) {
         const { adminFqdn, token } = cloudronClient();
-        let request = superagent(method, `https://${adminFqdn}${apiPath}`).query({ access_token: token }).ok(() => true);
+        let request = superagent.request(method, `https://${adminFqdn}${apiPath}`).query({ access_token: token }).ok(() => true);
         if (body) request = request.send(body);
         return await request;
     }
