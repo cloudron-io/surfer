@@ -101,19 +101,8 @@ describe('Application life cycle test', function () {
         if (!installed) throw new Error(`No inspected app for ${app.fqdn}`);
 
         const profile = await cloudronApi('GET', '/api/v1/profile');
-        let username;
-        let targetUserId = '';
-        if (profile.status === 200 && profile.body.username && profile.body.id !== 'uid-api-token') {
-            username = profile.body.username;
-            targetUserId = profile.body.id;
-        } else {
-            const listed = await cloudronApi('GET', '/api/v1/users?per_page=100');
-            if (listed.status !== 200) throw new Error(`Could not list Cloudron users: ${listed.status} ${JSON.stringify(listed.body)}`);
-            const user = (listed.body.users || []).find(function (entry) { return entry.username && entry.active; });
-            if (!user) throw new Error('No Cloudron user available for an app password');
-            username = user.username;
-            targetUserId = user.id;
-        }
+        const username = profile.body.username;
+        const targetUserId = profile.body.id;
 
         const body = {
             name: 'surfer-test-' + Date.now(),
@@ -121,6 +110,7 @@ describe('Application life cycle test', function () {
             expirationTime: null,
             targetUserId
         };
+        console.log('creating app password', JSON.stringify(body));
 
         const created = await cloudronApi('POST', '/api/v1/app_passwords', body);
         if (created.status !== 201) throw new Error(`Could not create app password: ${created.status} ${JSON.stringify(created.body)}`);
