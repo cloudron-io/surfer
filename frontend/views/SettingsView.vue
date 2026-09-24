@@ -62,14 +62,11 @@
       </SectionItem>
 
       <SectionItem title="Access">
-        <SettingsItem wrap>
+        <SettingsItem>
           <div>
             <label>Access restriction</label>
             <div>This controls how the public folder listing or any served up site can be accessed.</div>
           </div>
-          <SaveIndicator ref="accessIndicator">
-            <Button primary :disabled="saving.access || !accessChanged" @click="onSaveAccess">Save</Button>
-          </SaveIndicator>
         </SettingsItem>
         <div class="access-options">
           <RadioButton v-model="settings.accessRestriction" value="" label="Public (everyone)"/>
@@ -79,6 +76,9 @@
             <small>Changing the password will require every user to re-login.</small>
           </div>
           <RadioButton v-model="settings.accessRestriction" value="user" label="Private (only logged in users)"/>
+          <SaveIndicator ref="accessIndicator" class="access-save">
+            <Button primary :disabled="saving.access || !accessChanged" @click="onSaveAccess">Save</Button>
+          </SaveIndicator>
         </div>
       </SectionItem>
     </div>
@@ -291,6 +291,11 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.access-save {
+  margin-top: 8px;
+  align-self: flex-start;
 }
 
 .access-password {
