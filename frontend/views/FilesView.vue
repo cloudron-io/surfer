@@ -6,9 +6,6 @@
   <InputDialog ref="inputDialog"/>
 
   <div class="main-container">
-    <div class="breadcrumb-bar">
-      <Breadcrumb :home="breadcrumbHomeItem" :items="breadcrumbItems"/>
-    </div>
     <div class="main-container-body">
       <SplitLayout
         orientation="horizontal"
@@ -19,40 +16,45 @@
       >
         <template #left>
           <div class="directory-pane">
-            <DirectoryView
-              :items="entries"
-              :busy="busy"
-              :editable="true"
-              :show-download="true"
-              :multi-download="true"
-              :show-size="true"
-              :show-modified="true"
-              :show-rename="true"
-              :show-delete="true"
-              :show-new-file="false"
-              :show-new-folder="true"
-              :show-upload-file="true"
-              :show-upload-folder="true"
-              :show-cut="true"
-              :show-copy="true"
-              :show-paste="true"
-              :show-select-all="true"
-              :show-extract="true"
-              :download-handler="onDownload"
-              :delete-handler="onDelete"
-              :new-folder-handler="openNewFolderDialog"
-              :upload-file-handler="onUpload"
-              :upload-folder-handler="onUploadFolder"
-              :drop-handler="onDrop"
-              :paste-handler="onPaste"
-              :extract-handler="onExtract"
-              :refresh-handler="refresh"
-              :fallback-icon="'/_admin/mime-types/application-x-generic.svg'"
-              @selection-changed="onSelectionChanged"
-              @item-activated="onEntryOpen"
-              @rename-requested="onRenameRequested"
-            />
-            <div class="directory-view-busy" v-show="busy"><Spinner class="pankow-spinner-large"/></div>
+            <div class="breadcrumb-bar">
+              <Breadcrumb :home="breadcrumbHomeItem" :items="breadcrumbItems"/>
+            </div>
+            <div class="directory-view-wrap">
+              <DirectoryView
+                :items="entries"
+                :busy="busy"
+                :editable="true"
+                :show-download="true"
+                :multi-download="true"
+                :show-size="true"
+                :show-modified="true"
+                :show-rename="true"
+                :show-delete="true"
+                :show-new-file="false"
+                :show-new-folder="true"
+                :show-upload-file="true"
+                :show-upload-folder="true"
+                :show-cut="true"
+                :show-copy="true"
+                :show-paste="true"
+                :show-select-all="true"
+                :show-extract="true"
+                :download-handler="onDownload"
+                :delete-handler="onDelete"
+                :new-folder-handler="openNewFolderDialog"
+                :upload-file-handler="onUpload"
+                :upload-folder-handler="onUploadFolder"
+                :drop-handler="onDrop"
+                :paste-handler="onPaste"
+                :extract-handler="onExtract"
+                :refresh-handler="refresh"
+                :fallback-icon="'/_admin/mime-types/application-x-generic.svg'"
+                @selection-changed="onSelectionChanged"
+                @item-activated="onEntryOpen"
+                @rename-requested="onRenameRequested"
+              />
+              <div class="directory-view-busy" v-show="busy"><Spinner class="pankow-spinner-large"/></div>
+            </div>
           </div>
         </template>
         <template #right>
@@ -496,6 +498,7 @@ onMounted(() => {
 
 .breadcrumb-bar {
   display: flex;
+  flex-shrink: 0;
   gap: 4px;
   padding: 4px 10px;
   align-items: center;
@@ -507,9 +510,17 @@ onMounted(() => {
 }
 
 .directory-pane {
-  position: relative;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   height: 100%;
+}
+
+.directory-view-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .directory-view-busy {
