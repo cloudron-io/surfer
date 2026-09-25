@@ -11,7 +11,13 @@ const router = createRouter({
         { path: '/history', name: 'history', component: HistoryView },
         { path: '/settings', name: 'settings', component: SettingsView },
         { path: '/usage', name: 'usage', component: UsageView },
-        { path: '/:pathMatch(.*)*', name: 'files', component: FilesView },
+        { path: '/site/:name/:pathMatch(.*)*', name: 'site', component: FilesView },
+        { path: '/', redirect: '/site/default/' },
+        { path: '/:pathMatch(.*)*', redirect: function (to) {
+            const match = to.params.pathMatch;
+            const suffix = Array.isArray(match) ? match.join('/') : (match || '');
+            return suffix ? '/site/default/' + suffix : '/site/default/';
+        } },
     ],
 });
 

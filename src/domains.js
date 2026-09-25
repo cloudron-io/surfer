@@ -6,6 +6,9 @@ import database from './database.js';
 export default {
     init,
     publicDirForHost,
+    publicDirInUse,
+    list,
+    insert,
 };
 
 function init(dataDir, primaryDomain, aliasHostnames) {
@@ -48,4 +51,17 @@ function publicDirForHost(host) {
     if (!host) return null;
     const row = database.get('SELECT publicDir FROM sites WHERE domain = ?', [ host ]);
     return row ? row.publicDir : null;
+}
+
+function publicDirInUse(publicDir) {
+    if (!publicDir) return false;
+    return !!database.get('SELECT domain FROM sites WHERE publicDir = ?', [ publicDir ]);
+}
+
+function list() {
+    return database.all('SELECT domain, publicDir FROM sites ORDER BY publicDir, domain');
+}
+
+function insert(domain, publicDir) {
+    database.run('INSERT INTO sites (domain, publicDir) VALUES (?, ?)', [ domain, publicDir ]);
 }

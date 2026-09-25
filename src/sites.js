@@ -24,6 +24,8 @@ export default {
     aliasPatterns,
     exactAliases,
     primaryName,
+    isDeployName,
+    matchAlias,
     resolveRequest,
     readDeployment,
     rootForQuery,
@@ -58,6 +60,10 @@ function exactAliases() {
 
 function isHostname(value) {
     return typeof value === 'string' && value.length <= 253 && HOSTNAME.test(value);
+}
+
+function isDeployName(value) {
+    return typeof value === 'string' && new RegExp(`^${LABEL}$`).test(value);
 }
 
 function requestHost(req) {

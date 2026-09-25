@@ -21,6 +21,7 @@ import extract from './src/extract.js';
 import deploy from './src/deploy.js';
 import settings from './src/settings.js';
 import history from './src/history.js';
+import deploys from './src/deploys.js';
 import domains from './src/domains.js';
 import sites from './src/sites.js';
 
@@ -196,7 +197,8 @@ function getSettings(req, res) {
         accessRestriction: config.accessRestriction || '',
         accessPassword: config.accessPassword ? PASSWORD_PLACEHOLDER : '', // don't send the password, helps the UI to figure if a password was set at all
         oidcProviderName: process.env.CLOUDRON_OIDC_PROVIDER_NAME || 'Cloudron',
-        appPasswordsUrl: origin ? `${origin}/#/profile` : ''
+        appPasswordsUrl: origin ? `${origin}/#/profile` : '',
+        locationUrl: origin && process.env.CLOUDRON_APP_HOSTNAME ? `${origin}/#/app/${process.env.CLOUDRON_APP_HOSTNAME}/location` : ''
     });
 }
 
@@ -396,6 +398,8 @@ router.post  ('/api/copy', auth.requireAuth, files.copy);
 router.post  ('/api/extract', auth.requireAuth, extract.extract);
 router.post  ('/api/deploy', auth.requireAuth, deploy.deploy);
 router.get   ('/api/history', auth.requireAuth, history.get);
+router.get   ('/api/sites', auth.requireAuth, deploys.list);
+router.post  ('/api/sites', auth.requireAuth, deploys.create);
 router.get   ('/api/zip', handleProtection, handleZipDownload);
 router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });
 

@@ -18,28 +18,56 @@ function decode(path) {
     return path.split('/').map(decodeURIComponent).join('/');
 }
 
+function fileApiUrl(filePath, deployment, inline) {
+    const params = new URLSearchParams();
+    if (deployment) params.set('deployment', deployment);
+    if (inline) params.set('inline', '1');
+    const query = params.toString();
+    return '/api/files' + encode(filePath) + (query ? '?' + query : '');
+}
+
+function siteOrigin(domain) {
+    if (!domain || domain === 'localhost') return location.origin;
+    return 'https://' + domain;
+}
+
+function publicFileUrl(domain, filePath) {
+    return siteOrigin(domain) + encode(filePath || '/');
+}
+
 function download(entries) {
     if (!Array.isArray(entries)) entries = [ entries ];
     if (!entries.length) return;
 
+    const deployment = entries[0].deployment || '';
+
     if (entries.length === 1 && entries[0].isFile) {
+        if (deployment) {
+            window.location.href = fileApiUrl(entries[0].filePath, deployment, false);
+            return;
+        }
         window.location.href = encode(entries[0].filePath) + '?download';
         return;
     }
 
     const paths = entries.map(function (entry) { return entry.filePath; });
     const name = entries.length === 1 ? (entries[0].fileName || 'download') : 'download';
-
-    window.location.href = '/api/zip?paths=' + encodeURIComponent(JSON.stringify(paths)) + '&name=' + encodeURIComponent(name);
+    let url = '/api/zip?paths=' + encodeURIComponent(JSON.stringify(paths)) + '&name=' + encodeURIComponent(name);
+    if (deployment) url += '&deployment=' + encodeURIComponent(deployment);
+    window.location.href = url;
 }
 
-function getPreviewUrl(entry, basePath) {
-    const path = '/_admin/mime-types/';
+function getPreviewUrl(entry, basePath, deployment) {
+    const iconPath = '/_admin/mime-types/';
 
-    if (entry.isDirectory || !entry.mimeType) return path + 'inode-directory.svg';
-    if (entry.mimeType.startsWith('image/')) return encode(sanitize(basePath + '/' + entry.fileName));
+    if (entry.isDirectory || !entry.mimeType) return iconPath + 'inode-directory.svg';
+    if (entry.mimeType.startsWith('image/')) {
+        const filePath = sanitize(basePath + '/' + entry.fileName);
+        if (deployment) return fileApiUrl(filePath, deployment, true);
+        return encode(filePath);
+    }
 
-    return path + getMimeIcon(entry.mimeType);
+    return iconPath + getMimeIcon(entry.mimeType);
 }
 
 // text subtypes the browser downloads instead of displaying inline
@@ -56,12 +84,13 @@ function hasViewer(entry) {
     return false;
 }
 
-function toDirectoryItems(entries, basePath, useHashNavigation) {
+function toDirectoryItems(entries, basePath, useHashNavigation, options) {
+    options = options || {};
     return entries.map(function (entry) {
-        const previewUrl = getPreviewUrl(entry, basePath);
+        const previewUrl = getPreviewUrl(entry, basePath, options.deployment);
         const href = entry.isDirectory
-            ? (useHashNavigation ? '#' + encode(entry.filePath) : encode(entry.filePath) + '/')
-            : encode(entry.filePath);
+            ? (useHashNavigation ? '#' + (options.hashPrefix || '') + encode(entry.filePath) : encode(entry.filePath) + '/')
+            : (options.domain ? publicFileUrl(options.domain, entry.filePath) : encode(entry.filePath));
 
         return {
             ...entry,
@@ -70,6 +99,8 @@ function toDirectoryItems(entries, basePath, useHashNavigation) {
             icon: previewUrl,
             previewUrl: previewUrl,
             href: href,
+            openUrl: options.domain ? publicFileUrl(options.domain, entry.filePath) : '',
+            deployment: options.deployment || '',
             size: entry.size,
             modified: new Date(entry.mtime),
             selected: false,
@@ -122,6 +153,9 @@ export {
     sanitize,
     encode,
     decode,
+    fileApiUrl,
+    siteOrigin,
+    publicFileUrl,
     download,
     getPreviewUrl,
     hasViewer,

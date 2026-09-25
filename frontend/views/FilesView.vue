@@ -78,13 +78,39 @@ import { ref, reactive, computed, onMounted, inject, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Breadcrumb, DirectoryView, InputDialog, ProgressBar, Spinner, SplitLayout, fetcher } from '@cloudron/pankow';
 import { eachLimit, each } from 'async';
-import { sanitize, encode, decode, download, toDirectoryItems, makeCurrentFolderPreviewEntry, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from '../utils.js';
+import { sanitize, encode, decode, download, toDirectoryItems, makeCurrentFolderPreviewEntry, publicFileUrl, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from '../utils.js';
 
 import Preview from '../components/Preview.vue';
 
 const logout = inject('logout');
+const sites = inject('sites');
 const route = useRoute();
 const router = useRouter();
+
+const deploymentName = computed(function () {
+  if (route.name === 'site' && route.params.name) return String(route.params.name).toLowerCase();
+  return 'default';
+});
+
+const siteDomain = computed(function () {
+  const row = (sites.value || []).find(function (site) { return site.name === deploymentName.value; });
+  return row ? row.domain : '';
+});
+
+function deployBase() {
+  return '/site/' + deploymentName.value;
+}
+
+function deployQuery() {
+  return { deployment: deploymentName.value };
+}
+
+function folderFromRoute() {
+  if (route.name !== 'site') return '/';
+  const match = route.params.pathMatch;
+  const suffix = Array.isArray(match) ? match.join('/') : (match || '');
+  return sanitize('/' + decode(suffix));
+}
 
 const upload = ref(null);
 const uploadFolder = ref(null);
@@ -103,7 +129,7 @@ const path = ref('/');
 const breadcrumbHomeItem = ref({
   label: '',
   icon: 'fa-solid fa-house',
-  route: '#/',
+  route: '#/site/default/',
   action: onHomeCrumb
 });
 const breadcrumbItems = ref([]);
@@ -113,8 +139,12 @@ const previewWidthVw = ref(getPreviewPanelWidthVw());
 const leftWidthPercent = computed(() => 100 - previewWidthVw.value);
 
 const previewEntry = computed(() => {
-  if (activeEntry.value.filePath) return activeEntry.value;
-  return makeCurrentFolderPreviewEntry(path.value);
+  const entry = activeEntry.value.filePath ? activeEntry.value : makeCurrentFolderPreviewEntry(path.value);
+  return {
+    ...entry,
+    deployment: deploymentName.value,
+    openUrl: publicFileUrl(siteDomain.value, entry.filePath || '/')
+  };
 });
 
 function error(header, message) {
@@ -124,12 +154,13 @@ function error(header, message) {
 
 function openPath(folderPath) {
   const next = sanitize(folderPath || '/');
-  if (sanitize(decode(route.fullPath)) === next) {
+  if (route.name === 'site' && folderFromRoute() === next) {
     loadDirectory(next);
     return;
   }
 
-  router.push(next).catch(function () {
+  const target = deployBase() + (next === '/' ? '/' : next);
+  router.push(target).catch(function () {
     loadDirectory(next);
   });
 }
@@ -153,13 +184,17 @@ async function loadDirectory(folderPath) {
   activeEntry.value = {};
 
   try {
-    const result = await fetcher.get('/api/files/' + encode(folderPath));
+    const result = await fetcher.get('/api/files/' + encode(folderPath), deployQuery());
     if (serial !== loadSerial) return;
     if (result.status === 401) return logout();
 
     busy.value = false;
 
-    entries.value = toDirectoryItems(result.body.entries, folderPath, true);
+    entries.value = toDirectoryItems(result.body.entries, folderPath, true, {
+      deployment: deploymentName.value,
+      domain: siteDomain.value,
+      hashPrefix: deployBase()
+    });
   } catch (e) {
     if (serial !== loadSerial) return;
     return console.error(e);
@@ -168,6 +203,7 @@ async function loadDirectory(folderPath) {
   if (serial !== loadSerial) return;
 
   path.value = folderPath;
+  breadcrumbHomeItem.value.route = '#' + deployBase() + '/';
   breadcrumbItems.value = decode(folderPath).split('/').filter(function (e) { return !!e; }).map(function (e, i, a) {
     const itemPath = sanitize('/' + a.slice(0, i).join('/') + '/' + e);
     function action(item, event) {
@@ -175,7 +211,7 @@ async function loadDirectory(folderPath) {
     }
     return {
       label: e,
-      route: '#' + itemPath,
+      route: '#' + deployBase() + itemPath,
       action: action
     };
   });
@@ -230,7 +266,7 @@ function uploadFiles(files, targetPath) {
         uploadStatus.percentDone = tmp > 100 ? 100 : tmp;
       });
 
-      xhr.open('POST', `/api/files${filePath}`);
+      xhr.open('POST', `/api/files${filePath}?deployment=${encodeURIComponent(deploymentName.value)}`);
       xhr.send(formData);
     });
 
@@ -314,7 +350,7 @@ async function openNewFolderDialog() {
   const folderPath = encode(sanitize(path.value + '/' + newFolderName));
 
   try {
-    const result = await fetcher.post(`/api/files${folderPath}`, {}, { directory: true });
+    const result = await fetcher.post(`/api/files${folderPath}`, {}, { directory: true, deployment: deploymentName.value });
     if (result.status === 401) return logout();
     if (result.status === 403) return window.pankow.notify({ type: 'danger', text: 'Folder name not allowed' });
     if (result.status === 409) return window.pankow.notify({ type: 'danger', text: 'Folder already exists' });
@@ -356,7 +392,7 @@ async function onDelete(items) {
     const filePath = encode(sanitize(path.value + '/' + entry.fileName));
 
     try {
-      const result = await fetcher.del(`/api/files${filePath}`, {}, { recursive: true });
+      const result = await fetcher.del(`/api/files${filePath}`, {}, { recursive: true, deployment: deploymentName.value });
       if (result.status === 401) return logout();
       if (result.status !== 200) return error('Error deleting file');
     } catch (e) {
@@ -384,7 +420,7 @@ async function onRenameRequested(entry) {
   const newFilePath = sanitize(path.value + '/' + newFileName);
 
   try {
-    const result = await fetcher.put(`/api/files${filePath}`, { newFilePath: newFilePath });
+    const result = await fetcher.put(`/api/files${filePath}`, { newFilePath: newFilePath }, deployQuery());
     if (result.status === 401) return logout();
     if (result.status !== 200) return error('Error renaming file');
   } catch (e) {
@@ -406,7 +442,7 @@ async function moveItems(items, targetDir) {
     if (entry.isDirectory && (newFilePath + '/').indexOf(sanitize(entry.filePath) + '/') === 0) continue;
 
     try {
-      const result = await fetcher.put(`/api/files${encode(entry.filePath)}`, { newFilePath: newFilePath, overwrite: 'rename' });
+      const result = await fetcher.put(`/api/files${encode(entry.filePath)}`, { newFilePath: newFilePath, overwrite: 'rename' }, deployQuery());
       if (result.status === 401) return logout();
       if (result.status !== 200) return error('Error moving ' + entry.fileName);
     } catch (e) {
@@ -427,7 +463,7 @@ async function onPaste(action, files, targetItem) {
 
   if (action === 'copy') {
     try {
-      const result = await fetcher.post('/api/copy', { sources: files.map(function (f) { return f.filePath; }), destination: targetDir });
+      const result = await fetcher.post('/api/copy', { sources: files.map(function (f) { return f.filePath; }), destination: targetDir }, deployQuery());
       if (result.status === 401) return logout();
       if (result.status !== 201) return error('Error copying files');
     } catch (e) {
@@ -440,7 +476,7 @@ async function onPaste(action, files, targetItem) {
 
 async function onExtract(item) {
   try {
-    const result = await fetcher.post('/api/extract', { path: item.filePath });
+    const result = await fetcher.post('/api/extract', { path: item.filePath }, deployQuery());
     if (result.status === 401) return logout();
     if (result.status !== 200) return error('Error extracting ' + item.fileName);
   } catch (e) {
@@ -457,7 +493,7 @@ function onEntryOpen(entry) {
     return;
   }
 
-  window.open(entry.href, '_blank');
+  window.open(entry.openUrl || entry.href, '_blank');
 }
 
 function onSelectionChanged(selectedEntries) {
@@ -471,9 +507,9 @@ function onSplitResize(leftWidth) {
 
 defineExpose({ onUpload, onUploadFolder, openNewFolderDialog });
 
-watch(function () { return route.fullPath; }, function (fullPath) {
-  if (route.name !== 'files') return;
-  loadDirectory(decode(fullPath));
+watch(function () { return route.fullPath; }, function () {
+  if (route.name !== 'site') return;
+  loadDirectory(folderFromRoute());
 }, { immediate: true });
 
 onMounted(() => {

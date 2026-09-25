@@ -26,7 +26,7 @@
       <div class="actions">
         <Button outline v-show="entry.isFile || entry.isDirectory" icon="fa-solid fa-download" @click="onDownload(entry)">Download</Button>
         <Button outline icon="fa-regular fa-copy" @click="onCopyLink(entry)">Copy link</Button>
-        <Button outline icon="fa-solid fa-arrow-up-right-from-square" :href="encode(entry.filePath)" target="_blank">Open</Button>
+        <Button outline icon="fa-solid fa-arrow-up-right-from-square" :href="openHref" target="_blank">Open</Button>
       </div>
     </div>
   </div>
@@ -36,7 +36,7 @@
 
 import { ref, computed, watch } from 'vue';
 import { Button } from '@cloudron/pankow';
-import { download, encode, getPreviewUrl, hasViewer, sanitize } from '../utils.js';
+import { download, encode, fileApiUrl, getPreviewUrl, hasViewer, sanitize } from '../utils.js';
 import { copyToClipboard } from '@cloudron/pankow/utils';
 
 const props = defineProps({
@@ -51,6 +51,11 @@ let iframeSourceTimeout = null;
 
 const showFilenameInHeader = computed(() => {
   return !!(props.entry.filePath && hasViewer(props.entry));
+});
+
+const openHref = computed(() => {
+  if (props.entry.openUrl) return props.entry.openUrl;
+  return encode(props.entry.filePath);
 });
 
 const staticPreviewSrc = computed(() => {
@@ -84,7 +89,9 @@ watch(() => props.entry, (newEntry) => {
 
   iFrameSource.value = newEntry.previewUrl || 'about:blank';
 
-  iframeSourceTimeout = setTimeout(() => { iFrameSource.value = encode(newEntry.filePath); }, 100);
+  iframeSourceTimeout = setTimeout(() => {
+    iFrameSource.value = newEntry.deployment ? fileApiUrl(newEntry.filePath, newEntry.deployment, true) : encode(newEntry.filePath);
+  }, 100);
 });
 
 function onIframeLoad(e) {
@@ -109,7 +116,7 @@ function onDownload(entry) {
 }
 
 function onCopyLink(entry) {
-  copyToClipboard(location.origin + encode(entry.filePath));
+  copyToClipboard(entry.openUrl || (location.origin + encode(entry.filePath)));
   window.pankow.notify({ type:'success', text: 'Link copied to clipboard' });
 }
 

@@ -291,6 +291,22 @@ describe('Application life cycle test', function () {
         assert.ok(Array.isArray(res.body));
         assert.ok(res.body.some(function (entry) { return entry.username === gUsername; }));
     });
+    it('lists the primary site', async function () {
+        const res = await authed(superagent.get(`https://${app.fqdn}/api/sites`));
+        assert.strictEqual(res.status, 200);
+        assert.ok(Array.isArray(res.body));
+        assert.ok(res.body.some(function (entry) {
+            return entry.domain === app.fqdn && entry.publicDir === 'public' && entry.name === 'default';
+        }));
+    });
+    it('rejects a site on the primary domain', async function () {
+        const res = await authed(superagent.post(`https://${app.fqdn}/api/sites`).send({ name: 'alpha', domain: app.fqdn }));
+        assert.strictEqual(res.status, 400);
+    });
+    it('rejects a duplicate site name', async function () {
+        const res = await authed(superagent.post(`https://${app.fqdn}/api/sites`).send({ name: 'default', domain: 'alpha.example.com' }));
+        assert.strictEqual(res.status, 409);
+    });
   
     it('uninstall app', cloudronCli.uninstall);
 });
