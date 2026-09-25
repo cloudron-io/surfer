@@ -401,6 +401,7 @@ router.get   ('/api/history', auth.requireAuth, history.get);
 router.get   ('/api/sites', auth.requireAuth, deploys.list);
 router.post  ('/api/sites', auth.requireAuth, deploys.create);
 router.put   ('/api/sites/:domain', auth.requireAuth, deploys.update);
+router.delete('/api/sites/:domain', auth.requireAuth, deploys.remove);
 router.post  ('/api/sites/:name/default', auth.requireAuth, deploy.promote);
 router.get   ('/api/zip', handleProtection, handleZipDownload);
 router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });

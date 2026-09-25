@@ -323,6 +323,14 @@ describe('Application life cycle test', function () {
         const res = await authed(superagent.put(`https://${app.fqdn}/api/sites/missing.example.com`).send({ name: 'alpha', domain: 'alpha.example.com' }));
         assert.strictEqual(res.status, 404);
     });
+    it('rejects removing the default site', async function () {
+        const res = await authed(superagent.delete(`https://${app.fqdn}/api/sites/${encodeURIComponent(app.fqdn)}`));
+        assert.strictEqual(res.status, 400);
+    });
+    it('rejects removing an unknown site', async function () {
+        const res = await authed(superagent.delete(`https://${app.fqdn}/api/sites/missing.example.com`));
+        assert.strictEqual(res.status, 404);
+    });
   
     it('uninstall app', cloudronCli.uninstall);
 });

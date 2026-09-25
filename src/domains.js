@@ -6,9 +6,9 @@ import database from './database.js';
 export default {
     init,
     publicDirForHost,
-    publicDirInUse,
     list,
     insert,
+    remove,
     rowForDomain,
     updateSite,
 };
@@ -21,7 +21,7 @@ function init(dataDir, primaryDomain, aliasHostnames) {
     database.exec(`
         CREATE TABLE IF NOT EXISTS sites (
             domain TEXT PRIMARY KEY,
-            publicDir TEXT NOT NULL
+            publicDir TEXT NOT NULL UNIQUE
         );
     `);
 
@@ -45,8 +45,12 @@ function init(dataDir, primaryDomain, aliasHostnames) {
 
         const existing = database.get('SELECT domain FROM sites WHERE domain = ?', [ hostname ]);
         if (existing) continue;
+        const dirUsed = database.get('SELECT domain FROM sites WHERE publicDir = ?', [ entry.name ]);
+        if (dirUsed) continue;
         database.run('INSERT INTO sites (domain, publicDir) VALUES (?, ?)', [ hostname, entry.name ]);
     }
+
+    database.exec('CREATE UNIQUE INDEX IF NOT EXISTS sites_publicDir ON sites(publicDir)');
 }
 
 function publicDirForHost(host) {
@@ -55,17 +59,16 @@ function publicDirForHost(host) {
     return row ? row.publicDir : null;
 }
 
-function publicDirInUse(publicDir) {
-    if (!publicDir) return false;
-    return !!database.get('SELECT domain FROM sites WHERE publicDir = ?', [ publicDir ]);
-}
-
 function list() {
     return database.all('SELECT domain, publicDir FROM sites ORDER BY publicDir, domain');
 }
 
 function insert(domain, publicDir) {
     database.run('INSERT INTO sites (domain, publicDir) VALUES (?, ?)', [ domain, publicDir ]);
+}
+
+function remove(domain) {
+    database.run('DELETE FROM sites WHERE domain = ?', [ domain ]);
 }
 
 function rowForDomain(domain) {

@@ -14,6 +14,7 @@ const editDialog = useTemplateRef('editDialog');
 const siteNameInput = useTemplateRef('siteNameInput');
 const editNameInput = useTemplateRef('editNameInput');
 const promoteDialog = useTemplateRef('promoteDialog');
+const removeDialog = useTemplateRef('removeDialog');
 const viewRef = ref(null);
 const route = useRoute();
 const router = useRouter();
@@ -31,6 +32,10 @@ const editError = ref('');
 const promoting = ref(false);
 const promoteName = ref('');
 const promoteError = ref('');
+const removing = ref(false);
+const removeName = ref('');
+const removeDomain = ref('');
+const removeError = ref('');
 const locationUrl = ref('');
 
 const filesPath = computed(function () {
@@ -108,6 +113,12 @@ function siteActions(site) {
     label: 'Deploy to default',
     icon: 'fa-solid fa-arrow-right',
     action: function () { openPromote(site); }
+  }, {
+    separator: true,
+  }, {
+    label: 'Remove',
+    icon: 'fa-solid fa-trash',
+    action: function () { openRemove(site); }
   }];
 }
 
@@ -171,6 +182,40 @@ function openPromote(site) {
   promoteName.value = site.name;
   promoteError.value = '';
   promoteDialog.value?.open();
+}
+
+function openRemove(site) {
+  removeName.value = site.name;
+  removeDomain.value = site.domain;
+  removeError.value = '';
+  removeDialog.value?.open();
+}
+
+async function onRemove() {
+  if (removing.value) return;
+
+  const name = removeName.value;
+  const domain = removeDomain.value;
+  if (!domain) return;
+
+  removing.value = true;
+  removeError.value = '';
+  try {
+    const result = await fetcher.del('/api/sites/' + encodeURIComponent(domain), null);
+    if (result.status === 401) return login();
+    if (result.status !== 200) {
+      removeError.value = (result.body && (result.body.message || result.body.error)) || 'Could not remove site';
+      return;
+    }
+
+    removeDialog.value?.close();
+    await loadDeploys();
+    if (route.name === 'site' && String(route.params.name) === name) router.replace('/site/default/');
+  } catch (e) {
+    removeError.value = e.message || 'Could not remove site';
+  } finally {
+    removing.value = false;
+  }
 }
 
 async function onPromote() {
@@ -369,6 +414,10 @@ onMounted(loadProfile);
     <Dialog ref="promoteDialog" title="Deploy to default site" confirm-label="Deploy" reject-label="Cancel" confirm-style="success" reject-style="secondary" :confirm-busy="promoting" @confirm="onPromote">
       <p class="deploy-promote">Replace Default with the files from {{ promoteName }}. This site remains unchanged.</p>
       <span v-if="promoteError" class="deploy-error">{{ promoteError }}</span>
+    </Dialog>
+    <Dialog ref="removeDialog" title="Remove site" confirm-label="Remove" reject-label="Cancel" confirm-style="danger" reject-style="secondary" :confirm-busy="removing" @confirm="onRemove">
+      <p class="deploy-promote">Remove {{ removeName }} and delete its files?</p>
+      <span v-if="removeError" class="deploy-error">{{ removeError }}</span>
     </Dialog>
   </div>
 </template>
