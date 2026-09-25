@@ -407,3 +407,7 @@
 * Update surfer to 7.1.1
 * Various fixes to deployment and sites
 
+[7.2.0]
+* Update surfer to 7.1.2
+* Fix the preview UI
+
