@@ -8,13 +8,14 @@ const primaryDomain = 'app.example.com';
 const aliasDomain = 'alpha.example.com';
 
 let dataDir = '';
+let filesDirectory = '';
 let child = null;
 let serverUrl = '';
 
 function setup() {
     dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'surfer-route-'));
-    const publicDir = path.join(dataDir, 'files');
-    fs.mkdirSync(publicDir);
+    filesDirectory = path.join(dataDir, 'files');
+    fs.mkdirSync(filesDirectory);
 
     const env = {
         PATH: process.env.PATH,
@@ -25,7 +26,7 @@ function setup() {
         CLOUDRON_ALIAS_DOMAINS: aliasDomain,
     };
 
-    child = spawn(process.execPath, [ serverJs, publicDir, path.join(dataDir, 'db.sqlite') ], {
+    child = spawn(process.execPath, [ serverJs, filesDirectory, path.join(dataDir, 'db.sqlite') ], {
         env,
         stdio: [ 'ignore', 'pipe', 'pipe' ],
     });
@@ -59,6 +60,7 @@ function cleanup() {
     const dir = dataDir;
     const proc = child;
     dataDir = '';
+    filesDirectory = '';
     child = null;
     serverUrl = '';
 
@@ -81,10 +83,15 @@ function url() {
     return serverUrl;
 }
 
+function filesDir() {
+    return filesDirectory;
+}
+
 export default {
     setup,
     cleanup,
     url,
+    filesDir,
     primaryDomain,
     aliasDomain,
 };

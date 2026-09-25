@@ -38,17 +38,29 @@ describe('domains', function () {
     });
 
     it('serves Default for an alias with no site', function () {
-        const resolved = sites.resolveRequest({ headers: { host: 'alpha.example.com' } });
-        assert.equal(resolved.root, sites.primaryRoot);
+        process.env.CLOUDRON_APP_DOMAIN = 'app.example.com';
+        process.env.CLOUDRON_ALIAS_DOMAINS = 'alpha.example.com';
+        try {
+            const resolved = sites.resolveRequest({ headers: { host: 'alpha.example.com' } });
+            assert.equal(resolved.root, sites.primaryRoot);
+        } finally {
+            delete process.env.CLOUDRON_APP_DOMAIN;
+            delete process.env.CLOUDRON_ALIAS_DOMAINS;
+        }
     });
 
     it('serves the mapped directory for an alias site', function () {
+        process.env.CLOUDRON_APP_DOMAIN = 'app.example.com';
+        process.env.CLOUDRON_ALIAS_DOMAINS = 'alpha.example.com';
         domains.insert('alpha.example.com', 'public-alpha');
-
-        const resolved = sites.resolveRequest({ headers: { host: 'alpha.example.com' } });
-        assert.equal(resolved.root, path.resolve(sites.dataDir, 'public-alpha'));
-
-        domains.remove('alpha.example.com');
+        try {
+            const resolved = sites.resolveRequest({ headers: { host: 'alpha.example.com' } });
+            assert.equal(resolved.root, path.resolve(sites.dataDir, 'public-alpha'));
+        } finally {
+            domains.remove('alpha.example.com');
+            delete process.env.CLOUDRON_APP_DOMAIN;
+            delete process.env.CLOUDRON_ALIAS_DOMAINS;
+        }
     });
 
     it('removes a site row', function () {

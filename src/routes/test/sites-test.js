@@ -1,10 +1,12 @@
 import { describe, it, before, after } from 'mocha';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import superagent from '@cloudron/superagent';
 import common from './common.js';
 
 describe('Sites API', function () {
-    const { setup, cleanup, url, primaryDomain, aliasDomain } = common;
+    const { setup, cleanup, url, filesDir, primaryDomain, aliasDomain } = common;
 
     before(setup);
     after(cleanup);
@@ -43,12 +45,28 @@ describe('Sites API', function () {
         assert.equal(response.status, 409);
     });
 
+    it('serves Default for an alias with no site', async function () {
+        fs.writeFileSync(path.join(filesDir(), 'marker.txt'), 'default-marker');
+
+        const response = await superagent.get(`${url()}/marker.txt`).set('Host', aliasDomain);
+        assert.equal(response.status, 200);
+        assert.equal(response.text, 'default-marker');
+    });
+
     it('creates a site on a free alias', async function () {
         const response = await superagent.post(`${url()}/api/sites`)
             .send({ name: 'alpha', domain: aliasDomain });
 
         assert.equal(response.status, 201);
         assert.deepStrictEqual(response.body, { name: 'alpha', publicDir: 'public-alpha', domain: aliasDomain });
+    });
+
+    it('serves the alias site instead of Default', async function () {
+        fs.writeFileSync(path.join(filesDir(), '..', 'public-alpha', 'marker.txt'), 'site-marker');
+
+        const response = await superagent.get(`${url()}/marker.txt`).set('Host', aliasDomain);
+        assert.equal(response.status, 200);
+        assert.equal(response.text, 'site-marker');
     });
 
     it('rejects editing the default site', async function () {
