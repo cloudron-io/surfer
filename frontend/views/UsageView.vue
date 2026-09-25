@@ -33,6 +33,7 @@
           <li><code @click="onCopyToClipboard(putCommand)">{{ putCommand }}</code></li>
           <li><code @click="onCopyToClipboard(deployCommand)">{{ deployCommand }}</code> replaces Default</li>
           <li><code @click="onCopyToClipboard(deploySiteCommand)">{{ deploySiteCommand }}</code> replaces that site</li>
+          <li><code @click="onCopyToClipboard(createSiteCommand)">{{ createSiteCommand }}</code> creates the site, then replaces it</li>
         </ul>
       </SectionItem>
     </div>
@@ -55,7 +56,8 @@ const installCommand = 'npm install -g @cloudron/surfer';
 const configCommand = `surfer config --server ${origin} --username <username> --password <app password>`;
 const putCommand = 'surfer put file.txt /';
 const deployCommand = 'surfer deploy ./dist -m "Build from commit abc"';
-const deploySiteCommand = 'surfer deploy ./dist --deployment alpha';
+const deploySiteCommand = 'surfer deploy ./dist --site-name alpha';
+const createSiteCommand = 'surfer deploy ./dist --site-name alpha --domain alpha.example.com';
 const appPasswordsUrl = ref('');
 
 onMounted(async () => {

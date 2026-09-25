@@ -280,12 +280,76 @@ async function put(filePaths, options) {
     console.log('Done');
 }
 
+async function readBody(response) {
+    const text = await response.text();
+    if (!text) return null;
+
+    const body = safe(function () { return JSON.parse(text); });
+    return safe.error ? text : body;
+}
+
+function bodyMessage(body, status) {
+    if (body && typeof body === 'object' && body.message) return body.message;
+    if (typeof body === 'string' && body) return body;
+    return `Request failed. ${status}`;
+}
+
+// Create the site when it does not exist. A matching name and domain is left alone.
+// A name that already uses a different domain stops the deploy.
+async function ensureSite(siteName, domain) {
+    if (domain && !siteName) return 'Pass --site-name with --domain';
+    if (!siteName || siteName === 'default') {
+        if (domain) return 'The default site does not take an alias domain';
+        return '';
+    }
+
+    const [listError, listed] = await safe(fetch(`${gServer}/api/sites`, {
+        headers: { Authorization: gAuthHeader },
+    }));
+    if (listError) return listError.message;
+    if (listed.status === 401) return 'Invalid username or password';
+
+    const listedBody = await readBody(listed);
+    if (listed.status !== 200 || !Array.isArray(listedBody)) return bodyMessage(listedBody, listed.status);
+
+    const matches = listedBody.filter(function (row) { return row && row.name === siteName; });
+    if (matches.length) {
+        if (!domain) return '';
+        const domains = matches.map(function (row) { return row.domain; }).filter(Boolean);
+        if (domains.includes(domain)) return '';
+        return `Site ${siteName} is already served at ${domains.join(', ')}`;
+    }
+
+    if (!domain) return `Site ${siteName} does not exist. Pass --domain to create it`;
+
+    const [createError, created] = await safe(fetch(`${gServer}/api/sites`, {
+        method: 'POST',
+        headers: {
+            Authorization: gAuthHeader,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: siteName, domain: domain }),
+    }));
+    if (createError) return createError.message;
+    if (created.status === 401) return 'Invalid username or password';
+
+    const createdBody = await readBody(created);
+    if (created.status !== 201) return bodyMessage(createdBody, created.status);
+
+    console.log(`Created site ${siteName} (${domain})`);
+    return '';
+}
+
 async function deploy(dir, options) {
     checkConfig(options);
 
     if (typeof options.message === 'string' && options.message.trim().length > 1000) return exit('Deploy message is too long');
 
-    const deployment = typeof options.deployment === 'string' ? options.deployment.trim() : '';
+    const deployment = typeof options.siteName === 'string' ? options.siteName.trim().toLowerCase() : '';
+    const domain = typeof options.domain === 'string' ? options.domain.trim().toLowerCase() : '';
+
+    const siteError = await ensureSite(deployment, domain);
+    if (siteError) return exit(siteError);
 
     const absoluteDir = path.resolve(process.cwd(), dir);
     const stat = safe.fs.statSync(absoluteDir);

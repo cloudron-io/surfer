@@ -28,7 +28,8 @@ Put some files:
 
     surfer put [file]
 
-Replace a site with the contents of a directory. Use --deployment to publish a named site:
+Replace a site with the contents of a directory. Use --site-name to publish a named site. Pass --domain to create that site when it does not exist:
 
     surfer deploy ./dist -m "Build from commit abc"
-    surfer deploy ./dist --deployment alpha
+    surfer deploy ./dist --site-name alpha
+    surfer deploy ./dist --site-name alpha --domain alpha.example.com

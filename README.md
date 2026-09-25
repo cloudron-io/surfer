@@ -45,10 +45,11 @@ Put some files:
 surfer put [file]
 ```
 
-Replace a site with the contents of a directory. With no flag this replaces Default (`public/`). `--deployment` publishes a site created in the admin, such as `public-alpha`:
+Replace a site with the contents of a directory. With no flag this replaces Default (`public/`). `--site-name` publishes a named site. `--domain` creates that site first when it does not exist, and the domain must be an alias that is not already in use:
 
 ```bash
 surfer deploy ./dist -m "Build from commit abc"
-surfer deploy ./dist --deployment alpha
+surfer deploy ./dist --site-name alpha
+surfer deploy ./dist --site-name alpha --domain alpha.example.com
 ```
 

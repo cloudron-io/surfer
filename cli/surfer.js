@@ -47,15 +47,17 @@ program.command('deploy <dir>')
     .option('-u, --username <username>', 'Cloudron username (optional)')
     .option('-p, --password <app password>', 'Cloudron app password (optional)')
     .option('-m, --message <text>', 'Note stored with this deploy')
-    .option('--deployment <name>', 'Site name to replace')
+    .option('--site-name <name>', 'Site name to replace')
+    .option('--domain <domain>', 'Alias domain, used when the site does not exist yet')
     .action(actions.deploy)
     .on('--help', function() {
         console.log();
         console.log('  Examples:');
         console.log();
-        console.log('    $ surfer deploy ./dist                              # contents of ./dist become public/');
-        console.log('    $ surfer deploy ./dist -m "Build from commit abc"   # stores a note with the deploy');
-        console.log('    $ surfer deploy ./dist --deployment alpha           # publish the alpha site');
+        console.log('    $ surfer deploy ./dist                                              # contents of ./dist become public/');
+        console.log('    $ surfer deploy ./dist -m "Build from commit abc"                   # stores a note with the deploy');
+        console.log('    $ surfer deploy ./dist --site-name alpha                            # publish the alpha site');
+        console.log('    $ surfer deploy ./dist --site-name alpha --domain alpha.example.com # create alpha, then publish it');
         console.log();
     });
 
