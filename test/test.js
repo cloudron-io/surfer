@@ -248,7 +248,7 @@ describe('Application life cycle test', function () {
     it('uninstall app', cloudronCli.uninstall);
 
     it('can install app for update', cloudronCli.appstoreInstall);
-  
+
     it('can login', loginNoIndex);
     it('can create app password', ensureAppPassword);
     it('can cli login', cliLogin);
@@ -261,9 +261,9 @@ describe('Application life cycle test', function () {
     it('special folder names allow public listings', checkFilesInSpecialFolder);
     it('can upload folder', uploadFolder);
     it('can logout', logout);
-  
+
     it('can update', cloudronCli.update);
-  
+
     it('can login', login);
     it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
     it('file is served up', checkFileIsPresent);
@@ -271,7 +271,7 @@ describe('Application life cycle test', function () {
     it('special file in folder exists', checkFileInFolder);
     it('special folder names allow public listings', checkFilesInSpecialFolder);
     it('can logout', logout);
-  
+
     it('can deploy a directory', function () {
         runCli(`deploy ${JSON.stringify(path.join(import.meta.dirname, 'deploy-site'))}`, { stdio: 'inherit' });
     });
@@ -279,7 +279,7 @@ describe('Application life cycle test', function () {
         const deployed = await superagent.get(`https://${app.fqdn}/deployed.txt`).ok(() => true);
         assert.strictEqual(deployed.status, 200);
         assert.strictEqual(deployed.text, 'deployed\n');
-  
+
         const hidden = await superagent.get(`https://${app.fqdn}/.well-known/ping.txt`).ok(() => true);
         assert.strictEqual(hidden.status, 200);
         assert.strictEqual(hidden.text, 'pong\n');
@@ -324,13 +324,13 @@ describe('Application life cycle test', function () {
         assert.strictEqual(res.status, 404);
     });
     it('rejects removing the default site', async function () {
-        const res = await authed(superagent.delete(`https://${app.fqdn}/api/sites/${encodeURIComponent(app.fqdn)}`));
+        const res = await authed(superagent.del(`https://${app.fqdn}/api/sites/${encodeURIComponent(app.fqdn)}`));
         assert.strictEqual(res.status, 400);
     });
     it('rejects removing an unknown site', async function () {
-        const res = await authed(superagent.delete(`https://${app.fqdn}/api/sites/missing.example.com`));
+        const res = await authed(superagent.del(`https://${app.fqdn}/api/sites/missing.example.com`));
         assert.strictEqual(res.status, 404);
     });
-  
+
     it('uninstall app', cloudronCli.uninstall);
 });
