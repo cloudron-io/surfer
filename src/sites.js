@@ -6,8 +6,8 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import safe from '@cloudron/safetydance';
 import domains from './domains.js';
 
-// primaryRoot is the real public/ directory. Other sites are sibling directories
-// public-<name>. The sites table maps a hostname to one of those directory names.
+// primaryRoot is the real public/ directory (Default). Other sites are sibling directories
+// public-<name>. A host with no sites row, including an alias, serves Default.
 // CLOUDRON_ALIAS_DOMAINS is a comma-separated list of exact hostnames and single-label
 // wildcards such as *.example.com.
 const primaryRoot = path.resolve(import.meta.dirname, '..', process.argv[2] || 'files');
@@ -22,7 +22,6 @@ export default {
     primaryRoot,
     dataDir,
     aliasPatterns,
-    exactAliases,
     primaryName,
     isDeployName,
     matchAlias,
@@ -30,7 +29,6 @@ export default {
     readDeployment,
     rootForQuery,
     deploymentRoot,
-    folderForHostname,
     rootForPublicDir,
     prepare,
     contains,
@@ -50,12 +48,6 @@ function primaryHost() {
 
 function primaryName() {
     return primaryHost() || 'localhost';
-}
-
-function exactAliases() {
-    return aliasPatterns().filter(function (pattern) {
-        return !pattern.includes('*') && isHostname(pattern);
-    });
 }
 
 function isHostname(value) {
@@ -100,14 +92,6 @@ function matchAlias(hostname) {
     return null;
 }
 
-function folderForHostname(hostname) {
-    if (!isHostname(hostname)) return null;
-
-    const root = path.resolve(dataDir, 'public-' + hostname);
-    if (!contains(dataDir, root)) return null;
-    return root;
-}
-
 function rootForPublicDir(name) {
     if (name === 'public') return primaryRoot;
     if (typeof name !== 'string' || !name.startsWith('public-')) return null;
@@ -128,11 +112,8 @@ function resolveRequest(req) {
         if (root) return { site: host === primaryName() ? '' : host, root };
     }
 
-    if (!matchAlias(host)) return { site: '', root: primaryRoot };
-
-    const missing = path.resolve(dataDir, 'public-' + host);
-    if (!contains(dataDir, missing)) return { site: host, root: primaryRoot };
-    return { site: host, root: missing };
+    // Primary and any alias without its own site both serve Default.
+    return { site: '', root: primaryRoot };
 }
 
 function badDeployment(text) {

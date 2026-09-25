@@ -27,7 +27,7 @@ sites.prepare();
 
 console.log(`Using database at: ${DB_FILE}`);
 settings.init(DB_FILE);
-domains.init(sites.dataDir, sites.primaryName(), sites.exactAliases());
+domains.init(sites.primaryName());
 history.init();
 const config = settings.load();
 

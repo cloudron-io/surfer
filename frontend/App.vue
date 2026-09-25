@@ -353,7 +353,7 @@ onMounted(loadProfile);
       <div v-for="site in sites" :key="site.domain" class="deploy-row" :class="{ active: route.name === 'site' && String(route.params.name) === site.name }">
         <RouterLink class="side-bar-entry deploy-entry" :to="pathForDeploy(site.name)" @click="onCloseSidebar">
           <span class="deploy-name">{{ site.name === 'default' ? 'Default' : site.name }}</span>
-          <span class="deploy-domain">{{ site.domain }}</span>
+          <span v-if="site.name !== 'default'" class="deploy-domain">{{ site.domain }}</span>
         </RouterLink>
         <Button v-if="site.name !== 'default'" class="site-more" plain tool :show-dropdown="false" icon="fa-solid fa-ellipsis" title="Site actions" :menu="siteActions(site)"/>
       </div>

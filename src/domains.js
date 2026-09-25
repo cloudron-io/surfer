@@ -1,6 +1,5 @@
 'use strict';
 
-import fs from 'node:fs';
 import database from './database.js';
 
 export default {
@@ -13,7 +12,7 @@ export default {
     updateSite,
 };
 
-function init(dataDir, primaryDomain, aliasHostnames) {
+function init(primaryDomain) {
     const tables = database.all(`SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('domains', 'sites')`);
     const names = new Set(tables.map(function (row) { return row.name; }));
     if (names.has('domains') && !names.has('sites')) database.exec('ALTER TABLE domains RENAME TO sites');
@@ -32,26 +31,6 @@ function init(dataDir, primaryDomain, aliasHostnames) {
             if (!owner) database.run('INSERT INTO sites (domain, publicDir) VALUES (?, ?)', [ primaryDomain, 'public' ]);
             else database.run('UPDATE sites SET domain = ? WHERE domain = ?', [ primaryDomain, owner.domain ]);
         }
-    }
-
-    const aliases = new Set(aliasHostnames || []);
-    let entries;
-    try {
-        entries = fs.readdirSync(dataDir, { withFileTypes: true });
-    } catch {
-        entries = [];
-    }
-
-    for (const entry of entries) {
-        if (!entry.isDirectory() || !entry.name.startsWith('public-')) continue;
-        const hostname = entry.name.slice('public-'.length);
-        if (!aliases.has(hostname)) continue;
-
-        const existing = database.get('SELECT domain FROM sites WHERE domain = ?', [ hostname ]);
-        if (existing) continue;
-        const dirUsed = database.get('SELECT domain FROM sites WHERE publicDir = ?', [ entry.name ]);
-        if (dirUsed) continue;
-        database.run('INSERT INTO sites (domain, publicDir) VALUES (?, ?)', [ hostname, entry.name ]);
     }
 
     database.exec('CREATE UNIQUE INDEX IF NOT EXISTS sites_publicDir ON sites(publicDir)');
