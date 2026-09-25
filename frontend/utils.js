@@ -61,27 +61,13 @@ function getPreviewUrl(entry, basePath, deployment) {
     const iconPath = '/_admin/mime-types/';
 
     if (entry.isDirectory || !entry.mimeType) return iconPath + 'inode-directory.svg';
-    if (entry.mimeType.startsWith('image/')) {
+    if (entry.mimeType.startsWith('image/') && entry.mimeType !== 'image/vnd.adobe.photoshop') {
         const filePath = sanitize(basePath + '/' + entry.fileName);
         if (deployment) return fileApiUrl(filePath, deployment, true);
         return encode(filePath);
     }
 
     return iconPath + getMimeIcon(entry.mimeType);
-}
-
-// text subtypes the browser downloads instead of displaying inline
-const NON_PREVIEW_TEXT_SUBTYPES = [ 'csv', 'csv-schema', 'tab-separated-values', 'calendar', 'vcard', 'x-vcard', 'directory', 'rtf', 'richtext' ];
-
-function hasViewer(entry) {
-    if (entry.isDirectory || !entry.mimeType) return false;
-    if (entry.mimeType.startsWith('image/')) return true;
-    if (entry.mimeType.startsWith('audio/')) return true;
-    if (entry.mimeType.startsWith('video/')) return true;
-    if (entry.mimeType === 'application/pdf') return true;
-    if (entry.mimeType.startsWith('text/')) return !NON_PREVIEW_TEXT_SUBTYPES.includes(entry.mimeType.slice('text/'.length).split(';')[0].toLowerCase());
-
-    return false;
 }
 
 function toDirectoryItems(entries, basePath, useHashNavigation, options) {
@@ -158,7 +144,6 @@ export {
     publicFileUrl,
     download,
     getPreviewUrl,
-    hasViewer,
     toDirectoryItems,
     makeCurrentFolderPreviewEntry,
     getPreviewPanelWidthVw,
