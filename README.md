@@ -45,9 +45,10 @@ Put some files:
 surfer put [file]
 ```
 
-Replace the whole site with the contents of a directory:
+Replace the whole site with the contents of a directory. The primary domain serves that directory. An alias domain, including a wildcard such as `*.example.com`, is published with `--site` and the concrete hostname:
 
 ```bash
 surfer deploy ./dist -m "Build from commit abc"
+surfer deploy ./dist --site blog.example.com
 ```
 

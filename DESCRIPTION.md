@@ -28,6 +28,7 @@ Put some files:
 
     surfer put [file]
 
-Replace the whole site with the contents of a directory:
+Replace the whole site with the contents of a directory. Use --site to publish an alias domain:
 
     surfer deploy ./dist -m "Build from commit abc"
+    surfer deploy ./dist --site blog.example.com

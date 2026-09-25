@@ -23,6 +23,7 @@ import { TableView, fetcher } from '@cloudron/pankow';
 const columns = {
   at: { label: 'When', sort: true },
   who: { label: 'Who', sort: true },
+  site: { label: 'Site', sort: true },
   message: { label: 'Message' },
 };
 
@@ -37,7 +38,7 @@ async function load() {
     const result = await fetcher.get('/api/deploys');
     if (result.status !== 200 || !Array.isArray(result.body)) return;
     deploys.value = result.body.map(function (entry) {
-      return { at: entry.at, who: who(entry), message: entry.message || '' };
+      return { at: entry.at, who: who(entry), site: entry.site || 'Primary', message: entry.message || '' };
     });
   } catch {
     deploys.value = [];

@@ -21,8 +21,9 @@ import extract from './src/extract.js';
 import deploy from './src/deploy.js';
 import settings from './src/settings.js';
 import deploys from './src/deploys.js';
+import sites from './src/sites.js';
 
-const ROOT_FOLDER = path.resolve(import.meta.dirname, process.argv[2] || 'files');
+const ROOT_FOLDER = sites.primaryRoot;
 const DB_FILE = path.resolve(import.meta.dirname, process.argv[3] || 'db.sqlite');
 const FAVICON_FILE = path.resolve(import.meta.dirname, process.argv[4] || 'favicon.png');
 const FAVICON_FALLBACK_FILE = path.resolve(import.meta.dirname, 'dist', 'logo.png');
@@ -40,6 +41,7 @@ deploy.recover();
 
 // Ensure the root folder exists
 fs.mkdirSync(ROOT_FOLDER, { recursive: true });
+sites.prepare();
 
 console.log(`Using database at: ${DB_FILE}`);
 settings.init(DB_FILE);
@@ -111,15 +113,57 @@ const { app, router, express } = await tegel.createExpressApp({ oidcConfig, skip
 // Setup mime-type handling
 mime(express);
 
-// we will regenerate this if settings change
-let staticServMiddleware = express.static(ROOT_FOLDER, { index: config.index || 'index.html', setHeaders: setServMiddlewareHeaders, dotfiles: 'allow' });
+const staticByRoot = new Map();
+
+function staticFor(root) {
+    let middleware = staticByRoot.get(root);
+    if (middleware) return middleware;
+
+    middleware = express.static(root, { index: config.index || 'index.html', setHeaders: setServMiddlewareHeaders, dotfiles: 'allow' });
+    staticByRoot.set(root, middleware);
+    return middleware;
+}
+
+function resetStatic() {
+    staticByRoot.clear();
+}
+
+class SiteFileSystem extends webdav.v2.FileSystem {
+    constructor() {
+        super(null);
+        this.byRoot = new Map();
+    }
+
+    filesystem() {
+        const root = sites.currentRoot();
+        let filesystem = this.byRoot.get(root);
+        if (!filesystem) {
+            filesystem = new webdav.v2.PhysicalFileSystem(root);
+            this.byRoot.set(root, filesystem);
+        }
+        return filesystem;
+    }
+
+    _create(webPath, ctx, callback) { return this.filesystem()._create(webPath, ctx, callback); }
+    _delete(webPath, ctx, callback) { return this.filesystem()._delete(webPath, ctx, callback); }
+    _openWriteStream(webPath, ctx, callback) { return this.filesystem()._openWriteStream(webPath, ctx, callback); }
+    _openReadStream(webPath, ctx, callback) { return this.filesystem()._openReadStream(webPath, ctx, callback); }
+    _move(pathFrom, pathTo, ctx, callback) { return this.filesystem()._move(pathFrom, pathTo, ctx, callback); }
+    _size(webPath, ctx, callback) { return this.filesystem()._size(webPath, ctx, callback); }
+    _lockManager(webPath, ctx, callback) { return this.filesystem()._lockManager(webPath, ctx, callback); }
+    _propertyManager(webPath, ctx, callback) { return this.filesystem()._propertyManager(webPath, ctx, callback); }
+    _readDir(webPath, ctx, callback) { return this.filesystem()._readDir(webPath, ctx, callback); }
+    _creationDate(webPath, ctx, callback) { return this.filesystem()._creationDate(webPath, ctx, callback); }
+    _lastModifiedDate(webPath, ctx, callback) { return this.filesystem()._lastModifiedDate(webPath, ctx, callback); }
+    _type(webPath, ctx, callback) { return this.filesystem()._type(webPath, ctx, callback); }
+}
 
 const webdavServer = new webdav.v2.WebDAVServer({
     requireAuthentification: true,
     httpAuthentication: new webdav.v2.HTTPBasicAuthentication(new auth.WebdavUserManager(), 'Cloudron Surfer')
 });
 
-webdavServer.setFileSystem('/', new webdav.v2.PhysicalFileSystem(ROOT_FOLDER), function (success) {
+webdavServer.setFileSystem('/', new SiteFileSystem(), function (success) {
     if (!success) console.error('Failed to setup webdav server!');
 });
 
@@ -182,7 +226,7 @@ function setSettings(req, res, next) {
     config.title = req.body.title;
     config.index = req.body.index;
 
-    staticServMiddleware = express.static(ROOT_FOLDER, { index: config.index || 'index.html', setHeaders: setServMiddlewareHeaders, dotfiles: 'allow' });
+    resetStatic();
 
     config.accessRestriction = req.body.accessRestriction;
 
@@ -251,10 +295,11 @@ function handleZipDownload(req, res, next) {
     if (!Array.isArray(filePaths) || !filePaths.length || !filePaths.every(function (p) { return typeof p === 'string'; })) return next(new HttpError(400, 'invalid paths'));
     if (filePaths.length > MAX_ZIP_PATHS) return next(new HttpError(400, 'too many paths'));
 
+    const root = sites.resolveRequest(req).root;
     const absolutePaths = [];
     for (const filePath of filePaths) {
-        const absoluteFilePath = path.resolve(path.join(ROOT_FOLDER, filePath));
-        if (absoluteFilePath !== ROOT_FOLDER && absoluteFilePath.indexOf(ROOT_FOLDER + path.sep) !== 0) return next(new HttpError(403, 'Path not allowed'));
+        const absoluteFilePath = path.resolve(path.join(root, filePath));
+        if (!sites.contains(root, absoluteFilePath)) return next(new HttpError(403, 'Path not allowed'));
         absolutePaths.push(absoluteFilePath);
     }
 
@@ -288,10 +333,12 @@ function protectedLogin(req, res, next) {
     }
 }
 
-function send404(res) {
+function send404(req, res) {
+    const root = sites.resolveRequest(req).root;
+
     // first check if /404.htm(l) exists, if so send that
-    if (fs.existsSync(path.join(ROOT_FOLDER, '404.html'))) return res.status(404).sendFile(path.join(ROOT_FOLDER, '404.html'));
-    if (fs.existsSync(path.join(ROOT_FOLDER, '404.htm' ))) return res.status(404).sendFile(path.join(ROOT_FOLDER, '404.htm'));
+    if (fs.existsSync(path.join(root, '404.html'))) return res.status(404).sendFile(path.join(root, '404.html'));
+    if (fs.existsSync(path.join(root, '404.htm' ))) return res.status(404).sendFile(path.join(root, '404.htm'));
 
     res.status(404).sendFile(import.meta.dirname + '/dist/404.html');
 }
@@ -350,23 +397,31 @@ app.get('/build.json', function (req, res, next) {
     res.sendFile(buildFile);
 });
 
-app.use(webdav.v2.extensions.express('/_webdav', webdavServer));
+const webdavMiddleware = webdav.v2.extensions.express('/_webdav', webdavServer);
+app.use(function (req, res, next) {
+    sites.run(req, function () { webdavMiddleware(req, res, next); });
+});
 app.use('/_admin', express.static(import.meta.dirname + '/dist', { index: 'admin.html' }));
 app.use('/assets', express.static(import.meta.dirname + '/dist/assets'));
 app.use('/', handleProtection);
-app.use('/', function (req, res, next) { staticServMiddleware(req, res, next); });
+app.use('/', function (req, res, next) {
+    const root = sites.resolveRequest(req).root;
+    if (!fs.existsSync(root)) return next();
+    staticFor(root)(req, res, next);
+});
 app.use('/', function welcomePage(req, res, next) {
     if (config.folderListingEnabled || req.path !== '/') return next();
     res.status(200).sendFile(path.join(import.meta.dirname, '/dist/welcome.html'));
 });
 app.use('/', function (req, res, next) {
-    if (!config.folderListingEnabled) return send404(res);
+    if (!config.folderListingEnabled) return send404(req, res);
 
+    const root = sites.resolveRequest(req).root;
     const filePath = req.path ? decodeURIComponent(req.path) : '';
-    if (!fs.existsSync(path.join(ROOT_FOLDER, filePath))) return send404(res);
+    if (!fs.existsSync(path.join(root, filePath))) return send404(req, res);
 
     // we provision the public app with all the info so we can do static and dynamic rendering
-    files.getFolderListing(filePath, function (error, result) {
+    files.getFolderListing(root, filePath, function (error, result) {
         if (error) return next(error);
 
         // use cached PUBLIC_NOSCRIPT_EJS when deployed otherwise reread from disk for development
@@ -381,6 +436,8 @@ app.use(lastMile());
 
 app.listen(3000, function () {
     console.log(`Base path: ${ROOT_FOLDER}`);
+    const aliases = sites.aliasPatterns();
+    if (aliases.length) console.log(`Alias domains: ${aliases.join(', ')}`);
     console.log();
     console.log('Listening on http://localhost:3000');
 });

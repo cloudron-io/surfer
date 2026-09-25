@@ -7,18 +7,17 @@ import safe from '@cloudron/safetydance';
 import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
 import yauzl from 'yauzl';
 import * as tar from 'tar';
-
-const gBasePath = path.resolve(import.meta.dirname, '..', process.argv[2] || 'files');
+import sites from './sites.js';
 
 const ZIP_EXTENSIONS = [ '.zip' ];
 const TAR_EXTENSIONS = [ '.tar', '.tgz', '.tar.gz', '.tar.xz', '.tar.bz2' ];
 
 export default { extract };
 
-function getAbsolutePath(filePath) {
-    const absoluteFilePath = path.resolve(path.join(gBasePath, filePath));
+function getAbsolutePath(root, filePath) {
+    const absoluteFilePath = path.resolve(path.join(root, filePath));
 
-    if (absoluteFilePath.indexOf(gBasePath) !== 0) return null;
+    if (!sites.contains(root, absoluteFilePath)) return null;
     return absoluteFilePath;
 }
 
@@ -87,7 +86,7 @@ function extract(req, res, next) {
 
     if (typeof filePath !== 'string' || !filePath) return next(new HttpError(400, 'missing path'));
 
-    const absoluteFilePath = getAbsolutePath(filePath);
+    const absoluteFilePath = getAbsolutePath(sites.resolveRequest(req).root, filePath);
     if (!absoluteFilePath) return next(new HttpError(403, 'Path not allowed'));
 
     const fileName = path.basename(filePath);

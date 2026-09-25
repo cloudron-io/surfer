@@ -32,6 +32,7 @@
           <li><code @click="onCopyToClipboard(configCommand)">{{ configCommand }}</code></li>
           <li><code @click="onCopyToClipboard(putCommand)">{{ putCommand }}</code></li>
           <li><code @click="onCopyToClipboard(deployCommand)">{{ deployCommand }}</code> replaces the site</li>
+          <li><code @click="onCopyToClipboard(deploySiteCommand)">{{ deploySiteCommand }}</code> replaces an alias domain</li>
         </ul>
       </SectionItem>
     </div>
@@ -54,6 +55,7 @@ const installCommand = 'npm install -g @cloudron/surfer';
 const configCommand = `surfer config --server ${origin} --username <username> --password <app password>`;
 const putCommand = 'surfer put file.txt /';
 const deployCommand = 'surfer deploy ./dist -m "Build from commit abc"';
+const deploySiteCommand = 'surfer deploy ./dist --site blog.example.com';
 const appPasswordsUrl = ref('');
 
 onMounted(async () => {

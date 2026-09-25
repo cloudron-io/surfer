@@ -6,8 +6,7 @@ import path from 'path';
 import safe from '@cloudron/safetydance';
 import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
 import { getMimeType } from './mime.js';
-
-const gBasePath = path.resolve(import.meta.dirname, '..', process.argv[2] || 'files');
+import sites from './sites.js';
 
 export default {
     getFolderListing,
@@ -34,22 +33,22 @@ function createDirectory(targetPath, callback) {
     });
 }
 
-function isProtected(targetPath) {
-    return targetPath.indexOf(getAbsolutePath('_admin')) === 0;
+function isProtected(root, targetPath) {
+    return sites.contains(path.resolve(root, '_admin'), targetPath);
 }
 
-function getAbsolutePath(filePath) {
-    const absoluteFilePath = path.resolve(path.join(gBasePath, filePath));
+function getAbsolutePath(root, filePath) {
+    const absoluteFilePath = path.resolve(path.join(root, filePath));
 
-    if (absoluteFilePath.indexOf(gBasePath) !== 0) return null;
+    if (!sites.contains(root, absoluteFilePath)) return null;
     return absoluteFilePath;
 }
 
-function removeBasePath(filePath) {
-    return filePath.slice(gBasePath.length);
+function removeBasePath(root, filePath) {
+    return filePath.slice(path.resolve(root).length);
 }
 
-function collectFiles(folderPath, recursive, callback) {
+function collectFiles(root, folderPath, recursive, callback) {
     let results = [];
 
     fs.readdir(folderPath, function (error, list) {
@@ -73,12 +72,12 @@ function collectFiles(folderPath, recursive, callback) {
                     birthtime: stat.birthtime,
                     size: stat.size,
                     fileName: file,
-                    filePath: removeBasePath(filePath),
+                    filePath: removeBasePath(root, filePath),
                     mimeType: stat.isDirectory() ? null : getMimeType(file)
                 });
 
                 if (stat.isDirectory() && recursive) {
-                    collectFiles(filePath, recursive, function (error, result) {
+                    collectFiles(root, filePath, recursive, function (error, result) {
                         if (error) return callback(error);
 
                         results = results.concat(result);
@@ -93,8 +92,8 @@ function collectFiles(folderPath, recursive, callback) {
 }
 
 // TODO maybe unify getFolderListing() and get()
-function getFolderListing(filePath, callback) {
-    const absoluteFilePath = getAbsolutePath(filePath);
+function getFolderListing(root, filePath, callback) {
+    const absoluteFilePath = getAbsolutePath(root, filePath);
     if (!absoluteFilePath) return callback(new HttpError(403, 'Path not allowed'));
 
     fs.stat(absoluteFilePath, function (error, stat) {
@@ -104,7 +103,7 @@ function getFolderListing(filePath, callback) {
 
         if (!stat.isDirectory()) return callback(new HttpError(500, 'unsupported type'));
 
-        collectFiles(absoluteFilePath, false /* recursive */, function (error, results) {
+        collectFiles(root, absoluteFilePath, false /* recursive */, function (error, results) {
             if (error) return callback(new HttpError(500, error));
 
             const tmp = {
@@ -116,7 +115,7 @@ function getFolderListing(filePath, callback) {
                 birthtime: stat.birthtime,
                 size: stat.size,
                 fileName: '',
-                filePath: removeBasePath(absoluteFilePath),
+                filePath: removeBasePath(root, absoluteFilePath),
                 mimeType: null
             };
 
@@ -126,10 +125,11 @@ function getFolderListing(filePath, callback) {
 }
 
 function get(req, res, next) {
+    const root = sites.resolveRequest(req).root;
     const recursive = boolLike(req.query.recursive);
     const filePath = req.params.path.join('/');
 
-    const absoluteFilePath = getAbsolutePath(filePath);
+    const absoluteFilePath = getAbsolutePath(root, filePath);
     if (!absoluteFilePath) return next(new HttpError(403, 'Path not allowed'));
 
     fs.stat(absoluteFilePath, function (error, stat) {
@@ -140,7 +140,7 @@ function get(req, res, next) {
         if (!stat.isDirectory() && !stat.isFile()) return next(new HttpError(500, 'unsupported type'));
         if (stat.isFile()) return res.download(absoluteFilePath);
 
-        collectFiles(absoluteFilePath, recursive, function (error, results) {
+        collectFiles(root, absoluteFilePath, recursive, function (error, results) {
             if (error) return next(new HttpError(500, error));
 
             const tmp = {
@@ -152,7 +152,7 @@ function get(req, res, next) {
                 birthtime: stat.birthtime,
                 size: stat.size,
                 fileName: '',
-                filePath: removeBasePath(absoluteFilePath),
+                filePath: removeBasePath(root, absoluteFilePath),
                 mimeType: null
             };
 
@@ -172,8 +172,9 @@ function post(req, res, next) {
 
     console.log('post:', filePath, mtime);
 
-    const absoluteFilePath = getAbsolutePath(filePath);
-    if (!absoluteFilePath || isProtected(absoluteFilePath)) return next(new HttpError(403, 'Path not allowed'));
+    const root = sites.resolveRequest(req).root;
+    const absoluteFilePath = getAbsolutePath(root, filePath);
+    if (!absoluteFilePath || isProtected(root, absoluteFilePath)) return next(new HttpError(403, 'Path not allowed'));
 
     fs.stat(absoluteFilePath, function (error, result) {
         if (error && error.code !== 'ENOENT') return next(new HttpError(500, error));
@@ -224,11 +225,12 @@ function put(req, res, next) {
 
     console.log('put: %s -> %s', oldFilePath, newFilePath);
 
-    const absoluteOldFilePath = getAbsolutePath(oldFilePath);
-    if (!absoluteOldFilePath || isProtected(absoluteOldFilePath)) return next(new HttpError(403, 'Path not allowed'));
+    const root = sites.resolveRequest(req).root;
+    const absoluteOldFilePath = getAbsolutePath(root, oldFilePath);
+    if (!absoluteOldFilePath || isProtected(root, absoluteOldFilePath)) return next(new HttpError(403, 'Path not allowed'));
 
-    const absoluteNewFilePath = getAbsolutePath(newFilePath);
-    if (!absoluteNewFilePath || isProtected(absoluteNewFilePath)) return next(new HttpError(403, 'Path not allowed'));
+    const absoluteNewFilePath = getAbsolutePath(root, newFilePath);
+    if (!absoluteNewFilePath || isProtected(root, absoluteNewFilePath)) return next(new HttpError(403, 'Path not allowed'));
 
     function doRename(targetFilePath) {
         fs.rename(absoluteOldFilePath, targetFilePath, function (error) {
@@ -276,12 +278,13 @@ function copy(req, res, next) {
     if (!Array.isArray(sources) || !sources.length || !sources.every(function (p) { return typeof p === 'string'; })) return next(new HttpError(400, 'missing sources array'));
     if (typeof destination !== 'string' || !destination) return next(new HttpError(400, 'missing destination string'));
 
-    const absoluteDestination = getAbsolutePath(destination);
-    if (!absoluteDestination || isProtected(absoluteDestination)) return next(new HttpError(403, 'Path not allowed'));
+    const root = sites.resolveRequest(req).root;
+    const absoluteDestination = getAbsolutePath(root, destination);
+    if (!absoluteDestination || isProtected(root, absoluteDestination)) return next(new HttpError(403, 'Path not allowed'));
 
     async function copyOne(sourceFilePath) {
-        const absoluteSource = getAbsolutePath(sourceFilePath);
-        if (!absoluteSource || isProtected(absoluteSource)) throw new HttpError(403, 'Path not allowed');
+        const absoluteSource = getAbsolutePath(root, sourceFilePath);
+        if (!absoluteSource || isProtected(root, absoluteSource)) throw new HttpError(403, 'Path not allowed');
 
         const targetPath = await getUniquePath(path.join(absoluteDestination, path.basename(absoluteSource)));
 
@@ -305,13 +308,11 @@ function del(req, res, next) {
     const filePath = req.params.path.join('/');
     const recursive = boolLike(req.query.recursive);
 
-    const absoluteFilePath = getAbsolutePath(filePath);
+    const root = sites.resolveRequest(req).root;
+    const absoluteFilePath = getAbsolutePath(root, filePath);
     if (!absoluteFilePath) return next(new HttpError(404, 'Not found'));
 
-    if (isProtected(absoluteFilePath)) return next(new HttpError(403, 'Path not allowed'));
-
-    // absoltueFilePath has to have the base path prepended
-    if (absoluteFilePath.indexOf(gBasePath) !== 0) return next(new HttpError(404, 'Not found'));
+    if (isProtected(root, absoluteFilePath)) return next(new HttpError(403, 'Path not allowed'));
 
     fs.stat(absoluteFilePath, async function (error, result) {
         if (error) return next(new HttpError(404, error));

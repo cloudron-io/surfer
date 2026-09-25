@@ -285,6 +285,8 @@ async function deploy(dir, options) {
 
     if (typeof options.message === 'string' && options.message.trim().length > 1000) return exit('Deploy message is too long');
 
+    const site = typeof options.site === 'string' ? options.site.trim() : '';
+
     const absoluteDir = path.resolve(process.cwd(), dir);
     const stat = safe.fs.statSync(absoluteDir);
     if (!stat) return exit(`No such directory ${dir}`);
@@ -292,7 +294,7 @@ async function deploy(dir, options) {
 
     const archivePath = path.join(os.tmpdir(), `surfer-deploy-${crypto.randomBytes(8).toString('hex')}.tar.gz`);
 
-    console.log(`Deploying ${absoluteDir} -> ${gServer}`);
+    console.log(`Deploying ${absoluteDir} -> ${gServer}${site ? ' (' + site + ')' : ''}`);
 
     const [tarError] = await safe(tar.c({
         gzip: true,
@@ -311,6 +313,7 @@ async function deploy(dir, options) {
         'Content-Length': String(archiveStat.size),
     };
     if (typeof options.message === 'string' && options.message.trim()) headers['Surfer-Message'] = encodeURIComponent(options.message.trim());
+    if (site) headers['Surfer-Site'] = encodeURIComponent(site);
 
     const [error, response] = await safe(fetch(`${gServer}/api/deploy`, {
         method: 'POST',

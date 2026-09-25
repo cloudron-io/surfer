@@ -21,13 +21,17 @@ function init() {
             at TEXT NOT NULL,
             username TEXT NOT NULL,
             name TEXT NOT NULL,
-            message TEXT NOT NULL DEFAULT ''
+            message TEXT NOT NULL DEFAULT '',
+            site TEXT NOT NULL DEFAULT ''
         );
     `);
 
     const columns = database.all('PRAGMA table_info(deploys)');
     if (!columns.some(function (column) { return column.name === 'message'; })) {
         database.exec('ALTER TABLE deploys ADD COLUMN message TEXT NOT NULL DEFAULT \'\'');
+    }
+    if (!columns.some(function (column) { return column.name === 'site'; })) {
+        database.exec('ALTER TABLE deploys ADD COLUMN site TEXT NOT NULL DEFAULT \'\'');
     }
 }
 
@@ -50,14 +54,15 @@ function readMessage(req) {
     return message;
 }
 
-function add(req, message) {
+function add(req, message, site) {
     const user = req.user || {};
     const username = typeof user.username === 'string' ? user.username : '';
     const name = typeof user.name === 'string' ? user.name : (typeof user.displayName === 'string' ? user.displayName : '');
     const note = typeof message === 'string' ? message : '';
+    const hostname = typeof site === 'string' ? site : '';
 
     const tx = database.transaction(function () {
-        database.run('INSERT INTO deploys (at, username, name, message) VALUES (?, ?, ?, ?)', [ new Date().toISOString(), username, name, note ]);
+        database.run('INSERT INTO deploys (at, username, name, message, site) VALUES (?, ?, ?, ?, ?)', [ new Date().toISOString(), username, name, note, hostname ]);
 
         const extra = database.all('SELECT id FROM deploys ORDER BY id DESC LIMIT -1 OFFSET ?', [ MAX_DEPLOYS ]);
         for (const row of extra) database.run('DELETE FROM deploys WHERE id = ?', [ row.id ]);
@@ -66,7 +71,7 @@ function add(req, message) {
 }
 
 function list() {
-    return database.all('SELECT id, at, username, name, message FROM deploys ORDER BY id DESC');
+    return database.all('SELECT id, at, username, name, message, site FROM deploys ORDER BY id DESC');
 }
 
 function get(req, res, next) {
