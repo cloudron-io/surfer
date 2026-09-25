@@ -5,8 +5,8 @@ import fsPromises from 'node:fs/promises';
 import path from 'path';
 import safe from '@cloudron/safetydance';
 import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
-import { getMimeType } from './mime.js';
-import sites from './sites.js';
+import { getMimeType } from '../mime.js';
+import sites from '../sites.js';
 
 export default {
     getFolderListing,

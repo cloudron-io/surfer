@@ -7,7 +7,7 @@ import safe from '@cloudron/safetydance';
 import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
 import yauzl from 'yauzl';
 import * as tar from 'tar';
-import sites from './sites.js';
+import sites from '../sites.js';
 
 const ZIP_EXTENSIONS = [ '.zip' ];
 const TAR_EXTENSIONS = [ '.tar', '.tgz', '.tar.gz', '.tar.xz', '.tar.bz2' ];

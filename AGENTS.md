@@ -24,11 +24,21 @@ Admin UI is at e.g. `http://localhost:5173/admin.html`.
 
 ## Test
 
+Local unit and route tests:
+
 ```bash
 npm test
 ```
 
-Tests live in `test/test.js`.
+Those live in `src/test/` and `src/routes/test/`. Route tests start the server with `SURFER_ENV=test`, which turns on Tegel `testMode` so requests are already signed in.
+
+The Cloudron end-to-end suite is separate:
+
+```bash
+npm run test:e2e
+```
+
+That file is `test/test.js`.
 
 ## Shared libraries
 

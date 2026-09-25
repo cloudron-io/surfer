@@ -3,9 +3,9 @@
 import fs from 'node:fs';
 import safe from '@cloudron/safetydance';
 import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
-import deploy from './deploy.js';
-import domains from './domains.js';
-import sites from './sites.js';
+import deploy from '../deploy.js';
+import domains from '../domains.js';
+import sites from '../sites.js';
 
 export default {
     list,

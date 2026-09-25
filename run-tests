@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set -eu
+
+readonly source_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly DEFAULT_TESTS="./src/test/*-test.js ./src/routes/test/*-test.js"
+
+cd "${source_dir}"
+
+if [[ $# -gt 0 ]]; then
+    ./node_modules/.bin/mocha --bail --exit -R spec "$@"
+    exit $?
+fi
+
+echo "=> Run tests with mocha"
+./node_modules/.bin/mocha --bail --exit -R spec ${DEFAULT_TESTS}
