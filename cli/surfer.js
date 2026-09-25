@@ -11,7 +11,7 @@ import url from 'url';
 const program = new Command();
 
 // `path.dirname(url.fileURLToPath(import.meta.url))` can be replaced with `import.meta.dirname` to only support node > 20
-program.version(JSON.parse(fs.readFileSync(path.dirname(url.fileURLToPath(import.meta.url)) + '/../package.json', 'utf8')).version);
+program.version(JSON.parse(fs.readFileSync(path.dirname(url.fileURLToPath(import.meta.url)) + '/package.json', 'utf8')).version);
 
 program.command('config')
     .description('Configure default server')

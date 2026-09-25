@@ -1,6 +1,7 @@
 {
-  "name": "@cloudron/surfer",
-  "version": "7.1.0",
+  "name": "@cloudron/surfer-server",
+  "version": "0.0.0-unused-only-for-deps",
+  "private": true,
   "description": "Simple file server cli",
   "type": "module",
   "author": {
