@@ -411,3 +411,7 @@
 * Update surfer to 7.1.2
 * Fix the preview UI
 
+[7.2.1]
+* Update surfer to 7.2.1
+* Fix issue where alias domain was not serving up the primary site
+
