@@ -44,5 +44,5 @@ Tests live in `test/test.js`.
 - Functional patterns where possible
 - Remove trailing whitespace
 - Vue 3 `<script setup>`; use `@cloudron/pankow` as much as possible
-- Backend: `safe()` from `@cloudron/safetydance` for fallible calls
+- Async fallible calls use `safe()` from `@cloudron/safetydance`, not try/catch. `await safe(promise)` returns `[error, result]`. Synchronous try/catch is fine.
 - Match the indent of the file being edited

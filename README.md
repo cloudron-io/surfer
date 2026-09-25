@@ -48,6 +48,6 @@ surfer put [file]
 Replace the whole site with the contents of a directory:
 
 ```bash
-surfer deploy ./dist
+surfer deploy ./dist -m "Build from commit abc"
 ```
 

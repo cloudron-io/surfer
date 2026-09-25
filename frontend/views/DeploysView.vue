@@ -23,6 +23,7 @@ import { TableView, fetcher } from '@cloudron/pankow';
 const columns = {
   at: { label: 'When', sort: true },
   who: { label: 'Who', sort: true },
+  message: { label: 'Message' },
 };
 
 const deploys = ref([]);
@@ -36,7 +37,7 @@ async function load() {
     const result = await fetcher.get('/api/deploys');
     if (result.status !== 200 || !Array.isArray(result.body)) return;
     deploys.value = result.body.map(function (entry) {
-      return { at: entry.at, who: who(entry) };
+      return { at: entry.at, who: who(entry), message: entry.message || '' };
     });
   } catch {
     deploys.value = [];

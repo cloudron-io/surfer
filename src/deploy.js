@@ -119,24 +119,18 @@ async function extractArchive(archivePath, staging) {
 // Move the live folder aside, then move the staged folder into its place.
 // The live path is absent between the two renames. On failure, move the old folder back.
 async function swapIntoPlace(staging, previous) {
-    let movedAside = false;
+    const [renameError] = await safe(fsPromises.rename(gRootFolder, previous));
+    if (renameError && renameError.code !== 'ENOENT') throw renameError;
 
-    try {
-        try {
-            await fsPromises.rename(gRootFolder, previous);
-            movedAside = true;
-        } catch (error) {
-            if (error.code !== 'ENOENT') throw error;
-        }
+    const movedAside = !renameError;
+    const [swapError] = await safe(fsPromises.rename(staging, gRootFolder));
+    if (!swapError) return;
 
-        await fsPromises.rename(staging, gRootFolder);
-    } catch (error) {
-        if (movedAside) {
-            const [restoreError] = await safe(fsPromises.rename(previous, gRootFolder));
-            if (restoreError) console.error('deploy: failed to restore previous site', restoreError);
-        }
-        throw error;
+    if (movedAside) {
+        const [restoreError] = await safe(fsPromises.rename(previous, gRootFolder));
+        if (restoreError) console.error('deploy: failed to restore previous site', restoreError);
     }
+    throw swapError;
 }
 
 async function receiveAndPublish(req) {
@@ -147,7 +141,7 @@ async function receiveAndPublish(req) {
 
     await fsPromises.mkdir(gDeployFolder, { recursive: true });
 
-    try {
+    const [error] = await safe(async function () {
         await pipeline(req, limitArchiveSize(MAX_ARCHIVE_BYTES), fs.createWriteStream(archivePath));
         await fsPromises.mkdir(staging, { recursive: true });
         await extractArchive(archivePath, staging);
@@ -155,12 +149,13 @@ async function receiveAndPublish(req) {
 
         const [cleanupError] = await safe(fsPromises.rm(previous, { recursive: true, force: true }));
         if (cleanupError) console.error('deploy: failed to remove previous site', cleanupError);
-    } catch (error) {
-        await rmQuiet(staging);
-        throw error;
-    } finally {
-        await rmQuiet(archivePath);
-    }
+    });
+
+    await rmQuiet(archivePath);
+    if (!error) return;
+
+    await rmQuiet(staging);
+    throw error;
 }
 
 function deploy(req, res, next) {
@@ -168,6 +163,9 @@ function deploy(req, res, next) {
 
     const type = (req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
     if (type !== 'application/gzip' && type !== 'application/x-gzip') return next(new HttpError(400, 'expected application/gzip'));
+
+    const message = safe(function () { return deploys.readMessage(req); });
+    if (safe.error) return next(new HttpError(400, safe.error.message));
 
     gDeploying = true;
 
@@ -182,7 +180,7 @@ function deploy(req, res, next) {
             return next(new HttpError(500, error.message));
         }
 
-        safe(function () { deploys.add(req); });
+        safe(function () { deploys.add(req, message); });
         if (safe.error) console.error('deploy: failed to record deploy', safe.error);
 
         next(new HttpSuccess(201, {}));

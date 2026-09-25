@@ -283,6 +283,8 @@ async function put(filePaths, options) {
 async function deploy(dir, options) {
     checkConfig(options);
 
+    if (typeof options.message === 'string' && options.message.trim().length > 1000) return exit('Deploy message is too long');
+
     const absoluteDir = path.resolve(process.cwd(), dir);
     const stat = safe.fs.statSync(absoluteDir);
     if (!stat) return exit(`No such directory ${dir}`);
@@ -303,13 +305,16 @@ async function deploy(dir, options) {
     }
 
     const archiveStat = fs.statSync(archivePath);
+    const headers = {
+        Authorization: gAuthHeader,
+        'Content-Type': 'application/gzip',
+        'Content-Length': String(archiveStat.size),
+    };
+    if (typeof options.message === 'string' && options.message.trim()) headers['Surfer-Message'] = encodeURIComponent(options.message.trim());
+
     const [error, response] = await safe(fetch(`${gServer}/api/deploy`, {
         method: 'POST',
-        headers: {
-            Authorization: gAuthHeader,
-            'Content-Type': 'application/gzip',
-            'Content-Length': String(archiveStat.size),
-        },
+        headers,
         body: Readable.toWeb(fs.createReadStream(archivePath)),
         duplex: 'half',
     }));
