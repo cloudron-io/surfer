@@ -397,3 +397,9 @@
 * Deploy via `surfer deploy`
 * Add deploy view to show deploy history
 
+[7.1.0]
+* Update surfer to 7.1.0
+* deploy: add deployment messages via `surfer deploy -m message`
+* deploy: implement deployment to aliases via `surfer deploy --site domain`
+* webdav: connect to site for seeing alternate domains
+
