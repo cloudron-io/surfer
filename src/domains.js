@@ -27,11 +27,15 @@ function init(dataDir, primaryDomain, aliasHostnames) {
 
     if (primaryDomain) {
         const existing = database.get('SELECT domain FROM sites WHERE domain = ?', [ primaryDomain ]);
-        if (!existing) database.run('INSERT INTO sites (domain, publicDir) VALUES (?, ?)', [ primaryDomain, 'public' ]);
+        if (!existing) {
+            const owner = database.get('SELECT domain FROM sites WHERE publicDir = ?', [ 'public' ]);
+            if (!owner) database.run('INSERT INTO sites (domain, publicDir) VALUES (?, ?)', [ primaryDomain, 'public' ]);
+            else database.run('UPDATE sites SET domain = ? WHERE domain = ?', [ primaryDomain, owner.domain ]);
+        }
     }
 
     const aliases = new Set(aliasHostnames || []);
-    let entries = [];
+    let entries;
     try {
         entries = fs.readdirSync(dataDir, { withFileTypes: true });
     } catch {
