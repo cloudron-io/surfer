@@ -19,6 +19,7 @@
             <div class="breadcrumb-bar">
               <Breadcrumb :home="breadcrumbHomeItem" :items="breadcrumbItems"/>
             </div>
+            <ProgressBar v-if="busy" mode="indeterminate" :show-label="false" :slim="true" :show-track="false"/>
             <div class="directory-view-wrap">
               <DirectoryView
                 :items="entries"
@@ -53,7 +54,6 @@
                 @item-activated="onEntryOpen"
                 @rename-requested="onRenameRequested"
               />
-              <div class="directory-view-busy" v-show="busy"><Spinner class="pankow-spinner-large"/></div>
             </div>
           </div>
         </template>
@@ -557,14 +557,6 @@ onMounted(() => {
   flex: 1;
   min-height: 0;
   overflow: hidden;
-}
-
-.directory-view-busy {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 @media (prefers-color-scheme: dark) {
