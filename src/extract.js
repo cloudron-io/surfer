@@ -86,7 +86,10 @@ function extract(req, res, next) {
 
     if (typeof filePath !== 'string' || !filePath) return next(new HttpError(400, 'missing path'));
 
-    const absoluteFilePath = getAbsolutePath(sites.resolveRequest(req).root, filePath);
+    const root = safe(function () { return sites.rootForQuery(req); });
+    if (safe.error) return next(new HttpError(400, safe.error.message));
+
+    const absoluteFilePath = getAbsolutePath(root, filePath);
     if (!absoluteFilePath) return next(new HttpError(403, 'Path not allowed'));
 
     const fileName = path.basename(filePath);

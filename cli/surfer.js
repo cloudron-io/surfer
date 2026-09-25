@@ -42,20 +42,20 @@ program.command('put <file|dir...>')
     });
 
 program.command('deploy <dir>')
-    .description('Replace the site with the contents of a directory')
+    .description('Replace a site with the contents of a directory')
     .option('-s, --server <domain>', 'Surfer server domain (optional)')
     .option('-u, --username <username>', 'Cloudron username (optional)')
     .option('-p, --password <app password>', 'Cloudron app password (optional)')
     .option('-m, --message <text>', 'Note stored with this deploy')
-    .option('--site <hostname>', 'Alias domain to replace')
+    .option('--deployment <name>', 'Site name to replace')
     .action(actions.deploy)
     .on('--help', function() {
         console.log();
         console.log('  Examples:');
         console.log();
-        console.log('    $ surfer deploy ./dist                              # contents of ./dist become the site root');
+        console.log('    $ surfer deploy ./dist                              # contents of ./dist become public/');
         console.log('    $ surfer deploy ./dist -m "Build from commit abc"   # stores a note with the deploy');
-        console.log('    $ surfer deploy ./dist --site blog.example.com      # publish an alias domain');
+        console.log('    $ surfer deploy ./dist --deployment alpha           # publish the alpha site');
         console.log();
     });
 

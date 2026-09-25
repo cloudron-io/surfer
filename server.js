@@ -297,7 +297,13 @@ function handleZipDownload(req, res, next) {
     if (!Array.isArray(filePaths) || !filePaths.length || !filePaths.every(function (p) { return typeof p === 'string'; })) return next(new HttpError(400, 'invalid paths'));
     if (filePaths.length > MAX_ZIP_PATHS) return next(new HttpError(400, 'too many paths'));
 
-    const root = sites.resolveRequest(req).root;
+    let root;
+    if (req.query.deployment != null && req.query.deployment !== '') {
+        root = safe(function () { return sites.rootForQuery(req); });
+        if (safe.error) return next(new HttpError(400, safe.error.message));
+    } else {
+        root = sites.resolveRequest(req).root;
+    }
     const absolutePaths = [];
     for (const filePath of filePaths) {
         const absoluteFilePath = path.resolve(path.join(root, filePath));

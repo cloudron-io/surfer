@@ -1,5 +1,6 @@
 'use strict';
 
+import fs from 'node:fs';
 import path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import safe from '@cloudron/safetydance';
@@ -24,7 +25,9 @@ export default {
     exactAliases,
     primaryName,
     resolveRequest,
-    readSite,
+    readDeployment,
+    rootForQuery,
+    deploymentRoot,
     folderForHostname,
     rootForPublicDir,
     prepare,
@@ -126,24 +129,46 @@ function resolveRequest(req) {
     return { site: host, root: missing };
 }
 
-function badSite(text) {
+function badDeployment(text) {
     const error = new Error(text);
-    error.code = 'EBADSITE';
+    error.code = 'EBADDEPLOYMENT';
     return error;
 }
 
-function readSite(req) {
-    const raw = req.headers && req.headers['surfer-site'];
+function decodeName(raw) {
     if (raw == null || raw === '') return '';
-    if (typeof raw !== 'string') throw badSite('invalid site');
+    if (typeof raw !== 'string') throw badDeployment('invalid deployment');
 
     const decoded = safe(function () { return decodeURIComponent(raw); });
-    if (safe.error) throw badSite('invalid site');
+    if (safe.error) throw badDeployment('invalid deployment');
+    return decoded.trim().toLowerCase();
+}
 
-    const site = decoded.trim().toLowerCase();
-    if (!site) return '';
-    if (!matchAlias(site)) throw badSite('unknown site');
-    return site;
+function deploymentRoot(name) {
+    if (!name || name === 'default') return primaryRoot;
+
+    const root = rootForPublicDir('public-' + name);
+    if (!root || !fs.existsSync(root)) return null;
+    return root;
+}
+
+function readDeployment(req) {
+    const name = decodeName(req.headers && req.headers['surfer-deployment']);
+    if (!name) return 'default';
+    if (!deploymentRoot(name)) throw badDeployment('unknown deployment');
+    return name;
+}
+
+function rootForQuery(req) {
+    const raw = req.query && req.query.deployment;
+    if (raw == null || raw === '') return resolveRequest(req).root;
+
+    const name = decodeName(raw);
+    if (!name) return resolveRequest(req).root;
+
+    const root = deploymentRoot(name);
+    if (!root) throw badDeployment('unknown deployment');
+    return root;
 }
 
 function prepare() {

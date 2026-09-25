@@ -124,8 +124,17 @@ function getFolderListing(root, filePath, callback) {
     });
 }
 
+function deployRoot(req, next) {
+    const root = safe(function () { return sites.rootForQuery(req); });
+    if (!safe.error) return root;
+
+    next(new HttpError(400, safe.error.message));
+    return null;
+}
+
 function get(req, res, next) {
-    const root = sites.resolveRequest(req).root;
+    const root = deployRoot(req, next);
+    if (!root) return;
     const recursive = boolLike(req.query.recursive);
     const filePath = req.params.path.join('/');
 
@@ -138,7 +147,10 @@ function get(req, res, next) {
         console.log('get:', absoluteFilePath);
 
         if (!stat.isDirectory() && !stat.isFile()) return next(new HttpError(500, 'unsupported type'));
-        if (stat.isFile()) return res.download(absoluteFilePath);
+        if (stat.isFile()) {
+            if (boolLike(req.query.inline)) return res.sendFile(absoluteFilePath);
+            return res.download(absoluteFilePath);
+        }
 
         collectFiles(root, absoluteFilePath, recursive, function (error, results) {
             if (error) return next(new HttpError(500, error));
@@ -172,7 +184,8 @@ function post(req, res, next) {
 
     console.log('post:', filePath, mtime);
 
-    const root = sites.resolveRequest(req).root;
+    const root = deployRoot(req, next);
+    if (!root) return;
     const absoluteFilePath = getAbsolutePath(root, filePath);
     if (!absoluteFilePath || isProtected(root, absoluteFilePath)) return next(new HttpError(403, 'Path not allowed'));
 
@@ -225,7 +238,8 @@ function put(req, res, next) {
 
     console.log('put: %s -> %s', oldFilePath, newFilePath);
 
-    const root = sites.resolveRequest(req).root;
+    const root = deployRoot(req, next);
+    if (!root) return;
     const absoluteOldFilePath = getAbsolutePath(root, oldFilePath);
     if (!absoluteOldFilePath || isProtected(root, absoluteOldFilePath)) return next(new HttpError(403, 'Path not allowed'));
 
@@ -278,7 +292,8 @@ function copy(req, res, next) {
     if (!Array.isArray(sources) || !sources.length || !sources.every(function (p) { return typeof p === 'string'; })) return next(new HttpError(400, 'missing sources array'));
     if (typeof destination !== 'string' || !destination) return next(new HttpError(400, 'missing destination string'));
 
-    const root = sites.resolveRequest(req).root;
+    const root = deployRoot(req, next);
+    if (!root) return;
     const absoluteDestination = getAbsolutePath(root, destination);
     if (!absoluteDestination || isProtected(root, absoluteDestination)) return next(new HttpError(403, 'Path not allowed'));
 
@@ -308,7 +323,8 @@ function del(req, res, next) {
     const filePath = req.params.path.join('/');
     const recursive = boolLike(req.query.recursive);
 
-    const root = sites.resolveRequest(req).root;
+    const root = deployRoot(req, next);
+    if (!root) return;
     const absoluteFilePath = getAbsolutePath(root, filePath);
     if (!absoluteFilePath) return next(new HttpError(404, 'Not found'));
 

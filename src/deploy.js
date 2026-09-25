@@ -29,11 +29,14 @@ export default {
 // rename() cannot replace a non-empty directory, so a crashed swap can leave the
 // live folder missing and the previous tree under .deploy. Put it back before startup continues.
 function destinationForPrevious(name) {
-    if (/^[0-9a-f]{16}\.previous$/.test(name) || /^[0-9a-f]{16}\.public\.previous$/.test(name)) return sites.primaryRoot;
+    if (/^[0-9a-f]{16}\.previous$/.test(name)) return sites.primaryRoot;
 
-    const alias = /^[0-9a-f]{16}\.public-(.+)\.previous$/.exec(name);
-    if (!alias) return null;
-    return sites.folderForHostname(alias[1]);
+    const match = /^[0-9a-f]{16}\.(.+)\.previous$/.exec(name);
+    if (!match) return null;
+
+    const label = match[1];
+    if (label === 'public' || label === path.basename(sites.primaryRoot)) return sites.primaryRoot;
+    return sites.rootForPublicDir(label);
 }
 
 function recover() {
@@ -195,15 +198,16 @@ function deploy(req, res, next) {
     const message = safe(function () { return deploys.readMessage(req); });
     if (safe.error) return next(new HttpError(400, safe.error.message));
 
-    const site = safe(function () { return sites.readSite(req); });
+    const deployment = safe(function () { return sites.readDeployment(req); });
     if (safe.error) return next(new HttpError(400, safe.error.message));
 
-    const root = site ? sites.folderForHostname(site) : sites.primaryRoot;
+    const root = sites.deploymentRoot(deployment);
+    if (!root) return next(new HttpError(400, 'unknown deployment'));
 
     gDeploying = true;
 
     (async function () {
-        const [error] = await safe(receiveAndPublish(req, root, site));
+        const [error] = await safe(receiveAndPublish(req, root, deployment === 'default' ? '' : deployment));
         gDeploying = false;
 
         if (error) {
@@ -213,7 +217,7 @@ function deploy(req, res, next) {
             return next(new HttpError(500, error.message));
         }
 
-        safe(function () { deploys.add(req, message, site); });
+        safe(function () { deploys.add(req, message, deployment === 'default' ? 'default' : deployment); });
         if (safe.error) console.error('deploy: failed to record deploy', safe.error);
 
         next(new HttpSuccess(201, {}));
