@@ -403,3 +403,7 @@
 * deploy: implement deployment to aliases via `surfer deploy --site domain`
 * webdav: connect to site for seeing alternate domains
 
+[7.1.1]
+* Update surfer to 7.1.1
+* Various fixes to deployment and sites
+
