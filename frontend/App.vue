@@ -92,7 +92,7 @@ onMounted(loadProfile);
 
 <template>
   <div v-if="ready" class="main">
-    <SideBar ref="sidebar">
+    <SideBar ref="sidebar" resizable>
       <div class="sidebar-title">
         <RouterLink to="/" class="sidebar-title-link" @click="onCloseSidebar">
           <img :src="logoUrl" alt="" class="sidebar-icon"/>
@@ -165,8 +165,6 @@ onMounted(loadProfile);
 }
 
 .pankow-sidebar-container {
-  width: 256px;
-  min-width: 256px;
   flex-shrink: 0;
 }
 
