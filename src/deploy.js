@@ -9,7 +9,7 @@ import { pipeline } from 'node:stream/promises';
 import * as tar from 'tar';
 import safe from '@cloudron/safetydance';
 import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
-import deploys from './deploys.js';
+import history from './history.js';
 import sites from './sites.js';
 
 const gDeployFolder = path.join(sites.dataDir, '.deploy');
@@ -195,7 +195,7 @@ function deploy(req, res, next) {
     const type = (req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
     if (type !== 'application/gzip' && type !== 'application/x-gzip') return next(new HttpError(400, 'expected application/gzip'));
 
-    const message = safe(function () { return deploys.readMessage(req); });
+    const message = safe(function () { return history.readMessage(req); });
     if (safe.error) return next(new HttpError(400, safe.error.message));
 
     const deployment = safe(function () { return sites.readDeployment(req); });
@@ -217,7 +217,7 @@ function deploy(req, res, next) {
             return next(new HttpError(500, error.message));
         }
 
-        safe(function () { deploys.add(req, message, deployment === 'default' ? 'default' : deployment); });
+        safe(function () { history.add(req, message, deployment); });
         if (safe.error) console.error('deploy: failed to record deploy', safe.error);
 
         next(new HttpSuccess(201, {}));

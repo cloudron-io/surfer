@@ -20,7 +20,7 @@ import zip from './src/zip.js';
 import extract from './src/extract.js';
 import deploy from './src/deploy.js';
 import settings from './src/settings.js';
-import deploys from './src/deploys.js';
+import history from './src/history.js';
 import domains from './src/domains.js';
 import sites from './src/sites.js';
 
@@ -47,7 +47,7 @@ sites.prepare();
 console.log(`Using database at: ${DB_FILE}`);
 settings.init(DB_FILE);
 domains.init(sites.dataDir, sites.primaryName(), sites.exactAliases());
-deploys.init();
+history.init();
 const config = settings.load();
 
 const ASSET_MAX_AGE = 3600;
@@ -395,7 +395,7 @@ router.delete('/api/files/*path', auth.requireAuth, files.del);
 router.post  ('/api/copy', auth.requireAuth, files.copy);
 router.post  ('/api/extract', auth.requireAuth, extract.extract);
 router.post  ('/api/deploy', auth.requireAuth, deploy.deploy);
-router.get   ('/api/deploys', auth.requireAuth, deploys.get);
+router.get   ('/api/history', auth.requireAuth, history.get);
 router.get   ('/api/zip', handleProtection, handleZipDownload);
 router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });
 

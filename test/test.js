@@ -286,7 +286,7 @@ describe('Application life cycle test', function () {
     });
     it('deploy removes previous files', async () => checkFileIsGone(SPECIAL_FOLDER_NAME_0));
     it('deploy is recorded', async function () {
-        const res = await authed(superagent.get(`https://${app.fqdn}/api/deploys`));
+        const res = await authed(superagent.get(`https://${app.fqdn}/api/history`));
         assert.strictEqual(res.status, 200);
         assert.ok(Array.isArray(res.body));
         assert.ok(res.body.some(function (entry) { return entry.username === gUsername; }));
