@@ -9,6 +9,8 @@ export default {
     publicDirInUse,
     list,
     insert,
+    rowForDomain,
+    updateSite,
 };
 
 function init(dataDir, primaryDomain, aliasHostnames) {
@@ -64,4 +66,17 @@ function list() {
 
 function insert(domain, publicDir) {
     database.run('INSERT INTO sites (domain, publicDir) VALUES (?, ?)', [ domain, publicDir ]);
+}
+
+function rowForDomain(domain) {
+    if (!domain) return null;
+    return database.get('SELECT domain, publicDir FROM sites WHERE domain = ?', [ domain ]) || null;
+}
+
+function updateSite(fromDomain, fromDir, publicDir, domain) {
+    const tx = database.transaction(function () {
+        if (publicDir !== fromDir) database.run('UPDATE sites SET publicDir = ? WHERE publicDir = ?', [ publicDir, fromDir ]);
+        if (domain !== fromDomain) database.run('UPDATE sites SET domain = ? WHERE domain = ?', [ domain, fromDomain ]);
+    });
+    tx();
 }

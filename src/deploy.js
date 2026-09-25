@@ -21,9 +21,22 @@ const REJECTED_TYPES = new Set([ 'SymbolicLink', 'Link', 'CharacterDevice', 'Blo
 
 let gDeploying = false;
 
+function tryLock() {
+    if (gDeploying) return false;
+    gDeploying = true;
+    return true;
+}
+
+function unlock() {
+    gDeploying = false;
+}
+
 export default {
     deploy,
+    promote,
     recover,
+    tryLock,
+    unlock,
 };
 
 // rename() cannot replace a non-empty directory, so a crashed swap can leave the
@@ -187,6 +200,53 @@ async function receiveAndPublish(req, root, site) {
 
     await rmQuiet(staging);
     throw error;
+}
+
+async function publishDirectory(source, root) {
+    const id = crypto.randomBytes(8).toString('hex');
+    const staging = path.join(gDeployFolder, id);
+    const previous = path.join(gDeployFolder, `${id}.public.previous`);
+
+    await fsPromises.mkdir(gDeployFolder, { recursive: true });
+
+    const [error] = await safe(async function () {
+        await fsPromises.cp(source, staging, { recursive: true, dereference: true });
+        await swapIntoPlace(staging, previous, root);
+
+        const [cleanupError] = await safe(fsPromises.rm(previous, { recursive: true, force: true }));
+        if (cleanupError) console.error('deploy: failed to remove previous site', cleanupError);
+    });
+
+    if (!error) return;
+
+    await rmQuiet(staging);
+    throw error;
+}
+
+function promote(req, res, next) {
+    const name = typeof req.params.name === 'string' ? req.params.name.trim().toLowerCase() : '';
+    if (!sites.isDeployName(name) || name === 'default') return next(new HttpError(400, 'invalid site name'));
+
+    const source = sites.deploymentRoot(name);
+    if (!source || source === sites.primaryRoot) return next(new HttpError(400, 'unknown site'));
+
+    if (gDeploying) return next(new HttpError(409, 'a deploy is already in progress'));
+    gDeploying = true;
+
+    (async function () {
+        const [error] = await safe(publishDirectory(source, sites.primaryRoot));
+        gDeploying = false;
+
+        if (error) {
+            console.error('deploy:', error);
+            return next(new HttpError(500, error.message));
+        }
+
+        safe(function () { history.add(req, 'Deployed from ' + name, 'default'); });
+        if (safe.error) console.error('deploy: failed to record deploy', safe.error);
+
+        next(new HttpSuccess(201, {}));
+    })();
 }
 
 function deploy(req, res, next) {

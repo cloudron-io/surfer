@@ -307,6 +307,22 @@ describe('Application life cycle test', function () {
         const res = await authed(superagent.post(`https://${app.fqdn}/api/sites`).send({ name: 'default', domain: 'alpha.example.com' }));
         assert.strictEqual(res.status, 409);
     });
+    it('rejects deploying the default site onto itself', async function () {
+        const res = await authed(superagent.post(`https://${app.fqdn}/api/sites/default/default`));
+        assert.strictEqual(res.status, 400);
+    });
+    it('rejects deploying an unknown site onto default', async function () {
+        const res = await authed(superagent.post(`https://${app.fqdn}/api/sites/missing/default`));
+        assert.strictEqual(res.status, 400);
+    });
+    it('rejects editing the default site', async function () {
+        const res = await authed(superagent.put(`https://${app.fqdn}/api/sites/${encodeURIComponent(app.fqdn)}`).send({ name: 'alpha', domain: 'alpha.example.com' }));
+        assert.strictEqual(res.status, 400);
+    });
+    it('rejects editing an unknown site', async function () {
+        const res = await authed(superagent.put(`https://${app.fqdn}/api/sites/missing.example.com`).send({ name: 'alpha', domain: 'alpha.example.com' }));
+        assert.strictEqual(res.status, 404);
+    });
   
     it('uninstall app', cloudronCli.uninstall);
 });

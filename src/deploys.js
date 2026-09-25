@@ -3,12 +3,14 @@
 import fs from 'node:fs';
 import safe from '@cloudron/safetydance';
 import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
+import deploy from './deploy.js';
 import domains from './domains.js';
 import sites from './sites.js';
 
 export default {
     list,
     create,
+    update,
 };
 
 function deployName(publicDir) {
@@ -54,4 +56,55 @@ function create(req, res, next) {
     if (safe.error) return next(new HttpError(500, safe.error.message));
 
     next(new HttpSuccess(201, { name: name, publicDir: publicDir, domain: domain }));
+}
+
+function update(req, res, next) {
+    const fromDomain = typeof req.params.domain === 'string' ? req.params.domain.trim().toLowerCase() : '';
+    const body = req.body || {};
+    const name = typeof body.name === 'string' ? body.name.trim().toLowerCase() : '';
+    const domain = typeof body.domain === 'string' ? body.domain.trim().toLowerCase() : '';
+
+    const row = safe(function () { return domains.rowForDomain(fromDomain); });
+    if (safe.error) return next(new HttpError(500, safe.error.message));
+    if (!row) return next(new HttpError(404, 'unknown site'));
+    if (row.publicDir === 'public') return next(new HttpError(400, 'invalid site name'));
+
+    if (!sites.isDeployName(name) || name === 'default') return next(new HttpError(400, 'invalid site name'));
+    if (!domain || domain === sites.primaryName() || !sites.matchAlias(domain)) return next(new HttpError(400, 'domain must be an alias'));
+
+    const fromName = deployName(row.publicDir);
+    const publicDir = 'public-' + name;
+    if (name !== fromName) {
+        if (domains.publicDirInUse(publicDir)) return next(new HttpError(409, 'site already exists'));
+        const nextRoot = sites.rootForPublicDir(publicDir);
+        if (!nextRoot) return next(new HttpError(400, 'invalid site name'));
+        if (fs.existsSync(nextRoot)) return next(new HttpError(409, 'site already exists'));
+    }
+
+    if (domain !== fromDomain && domains.publicDirForHost(domain)) return next(new HttpError(409, 'domain is already mapped'));
+
+    const oldRoot = sites.rootForPublicDir(row.publicDir);
+    if (!oldRoot || !fs.existsSync(oldRoot)) return next(new HttpError(400, 'unknown site'));
+    if (name === fromName && domain === fromDomain) return next(new HttpSuccess(200, { name: name, publicDir: row.publicDir, domain: domain }));
+
+    if (!deploy.tryLock()) return next(new HttpError(409, 'a deploy is already in progress'));
+
+    const nextRoot = sites.rootForPublicDir(publicDir);
+    if (name !== fromName) {
+        safe(function () { fs.renameSync(oldRoot, nextRoot); });
+        if (safe.error) {
+            deploy.unlock();
+            return next(new HttpError(500, safe.error.message));
+        }
+    }
+
+    safe(function () { domains.updateSite(fromDomain, row.publicDir, publicDir, domain); });
+    if (safe.error) {
+        if (name !== fromName) safe(function () { fs.renameSync(nextRoot, oldRoot); });
+        deploy.unlock();
+        return next(new HttpError(500, safe.error.message));
+    }
+
+    deploy.unlock();
+    next(new HttpSuccess(200, { name: name, publicDir: publicDir, domain: domain }));
 }
