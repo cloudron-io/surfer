@@ -21,6 +21,7 @@ import extract from './src/extract.js';
 import deploy from './src/deploy.js';
 import settings from './src/settings.js';
 import deploys from './src/deploys.js';
+import domains from './src/domains.js';
 import sites from './src/sites.js';
 
 const ROOT_FOLDER = sites.primaryRoot;
@@ -45,6 +46,7 @@ sites.prepare();
 
 console.log(`Using database at: ${DB_FILE}`);
 settings.init(DB_FILE);
+domains.init(sites.dataDir, sites.primaryName(), sites.exactAliases());
 deploys.init();
 const config = settings.load();
 

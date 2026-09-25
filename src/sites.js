@@ -1,13 +1,14 @@
 'use strict';
 
-import fs from 'node:fs';
 import path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import safe from '@cloudron/safetydance';
+import domains from './domains.js';
 
-// The primary domain serves primaryRoot (public/). Each alias hostname serves
-// a sibling directory public-<hostname>. CLOUDRON_ALIAS_DOMAINS is a comma-separated
-// list of exact hostnames and single-label wildcards such as *.example.com.
+// primaryRoot is the real public/ directory. Other sites are sibling directories
+// public-<name>. The sites table maps a hostname to one of those directory names.
+// CLOUDRON_ALIAS_DOMAINS is a comma-separated list of exact hostnames and single-label
+// wildcards such as *.example.com.
 const primaryRoot = path.resolve(import.meta.dirname, '..', process.argv[2] || 'files');
 const dataDir = path.dirname(primaryRoot);
 
@@ -20,9 +21,12 @@ export default {
     primaryRoot,
     dataDir,
     aliasPatterns,
+    exactAliases,
+    primaryName,
     resolveRequest,
     readSite,
     folderForHostname,
+    rootForPublicDir,
     prepare,
     contains,
     run,
@@ -37,6 +41,16 @@ function aliasPatterns() {
 
 function primaryHost() {
     return (process.env.CLOUDRON_APP_DOMAIN || '').trim().toLowerCase();
+}
+
+function primaryName() {
+    return primaryHost() || 'localhost';
+}
+
+function exactAliases() {
+    return aliasPatterns().filter(function (pattern) {
+        return !pattern.includes('*') && isHostname(pattern);
+    });
 }
 
 function isHostname(value) {
@@ -85,11 +99,31 @@ function folderForHostname(hostname) {
     return root;
 }
 
-function resolveRequest(req) {
-    const site = matchAlias(requestHost(req));
-    if (!site) return { site: '', root: primaryRoot };
+function rootForPublicDir(name) {
+    if (name === 'public') return primaryRoot;
+    if (typeof name !== 'string' || !name.startsWith('public-')) return null;
 
-    return { site, root: folderForHostname(site) };
+    const suffix = name.slice('public-'.length);
+    if (!suffix || suffix === '.' || suffix === '..' || suffix.includes('/') || suffix.includes('\\')) return null;
+
+    const root = path.resolve(dataDir, name);
+    if (!contains(dataDir, root)) return null;
+    return root;
+}
+
+function resolveRequest(req) {
+    const host = requestHost(req);
+    const mapped = domains.publicDirForHost(host);
+    if (mapped) {
+        const root = rootForPublicDir(mapped);
+        if (root) return { site: host === primaryName() ? '' : host, root };
+    }
+
+    if (!matchAlias(host)) return { site: '', root: primaryRoot };
+
+    const missing = path.resolve(dataDir, 'public-' + host);
+    if (!contains(dataDir, missing)) return { site: host, root: primaryRoot };
+    return { site: host, root: missing };
 }
 
 function badSite(text) {
@@ -113,10 +147,6 @@ function readSite(req) {
 }
 
 function prepare() {
-    for (const pattern of aliasPatterns()) {
-        if (pattern.includes('*') || !isHostname(pattern)) continue;
-        fs.mkdirSync(folderForHostname(pattern), { recursive: true });
-    }
 }
 
 function contains(root, absolute) {
