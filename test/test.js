@@ -247,50 +247,50 @@ describe('Application life cycle test', function () {
 
     it('uninstall app', cloudronCli.uninstall);
 
-  // it('can install app for update', cloudronCli.appstoreInstall);
-
-  // it('can login', loginNoIndex);
-  // it('can create app password', ensureAppPassword);
-  // it('can cli login', cliLogin);
-  // it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
-  // it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
-  // it('file is served up', checkFileIsPresent);
-  // it('file is served up', checkIndexFileIsServedUp);
-  // it('can create special folder names', createSpecialFolders);
-  // it('can enable public folder listing', enablePublicFolderListing);
-  // it('special folder names allow public listings', checkFilesInSpecialFolder);
-  // it('can upload folder', uploadFolder);
-  // it('can logout', logout);
-
-  // it('can update', cloudronCli.update);
-
-  // it('can login', login);
-  // it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
-  // it('file is served up', checkFileIsPresent);
-  // it('file is served up', checkIndexFileIsServedUp);
-  // it('special file in folder exists', checkFileInFolder);
-  // it('special folder names allow public listings', checkFilesInSpecialFolder);
-  // it('can logout', logout);
-
-  // it('can deploy a directory', function () {
-  //     runCli(`deploy ${JSON.stringify(path.join(import.meta.dirname, 'deploy-site'))}`, { stdio: 'inherit' });
-  // });
-  // it('deployed site is served', async function () {
-  //     const deployed = await superagent.get(`https://${app.fqdn}/deployed.txt`).ok(() => true);
-  //     assert.strictEqual(deployed.status, 200);
-  //     assert.strictEqual(deployed.text, 'deployed\n');
-
-  //     const hidden = await superagent.get(`https://${app.fqdn}/.well-known/ping.txt`).ok(() => true);
-  //     assert.strictEqual(hidden.status, 200);
-  //     assert.strictEqual(hidden.text, 'pong\n');
-  // });
-  // it('deploy removes previous files', async () => checkFileIsGone(SPECIAL_FOLDER_NAME_0));
-  // it('deploy is recorded', async function () {
-  //     const res = await authed(superagent.get(`https://${app.fqdn}/api/deploys`));
-  //     assert.strictEqual(res.status, 200);
-  //     assert.ok(Array.isArray(res.body));
-  //     assert.ok(res.body.some(function (entry) { return entry.username === gUsername; }));
-  // });
-
-  // it('uninstall app', cloudronCli.uninstall);
+    it('can install app for update', cloudronCli.appstoreInstall);
+  
+    it('can login', loginNoIndex);
+    it('can create app password', ensureAppPassword);
+    it('can cli login', cliLogin);
+    it('can upload file', uploadFile.bind(null, TEST_FILE_NAME_0));
+    it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
+    it('file is served up', checkFileIsPresent);
+    it('file is served up', checkIndexFileIsServedUp);
+    it('can create special folder names', createSpecialFolders);
+    it('can enable public folder listing', enablePublicFolderListing);
+    it('special folder names allow public listings', checkFilesInSpecialFolder);
+    it('can upload folder', uploadFolder);
+    it('can logout', logout);
+  
+    it('can update', cloudronCli.update);
+  
+    it('can login', login);
+    it('file is listed', checkFileIsListed.bind(null, TEST_FILE_NAME_0));
+    it('file is served up', checkFileIsPresent);
+    it('file is served up', checkIndexFileIsServedUp);
+    it('special file in folder exists', checkFileInFolder);
+    it('special folder names allow public listings', checkFilesInSpecialFolder);
+    it('can logout', logout);
+  
+    it('can deploy a directory', function () {
+        runCli(`deploy ${JSON.stringify(path.join(import.meta.dirname, 'deploy-site'))}`, { stdio: 'inherit' });
+    });
+    it('deployed site is served', async function () {
+        const deployed = await superagent.get(`https://${app.fqdn}/deployed.txt`).ok(() => true);
+        assert.strictEqual(deployed.status, 200);
+        assert.strictEqual(deployed.text, 'deployed\n');
+  
+        const hidden = await superagent.get(`https://${app.fqdn}/.well-known/ping.txt`).ok(() => true);
+        assert.strictEqual(hidden.status, 200);
+        assert.strictEqual(hidden.text, 'pong\n');
+    });
+    it('deploy removes previous files', async () => checkFileIsGone(SPECIAL_FOLDER_NAME_0));
+    it('deploy is recorded', async function () {
+        const res = await authed(superagent.get(`https://${app.fqdn}/api/deploys`));
+        assert.strictEqual(res.status, 200);
+        assert.ok(Array.isArray(res.body));
+        assert.ok(res.body.some(function (entry) { return entry.username === gUsername; }));
+    });
+  
+    it('uninstall app', cloudronCli.uninstall);
 });
