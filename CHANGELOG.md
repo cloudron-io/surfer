@@ -415,3 +415,6 @@
 * Update surfer to 7.2.1
 * Fix issue where alias domain was not serving up the primary site
 
+[7.2.2]
+* Serve `index.xml` as a folder index when there is no index.html
+
