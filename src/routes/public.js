@@ -22,7 +22,7 @@ function createPublic({ express, config, appRoot }) {
     function cacheControlFor(filePath) {
         const name = path.basename(filePath).toLowerCase();
         const indexName = path.basename(config.index || 'index.html').toLowerCase();
-        const revalidate = name.endsWith('.html') || name.endsWith('.htm') || name === indexName;
+        const revalidate = name.endsWith('.html') || name.endsWith('.htm') || name.endsWith('.xml') || name === indexName;
         const visibility = config.accessRestriction ? 'private' : 'public';
 
         return visibility + ', max-age=' + (revalidate ? 0 : ASSET_MAX_AGE);
@@ -48,7 +48,7 @@ function createPublic({ express, config, appRoot }) {
         let middleware = staticByRoot.get(root);
         if (middleware) return middleware;
 
-        middleware = express.static(root, { index: config.index || 'index.html', setHeaders: setServMiddlewareHeaders, dotfiles: 'allow' });
+        middleware = express.static(root, { index: [ config.index || 'index.html', 'index.xml' ], setHeaders: setServMiddlewareHeaders, dotfiles: 'allow' });
         staticByRoot.set(root, middleware);
         return middleware;
     }
