@@ -18,7 +18,7 @@
   "main": "server.js",
   "dependencies": {
     "@cloudron/connect-lastmile": "^3.0.0",
-    "@cloudron/pankow": "^4.4.16",
+    "@cloudron/pankow": "^4.4.24",
     "@cloudron/safetydance": "^3.1.0",
     "@cloudron/superagent": "^2.3.0",
     "@cloudron/tegel": "^1.7.0",
