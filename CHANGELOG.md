@@ -418,3 +418,7 @@
 [7.2.2]
 * Serve `index.xml` as a folder index when there is no index.html
 
+[7.2.3]
+* Update surfer to 7.2.3
+* Fix image previews
+
