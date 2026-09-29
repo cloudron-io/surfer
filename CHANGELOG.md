@@ -422,3 +422,7 @@
 * Update surfer to 7.2.3
 * Fix image previews
 
+[7.2.4]
+* Update surfer to 136862e
+* Add drag and drop across windows
+
