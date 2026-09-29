@@ -46,6 +46,8 @@
                 :upload-file-handler="onUpload"
                 :upload-folder-handler="onUploadFolder"
                 :drop-handler="onDrop"
+                :drag-scope="deploymentName"
+                :drag-payload-handler="dragPayloadHandler"
                 :paste-handler="onPaste"
                 :extract-handler="onExtract"
                 :refresh-handler="refresh"
@@ -76,7 +78,7 @@
 
 import { ref, reactive, computed, onMounted, inject, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Breadcrumb, DirectoryView, InputDialog, ProgressBar, Spinner, SplitLayout, fetcher } from '@cloudron/pankow';
+import { Breadcrumb, DirectoryView, InputDialog, ProgressBar, Spinner, SplitLayout, fetcher, useChangeBroadcast } from '@cloudron/pankow';
 import { eachLimit, each } from 'async';
 import { sanitize, encode, decode, download, toDirectoryItems, makeCurrentFolderPreviewEntry, publicFileUrl, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from '../utils.js';
 
@@ -104,6 +106,13 @@ function deployBase() {
 function deployQuery() {
   return { deployment: deploymentName.value };
 }
+
+// other admin windows of the same site reload changed folders
+const changes = useChangeBroadcast('surfer-changes', deploymentName);
+
+changes.onChange(function (paths) {
+  if (paths.map(function (p) { return sanitize(p); }).includes(path.value)) refresh();
+});
 
 function folderFromRoute() {
   if (route.name !== 'site') return '/';
@@ -283,17 +292,29 @@ function uploadFiles(files, targetPath) {
     uploadStatus.percentDone = 100;
 
     await refresh();
+    changes.announce([targetPath]);
   });
 }
 
-function onDrop(targetItemName, dataTransfer, selectedItems) {
-  if (selectedItems) {
-    return moveItems(selectedItems, sanitize(path.value + '/' + targetItemName));
-  }
+function dragPayloadHandler(items) {
+  return items.map(function (i) { return { fileName: i.fileName, filePath: i.filePath, isDirectory: !!i.isDirectory }; });
+}
+
+// items dragged from another surfer window of the same site (see drag-scope)
+function itemsFromDragPayload(payload) {
+  if (!Array.isArray(payload)) return null;
+
+  const items = payload.filter(function (i) { return typeof i?.fileName === 'string' && i.fileName && typeof i.filePath === 'string'; });
+  return items.length ? items : null;
+}
+
+function onDrop(targetItemName, dataTransfer, selectedItems, { payload = null, action = 'move' } = {}) {
+  const targetPath = targetItemName ? sanitize(path.value + '/' + targetItemName) : path.value;
+
+  if (payload) selectedItems = itemsFromDragPayload(payload);
+  if (selectedItems) return pasteItems(action === 'copy' ? 'copy' : 'cut', selectedItems, targetPath);
 
   if (!dataTransfer || !dataTransfer.items[0]) return;
-
-  const targetPath = targetItemName ? sanitize(path.value + '/' + targetItemName) : path.value;
 
   let folderItem;
   try {
@@ -359,6 +380,7 @@ async function openNewFolderDialog() {
     return window.pankow.notify({ type: 'danger', text: e.message });
   }
 
+  changes.announce([path.value]);
   openPath(path.value + '/' + newFolderName);
 }
 
@@ -401,6 +423,7 @@ async function onDelete(items) {
   }
 
   await refresh();
+  changes.announce([path.value]);
 }
 
 async function onRenameRequested(entry) {
@@ -428,6 +451,7 @@ async function onRenameRequested(entry) {
   }
 
   await refresh();
+  changes.announce([path.value]);
 }
 
 function onDownload(entry) {
@@ -453,11 +477,14 @@ async function moveItems(items, targetDir) {
   await refresh();
 }
 
-async function onPaste(action, files, targetItem) {
-  const targetDir = targetItem ? sanitize(path.value + '/' + targetItem.name) : path.value;
+function parentFolder(filePath) {
+  return sanitize(sanitize(filePath).split('/').slice(0, -1).join('/') || '/');
+}
 
+async function pasteItems(action, files, targetDir) {
   if (action === 'cut') {
     await moveItems(files, targetDir);
+    changes.announce([targetDir, ...files.map(function (f) { return parentFolder(f.filePath); })]);
     return;
   }
 
@@ -471,7 +498,13 @@ async function onPaste(action, files, targetItem) {
     }
 
     await refresh();
+    changes.announce([targetDir]);
   }
+}
+
+async function onPaste(action, files, targetItem) {
+  const targetDir = targetItem ? sanitize(path.value + '/' + targetItem.name) : path.value;
+  await pasteItems(action, files, targetDir);
 }
 
 async function onExtract(item) {
@@ -485,6 +518,7 @@ async function onExtract(item) {
 
   window.pankow.notify({ type: 'success', text: 'Extracted ' + item.fileName });
   await refresh();
+  changes.announce([path.value]);
 }
 
 function onEntryOpen(entry) {
