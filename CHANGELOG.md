@@ -426,3 +426,7 @@
 * Update surfer to 136862e
 * Add drag and drop across windows
 
+[7.2.5]
+* Update surfer to 4f87312
+* Update tegel
+
