@@ -16,6 +16,7 @@ export default {
     run,
     exec,
     transaction,
+    close,
 };
 
 function init(dbPath) {
@@ -26,6 +27,13 @@ function init(dbPath) {
 
     db = new Database(dbPath);
     db.pragma('foreign_keys = ON');
+    db.pragma('journal_mode = WAL');
+}
+
+function close() {
+    if (!db) return;
+    db.close();
+    db = null;
 }
 
 function get(sql, params = []) {

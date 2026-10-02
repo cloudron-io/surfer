@@ -18,10 +18,10 @@
   "main": "server.js",
   "dependencies": {
     "@cloudron/connect-lastmile": "^3.0.0",
-    "@cloudron/pankow": "^4.4.26",
+    "@cloudron/pankow": "^4.5.0",
     "@cloudron/safetydance": "^3.1.0",
     "@cloudron/superagent": "^2.3.0",
-    "@cloudron/tegel": "^1.8.0",
+    "@cloudron/tegel": "^2.2.0",
     "archiver": "^8.0.0",
     "async": "^3.2.6",
     "better-sqlite3": "^13.0.3",
@@ -36,12 +36,12 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@vitejs/plugin-vue": "^6.0.9",
-    "eslint": "^10.10.0",
-    "eslint-plugin-vue": "^10.11.0",
-    "globals": "^17.12.0",
-    "mocha": "^12.0.1",
-    "vite": "^8.3.0",
-    "vue": "^3.5.42",
+    "eslint": "^10.11.0",
+    "eslint-plugin-vue": "^10.11.1",
+    "globals": "^17.13.0",
+    "mocha": "^12.0.3",
+    "vite": "^8.3.2",
+    "vue": "^3.5.43",
     "vue-router": "^5.3.1"
   },
   "bin": {

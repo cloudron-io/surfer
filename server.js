@@ -5,6 +5,7 @@
 import fs from 'fs';
 import path from 'path';
 import * as tegel from '@cloudron/tegel';
+import database from './src/database.js';
 import deploy from './src/deploy.js';
 import domains from './src/domains.js';
 import history from './src/history.js';
@@ -55,7 +56,7 @@ register({
 });
 
 const port = process.env.SURFER_ENV === 'test' && process.env.PORT ? Number(process.env.PORT) : 3000;
-app.listen(port, function () {
+const server = app.listen(port, function () {
     const actual = this.address().port;
     console.log(`Base path: ${ROOT_FOLDER}`);
     const aliases = sites.aliasPatterns();
@@ -63,3 +64,5 @@ app.listen(port, function () {
     console.log();
     console.log(`Listening on http://localhost:${actual}`);
 });
+
+tegel.gracefulShutdown({ server, close: function () { database.close(); } });

@@ -45,14 +45,17 @@ function setup() {
             reject(new Error('server exited ' + code + '\n' + output));
         });
 
-        child.stdout.on('data', function () {
+        function onServerData() {
             const match = output.match(/Listening on (http:\/\/localhost:\d+)/);
             if (!match) return;
             clearTimeout(timer);
             child.removeAllListeners('exit');
+            child.stdout.removeListener('data', onServerData);
             serverUrl = match[1];
             resolve();
-        });
+        }
+
+        child.stdout.on('data', onServerData);
     });
 }
 
