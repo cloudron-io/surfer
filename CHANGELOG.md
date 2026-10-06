@@ -430,3 +430,6 @@
 * Update surfer to 4f87312
 * Update tegel
 
+[7.2.6]
+* Update surfer to 7.2.6
+
