@@ -6,7 +6,7 @@ to manage files directly on the server.
 # Development
 
 ```bash
-git clone https://git.cloudron.io/s42/surfer.git
+git clone https://git.cloudron.io/apps/surfer.git
 cd surfer
 npm install
 npm run build
