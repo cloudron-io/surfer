@@ -7,8 +7,8 @@ export NODE_ENV=production
 [[ -d /app/data/surfer_root ]] && mv /app/data/surfer_root /app/data/public
 mkdir -p /app/data/public
 
-echo "=> Ensure permissions"
+echo "==> Ensure permissions"
 chown -R cloudron:cloudron /app/data
 
-echo "=> Start the server"
+echo "==> Starting Surfer"
 exec /usr/local/bin/gosu cloudron:cloudron node /app/code/server.js /app/data/public /app/data/db.sqlite /app/data/favicon.png
