@@ -40,6 +40,12 @@ a.usage-link {
   flex-grow: 1;
 }
 
+.main-container-body .pankow-split-layout-second {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 @media only screen and (max-width: 767px) {
   .directory-view-header-size,
   .directory-view .size {

@@ -73,8 +73,10 @@ function onCopyLink(entry) {
 
 .preview-panel {
   display: flex;
+  flex: 1;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   overflow: auto;
   background-color: white;
   padding: 0;
@@ -82,9 +84,14 @@ function onCopyLink(entry) {
 
 .preview-main-column {
   display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  width: 100%;
   min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
   padding: 20px 30px;
 }
 
@@ -95,6 +102,10 @@ function onCopyLink(entry) {
 }
 
 .preview-image.shadow {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 70%;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
