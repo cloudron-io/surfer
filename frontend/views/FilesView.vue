@@ -107,8 +107,36 @@ function deployQuery() {
   return { deployment: deploymentName.value };
 }
 
+function deploymentOf(entry) {
+  const name = entry && typeof entry.deployment === 'string' ? entry.deployment.trim().toLowerCase() : '';
+  return name || deploymentName.value;
+}
+
+function groupBySource(files) {
+  const groups = new Map();
+  for (const file of files) {
+    const from = deploymentOf(file);
+    const list = groups.get(from) || [];
+    list.push(file);
+    groups.set(from, list);
+  }
+  return groups;
+}
+
 // other admin windows of the same site reload changed folders
 const changes = useChangeBroadcast('surfer-changes', deploymentName);
+
+function announcePaths(site, paths) {
+  if (site === deploymentName.value) {
+    changes.announce(paths);
+    return;
+  }
+
+  if (typeof BroadcastChannel === 'undefined') return;
+  const channel = new BroadcastChannel('surfer-changes');
+  channel.postMessage({ scope: site, paths: paths });
+  channel.close();
+}
 
 changes.onChange(function (paths) {
   if (paths.map(function (p) { return sanitize(p); }).includes(path.value)) refresh();
@@ -459,14 +487,21 @@ function onDownload(entry) {
 }
 
 async function moveItems(items, targetDir) {
+  const dest = deploymentName.value;
+
   for (const entry of items) {
     const newFilePath = sanitize(targetDir + '/' + entry.fileName);
+    const from = deploymentOf(entry);
+    const sameSite = from === dest;
 
-    if (newFilePath === sanitize(entry.filePath)) continue;
-    if (entry.isDirectory && (newFilePath + '/').indexOf(sanitize(entry.filePath) + '/') === 0) continue;
+    if (sameSite && newFilePath === sanitize(entry.filePath)) continue;
+    if (sameSite && entry.isDirectory && (newFilePath + '/').indexOf(sanitize(entry.filePath) + '/') === 0) continue;
+
+    const body = { newFilePath: newFilePath, overwrite: 'rename' };
+    if (!sameSite) body.sourceDeployment = from;
 
     try {
-      const result = await fetcher.put(`/api/files${encode(entry.filePath)}`, { newFilePath: newFilePath, overwrite: 'rename' }, deployQuery());
+      const result = await fetcher.put(`/api/files${encode(entry.filePath)}`, body, deployQuery());
       if (result.status === 401) return logout();
       if (result.status !== 200) return error('Error moving ' + entry.fileName);
     } catch (e) {
@@ -484,15 +519,26 @@ function parentFolder(filePath) {
 async function pasteItems(action, files, targetDir) {
   if (action === 'cut') {
     await moveItems(files, targetDir);
-    changes.announce([targetDir, ...files.map(function (f) { return parentFolder(f.filePath); })]);
+    const here = [targetDir];
+    for (const [site, entries] of groupBySource(files)) {
+      const folders = entries.map(function (f) { return parentFolder(f.filePath); });
+      if (site === deploymentName.value) here.push(...folders);
+      else announcePaths(site, folders);
+    }
+    announcePaths(deploymentName.value, here);
     return;
   }
 
   if (action === 'copy') {
     try {
-      const result = await fetcher.post('/api/copy', { sources: files.map(function (f) { return f.filePath; }), destination: targetDir }, deployQuery());
-      if (result.status === 401) return logout();
-      if (result.status !== 201) return error('Error copying files');
+      for (const [from, entries] of groupBySource(files)) {
+        const body = { sources: entries.map(function (f) { return f.filePath; }), destination: targetDir };
+        if (from !== deploymentName.value) body.sourceDeployment = from;
+
+        const result = await fetcher.post('/api/copy', body, deployQuery());
+        if (result.status === 401) return logout();
+        if (result.status !== 201) return error('Error copying files');
+      }
     } catch (e) {
       return error(e.message);
     }

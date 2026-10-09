@@ -132,6 +132,23 @@ function deployRoot(req, next) {
     return null;
 }
 
+// destination is the deployment query. sourceDeployment on the body reads another site.
+function transferRoots(req, next) {
+    const destination = deployRoot(req, next);
+    if (!destination) return null;
+
+    const raw = req.body && req.body.sourceDeployment;
+    if (raw == null || raw === '') return { source: destination, destination };
+
+    const source = safe(function () { return sites.rootForName(raw); });
+    if (safe.error) {
+        next(new HttpError(400, safe.error.message));
+        return null;
+    }
+
+    return { source, destination };
+}
+
 function get(req, res, next) {
     const root = deployRoot(req, next);
     if (!root) return;
@@ -238,13 +255,13 @@ function put(req, res, next) {
 
     console.log('put: %s -> %s', oldFilePath, newFilePath);
 
-    const root = deployRoot(req, next);
-    if (!root) return;
-    const absoluteOldFilePath = getAbsolutePath(root, oldFilePath);
-    if (!absoluteOldFilePath || isProtected(root, absoluteOldFilePath)) return next(new HttpError(403, 'Path not allowed'));
+    const roots = transferRoots(req, next);
+    if (!roots) return;
+    const absoluteOldFilePath = getAbsolutePath(roots.source, oldFilePath);
+    if (!absoluteOldFilePath || isProtected(roots.source, absoluteOldFilePath)) return next(new HttpError(403, 'Path not allowed'));
 
-    const absoluteNewFilePath = getAbsolutePath(root, newFilePath);
-    if (!absoluteNewFilePath || isProtected(root, absoluteNewFilePath)) return next(new HttpError(403, 'Path not allowed'));
+    const absoluteNewFilePath = getAbsolutePath(roots.destination, newFilePath);
+    if (!absoluteNewFilePath || isProtected(roots.destination, absoluteNewFilePath)) return next(new HttpError(403, 'Path not allowed'));
 
     function doRename(targetFilePath) {
         fs.rename(absoluteOldFilePath, targetFilePath, function (error) {
@@ -292,14 +309,14 @@ function copy(req, res, next) {
     if (!Array.isArray(sources) || !sources.length || !sources.every(function (p) { return typeof p === 'string'; })) return next(new HttpError(400, 'missing sources array'));
     if (typeof destination !== 'string' || !destination) return next(new HttpError(400, 'missing destination string'));
 
-    const root = deployRoot(req, next);
-    if (!root) return;
-    const absoluteDestination = getAbsolutePath(root, destination);
-    if (!absoluteDestination || isProtected(root, absoluteDestination)) return next(new HttpError(403, 'Path not allowed'));
+    const roots = transferRoots(req, next);
+    if (!roots) return;
+    const absoluteDestination = getAbsolutePath(roots.destination, destination);
+    if (!absoluteDestination || isProtected(roots.destination, absoluteDestination)) return next(new HttpError(403, 'Path not allowed'));
 
     async function copyOne(sourceFilePath) {
-        const absoluteSource = getAbsolutePath(root, sourceFilePath);
-        if (!absoluteSource || isProtected(root, absoluteSource)) throw new HttpError(403, 'Path not allowed');
+        const absoluteSource = getAbsolutePath(roots.source, sourceFilePath);
+        if (!absoluteSource || isProtected(roots.source, absoluteSource)) throw new HttpError(403, 'Path not allowed');
 
         const targetPath = await getUniquePath(path.join(absoluteDestination, path.basename(absoluteSource)));
 

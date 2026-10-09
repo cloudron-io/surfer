@@ -28,6 +28,7 @@ export default {
     resolveRequest,
     readDeployment,
     rootForQuery,
+    rootForName,
     deploymentRoot,
     rootForPublicDir,
     prepare,
@@ -146,16 +147,22 @@ function readDeployment(req) {
     return name;
 }
 
+function rootForName(raw) {
+    const name = decodeName(raw);
+    if (!name || name === 'default') return primaryRoot;
+
+    const root = deploymentRoot(name);
+    if (!root) throw badDeployment('unknown deployment');
+    return root;
+}
+
 function rootForQuery(req) {
     const raw = req.query && req.query.deployment;
     if (raw == null || raw === '') return resolveRequest(req).root;
 
     const name = decodeName(raw);
     if (!name) return resolveRequest(req).root;
-
-    const root = deploymentRoot(name);
-    if (!root) throw badDeployment('unknown deployment');
-    return root;
+    return rootForName(name);
 }
 
 function prepare() {
