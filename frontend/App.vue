@@ -110,7 +110,7 @@ function siteActions(site) {
     icon: 'fa-solid fa-pen',
     action: function () { openEdit(site); }
   }, {
-    label: 'Deploy to default',
+    label: 'Deploy to Default',
     icon: 'fa-solid fa-arrow-right',
     action: function () { openPromote(site); }
   }, {
@@ -225,14 +225,14 @@ async function onPromote() {
     const result = await fetcher.post('/api/sites/' + encodeURIComponent(promoteName.value) + '/default', {});
     if (result.status === 401) return login();
     if (result.status !== 201) {
-      promoteError.value = (result.body && (result.body.message || result.body.error)) || 'Could not deploy to the default site';
+      promoteError.value = (result.body && (result.body.message || result.body.error)) || 'Could not deploy to Default';
       return;
     }
 
     promoteDialog.value?.close();
-    window.pankow.notify({ type: 'success', text: 'Deployed to the default site' });
+    window.pankow.notify({ type: 'success', text: 'Deployed to Default' });
   } catch (e) {
-    promoteError.value = e.message || 'Could not deploy to the default site';
+    promoteError.value = e.message || 'Could not deploy to Default';
   } finally {
     promoting.value = false;
   }
@@ -411,7 +411,7 @@ onMounted(loadProfile);
         <span v-if="editError" class="deploy-error">{{ editError }}</span>
       </div>
     </Dialog>
-    <Dialog ref="promoteDialog" title="Deploy to default site" confirm-label="Deploy" reject-label="Cancel" confirm-style="success" reject-style="secondary" :confirm-busy="promoting" @confirm="onPromote">
+    <Dialog ref="promoteDialog" title="Deploy to Default" confirm-label="Deploy" reject-label="Cancel" confirm-style="success" reject-style="secondary" :confirm-busy="promoting" @confirm="onPromote">
       <p class="deploy-promote">Replace Default with the files from {{ promoteName }}. This site remains unchanged.</p>
       <span v-if="promoteError" class="deploy-error">{{ promoteError }}</span>
     </Dialog>
