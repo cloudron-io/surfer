@@ -433,3 +433,7 @@
 [7.2.6]
 * Update surfer to 7.2.6
 
+[7.2.7]
+* Update surfer to 7.2.7
+* Fix for cross site copy and move
+
