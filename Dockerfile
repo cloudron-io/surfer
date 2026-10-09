@@ -9,7 +9,7 @@ RUN apt-get update && \
 
 # SURFER_COMMIT is a reference for renovate when building from master. The pipeline always builds from the branch it is run on
 # renovate: datasource=git-refs packageName=https://git.cloudron.io/apps/surfer branch=master
-ARG SURFER_COMMIT=d88e35892aba7da88b5d9681af0a5f1bb311794f
+ARG SURFER_COMMIT=54cba099cae6c5d34c245c50603b7122fd9de7b0
 
 COPY . /app/code/
 
