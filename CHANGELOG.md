@@ -437,3 +437,8 @@
 * Update surfer to 7.2.7
 * Fix for cross site copy and move
 
+[7.3.0]
+* Update surfer to 7.3.0
+* Do not allow zip download when folder listing is disabled
+* Restructure codebase
+
