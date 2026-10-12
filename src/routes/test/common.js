@@ -9,12 +9,14 @@ const aliasDomain = 'alpha.example.com';
 
 let dataDir = '';
 let filesDirectory = '';
+let faviconFile = '';
 let child = null;
 let serverUrl = '';
 
 function setup() {
     dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'surfer-route-'));
     filesDirectory = path.join(dataDir, 'files');
+    faviconFile = path.join(dataDir, 'favicon.png');
     fs.mkdirSync(filesDirectory);
 
     const env = {
@@ -26,7 +28,7 @@ function setup() {
         CLOUDRON_ALIAS_DOMAINS: aliasDomain,
     };
 
-    child = spawn(process.execPath, [ serverJs, filesDirectory, path.join(dataDir, 'db.sqlite') ], {
+    child = spawn(process.execPath, [ serverJs, filesDirectory, path.join(dataDir, 'db.sqlite'), faviconFile ], {
         env,
         stdio: [ 'ignore', 'pipe', 'pipe' ],
     });
@@ -64,6 +66,7 @@ function cleanup() {
     const proc = child;
     dataDir = '';
     filesDirectory = '';
+    faviconFile = '';
     child = null;
     serverUrl = '';
 
@@ -90,11 +93,16 @@ function filesDir() {
     return filesDirectory;
 }
 
+function faviconPath() {
+    return faviconFile;
+}
+
 export default {
     setup,
     cleanup,
     url,
     filesDir,
+    faviconPath,
     primaryDomain,
     aliasDomain,
 };

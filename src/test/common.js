@@ -12,6 +12,7 @@ function setup() {
 }
 
 function cleanup() {
+    database.close();
     if (!dataDir) return;
     fs.rmSync(dataDir, { recursive: true, force: true });
     dataDir = '';
@@ -21,8 +22,13 @@ function root() {
     return dataDir;
 }
 
+function dbFile() {
+    return path.join(dataDir, 'db.sqlite');
+}
+
 export default {
     setup,
     cleanup,
     root,
+    dbFile,
 };
