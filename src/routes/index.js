@@ -48,6 +48,13 @@ function register({ app, router, express, config, appRoot, faviconFile, faviconF
         updatePassword: access.updatePassword,
     });
 
+    function zipAccess(req, res, next) {
+        const deployment = req.query.deployment;
+        if (config.folderListingEnabled && (deployment == null || deployment === '')) return access.handleProtection(req, res, next);
+
+        return auth.requireAuth(req, res, next);
+    }
+
     router.use(logRequests);
     router.use(cors({ origins: [ '*' ], allowCredentials: false }));
     router.use('/api', express.urlencoded({ extended: false, limit: '100mb' }));
@@ -76,7 +83,7 @@ function register({ app, router, express, config, appRoot, faviconFile, faviconF
     router.put   ('/api/sites/:domain', auth.requireAuth, siteRoutes.update);
     router.delete('/api/sites/:domain', auth.requireAuth, siteRoutes.remove);
     router.post  ('/api/sites/:name/default', auth.requireAuth, deploy.promote);
-    router.get   ('/api/zip', access.handleProtection, publicSite.zipDownload);
+    router.get   ('/api/zip', zipAccess, publicSite.zipDownload);
     router.get   ('/api/healthcheck', function (req, res) { res.status(200).send(); });
 
     webdav.install(app);
