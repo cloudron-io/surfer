@@ -1,6 +1,5 @@
 'use strict';
 
-import fs from 'node:fs';
 import path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import safe from '@cloudron/safetydance';
@@ -132,12 +131,16 @@ function resolveRequest(req) {
     return resolveHost(requestHost(req));
 }
 
-function decodeName(raw) {
+async function decode(value) {
+    return decodeURIComponent(value);
+}
+
+async function decodeName(raw) {
     if (raw == null || raw === '') return '';
     if (typeof raw !== 'string') throw new SurferError(SurferError.BAD_FIELD, 'invalid deployment');
 
-    const decoded = safe(function () { return decodeURIComponent(raw); });
-    if (safe.error) throw new SurferError(SurferError.BAD_FIELD, 'invalid deployment');
+    const [error, decoded] = await safe(decode(raw));
+    if (error) throw new SurferError(SurferError.BAD_FIELD, 'invalid deployment');
     return decoded.trim().toLowerCase();
 }
 
@@ -145,23 +148,23 @@ function deploymentRoot(name) {
     if (!name || name === 'default') return primaryRoot;
 
     const root = rootForPublicDir('public-' + name);
-    if (!root || !fs.existsSync(root)) return null;
+    if (!root || !safe.fs.existsSync(root)) return null;
     return root;
 }
 
-function readDeploymentHeader(raw) {
-    const name = decodeName(raw);
+async function readDeploymentHeader(raw) {
+    const name = await decodeName(raw);
     if (!name) return 'default';
     if (!deploymentRoot(name)) throw new SurferError(SurferError.BAD_FIELD, 'unknown deployment');
     return name;
 }
 
-function readDeployment(req) {
+async function readDeployment(req) {
     return readDeploymentHeader(req.headers && req.headers['surfer-deployment']);
 }
 
-function rootForName(raw) {
-    const name = decodeName(raw);
+async function rootForName(raw) {
+    const name = await decodeName(raw);
     if (!name || name === 'default') return primaryRoot;
 
     const root = deploymentRoot(name);
@@ -169,15 +172,15 @@ function rootForName(raw) {
     return root;
 }
 
-function rootForRequest(host, raw) {
+async function rootForRequest(host, raw) {
     if (raw == null || raw === '') return resolveHost(host).root;
 
-    const name = decodeName(raw);
+    const name = await decodeName(raw);
     if (!name) return resolveHost(host).root;
     return rootForName(name);
 }
 
-function rootForQuery(req) {
+async function rootForQuery(req) {
     return rootForRequest(requestHost(req), req.query && req.query.deployment);
 }
 
@@ -204,24 +207,22 @@ function conflictMessage(error) {
     return 'site already exists';
 }
 
-function rowOrThrow(domain) {
-    try {
-        return domains.rowForDomain(domain);
-    } catch (error) {
-        throw new SurferError(SurferError.DATABASE_ERROR, error.message);
-    }
+async function rowOrThrow(domain) {
+    const [error, row] = await safe(domains.rowForDomain(domain));
+    if (error) throw new SurferError(SurferError.DATABASE_ERROR, error.message);
+    return row;
 }
 
 async function list() {
-    try {
-        const rows = domains.list() || [];
-        return rows.map(function (row) {
-            return { name: deployName(row.publicDir), publicDir: row.publicDir, domain: row.domain };
-        });
-    } catch (error) {
+    const [error, rows] = await safe(domains.list());
+    if (error) {
         console.error('sites:', error);
         throw new SurferError(SurferError.DATABASE_ERROR, 'failed to list sites');
     }
+
+    return (rows || []).map(function (row) {
+        return { name: deployName(row.publicDir), publicDir: row.publicDir, domain: row.domain };
+    });
 }
 
 async function create(name, domain) {
@@ -230,25 +231,21 @@ async function create(name, domain) {
     const publicDir = name === 'default' ? 'public' : ('public-' + name);
     const root = rootForPublicDir(publicDir);
     if (!root) throw new SurferError(SurferError.BAD_FIELD, 'invalid site name');
-    if (fs.existsSync(root)) throw new SurferError(SurferError.ALREADY_EXISTS, 'site already exists');
+    if (safe.fs.existsSync(root)) throw new SurferError(SurferError.ALREADY_EXISTS, 'site already exists');
 
     if (!domain || domain === primaryName() || !matchAlias(domain)) throw new SurferError(SurferError.BAD_FIELD, 'domain must be an alias');
     if (domains.publicDirForHost(domain)) throw new SurferError(SurferError.ALREADY_EXISTS, 'domain is already mapped');
 
-    try {
-        domains.insert(domain, publicDir);
-    } catch (error) {
-        const conflict = conflictMessage(error);
+    const [insertError] = await safe(domains.insert(domain, publicDir));
+    if (insertError) {
+        const conflict = conflictMessage(insertError);
         if (conflict) throw new SurferError(SurferError.ALREADY_EXISTS, conflict);
-        throw new SurferError(SurferError.DATABASE_ERROR, error.message);
+        throw new SurferError(SurferError.DATABASE_ERROR, insertError.message);
     }
 
-    try {
-        fs.mkdirSync(root);
-    } catch (error) {
-        try {
-            domains.remove(domain);
-        } catch { /* the insert is rolled back best-effort */ }
+    if (!safe.fs.mkdirSync(root)) {
+        const error = safe.error;
+        await safe(domains.remove(domain));
         throw new SurferError(SurferError.FS_ERROR, error.message);
     }
 
@@ -256,7 +253,7 @@ async function create(name, domain) {
 }
 
 async function update(fromDomain, name, domain) {
-    const row = rowOrThrow(fromDomain);
+    const row = await rowOrThrow(fromDomain);
     if (!row) throw new SurferError(SurferError.NOT_FOUND, 'unknown site');
     if (row.publicDir === 'public') throw new SurferError(SurferError.BAD_FIELD, 'invalid site name');
 
@@ -268,50 +265,39 @@ async function update(fromDomain, name, domain) {
     if (name !== fromName) {
         const nextRoot = rootForPublicDir(publicDir);
         if (!nextRoot) throw new SurferError(SurferError.BAD_FIELD, 'invalid site name');
-        if (fs.existsSync(nextRoot)) throw new SurferError(SurferError.ALREADY_EXISTS, 'site already exists');
+        if (safe.fs.existsSync(nextRoot)) throw new SurferError(SurferError.ALREADY_EXISTS, 'site already exists');
     }
 
     if (domain !== fromDomain && domains.publicDirForHost(domain)) throw new SurferError(SurferError.ALREADY_EXISTS, 'domain is already mapped');
 
     const oldRoot = rootForPublicDir(row.publicDir);
-    if (!oldRoot || !fs.existsSync(oldRoot)) throw new SurferError(SurferError.BAD_FIELD, 'unknown site');
+    if (!oldRoot || !safe.fs.existsSync(oldRoot)) throw new SurferError(SurferError.BAD_FIELD, 'unknown site');
     if (name === fromName && domain === fromDomain) return { name: name, publicDir: row.publicDir, domain: domain };
 
     if (!tryLock()) throw new SurferError(SurferError.BUSY, 'a deploy is already in progress');
 
     const nextRoot = rootForPublicDir(publicDir);
-    let renamed = false;
-    try {
-        if (name !== fromName) {
-            try {
-                fs.renameSync(oldRoot, nextRoot);
-            } catch (error) {
-                throw new SurferError(SurferError.FS_ERROR, error.message);
-            }
-            renamed = true;
-        }
-
-        try {
-            domains.updateSite(fromDomain, row.publicDir, publicDir, domain);
-        } catch (error) {
-            if (renamed) {
-                try {
-                    fs.renameSync(nextRoot, oldRoot);
-                } catch { /* leave the renamed folder if the rollback fails */ }
-            }
-            const conflict = conflictMessage(error);
-            if (conflict) throw new SurferError(SurferError.ALREADY_EXISTS, conflict);
-            throw new SurferError(SurferError.DATABASE_ERROR, error.message);
-        }
-
-        return { name: name, publicDir: publicDir, domain: domain };
-    } finally {
+    if (name !== fromName && !safe.fs.renameSync(oldRoot, nextRoot)) {
+        const error = safe.error;
         unlock();
+        throw new SurferError(SurferError.FS_ERROR, error.message);
     }
+
+    const [updateError] = await safe(domains.updateSite(fromDomain, row.publicDir, publicDir, domain));
+    if (updateError) {
+        if (name !== fromName) safe.fs.renameSync(nextRoot, oldRoot);
+        unlock();
+        const conflict = conflictMessage(updateError);
+        if (conflict) throw new SurferError(SurferError.ALREADY_EXISTS, conflict);
+        throw new SurferError(SurferError.DATABASE_ERROR, updateError.message);
+    }
+
+    unlock();
+    return { name: name, publicDir: publicDir, domain: domain };
 }
 
 async function remove(domain) {
-    const row = rowOrThrow(domain);
+    const row = await rowOrThrow(domain);
     if (!row) throw new SurferError(SurferError.NOT_FOUND, 'unknown site');
     if (row.publicDir === 'public') throw new SurferError(SurferError.BAD_FIELD, 'invalid site name');
 
@@ -320,23 +306,15 @@ async function remove(domain) {
 
     if (!tryLock()) throw new SurferError(SurferError.BUSY, 'a deploy is already in progress');
 
-    try {
-        if (fs.existsSync(root)) {
-            try {
-                fs.rmSync(root, { recursive: true, force: true });
-            } catch (error) {
-                throw new SurferError(SurferError.FS_ERROR, error.message);
-            }
-        }
-
-        try {
-            domains.remove(domain);
-        } catch (error) {
-            throw new SurferError(SurferError.DATABASE_ERROR, error.message);
-        }
-    } finally {
+    if (safe.fs.existsSync(root) && !safe.fs.rmSync(root, { recursive: true, force: true })) {
+        const error = safe.error;
         unlock();
+        throw new SurferError(SurferError.FS_ERROR, error.message);
     }
+
+    const [error] = await safe(domains.remove(domain));
+    unlock();
+    if (error) throw new SurferError(SurferError.DATABASE_ERROR, error.message);
 }
 
 function prepare() {

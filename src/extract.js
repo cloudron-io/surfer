@@ -79,7 +79,7 @@ function extractTar(absoluteFilePath, destination) {
 }
 
 async function extract(host, deployment, filePath) {
-    const root = sites.rootForRequest(host, deployment);
+    const root = await sites.rootForRequest(host, deployment);
     const absoluteFilePath = absolutePath(root, filePath);
     if (!absoluteFilePath) throw new SurferError(SurferError.ACCESS_DENIED, 'Path not allowed');
 

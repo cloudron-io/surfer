@@ -78,10 +78,8 @@ function parsePaths(req, next) {
         return null;
     }
 
-    let filePaths;
-    try {
-        filePaths = JSON.parse(req.query.paths);
-    } catch {
+    const filePaths = safe.JSON.parse(req.query.paths);
+    if (!filePaths) {
         next(new HttpError(400, 'invalid paths'));
         return null;
     }

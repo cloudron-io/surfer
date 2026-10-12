@@ -29,7 +29,7 @@ export default {
     removeFavicon,
 };
 
-function init(dbPath, paths = {}) {
+async function init(dbPath, paths = {}) {
     gFaviconFile = paths.faviconFile || '';
     gFaviconFallback = paths.faviconFallback || '';
 
@@ -54,7 +54,7 @@ function init(dbPath, paths = {}) {
 
         if (legacy) {
             console.log(`Migrating settings from ${legacy.path}`);
-            save(normalize(legacy.parsed));
+            await save(normalize(legacy.parsed));
             if (!safe.fs.unlinkSync(legacy.path)) console.error(`Cannot remove legacy settings ${legacy.path}`, safe.error);
         }
     }
@@ -93,9 +93,8 @@ async function update(fields) {
         config.accessPasswordSalt = fields.passwordUpdate.accessPasswordSalt;
     }
 
-    try {
-        save(config);
-    } catch (error) {
+    const [error] = await safe(save(config));
+    if (error) {
         console.error('unable to save settings', error);
         throw new SurferError(SurferError.DATABASE_ERROR, 'unable to save settings');
     }
@@ -107,24 +106,21 @@ function faviconPath() {
 }
 
 async function writeFavicon(uploadPath) {
-    try {
-        await fs.copyFile(uploadPath, gFaviconFile);
-    } catch (error) {
+    const [error] = await safe(fs.copyFile(uploadPath, gFaviconFile));
+    if (error) {
         console.error('Failed to save favicon.', error);
         throw new SurferError(SurferError.FS_ERROR, 'Failed to save favicon');
     }
 }
 
 async function removeFavicon() {
-    try {
-        await fs.unlink(gFaviconFile);
-    } catch (error) {
-        console.error('Failed to reset favicon.', error);
-        throw new SurferError(SurferError.FS_ERROR, 'Failed to reset favicon');
-    }
+    if (safe.fs.unlinkSync(gFaviconFile)) return;
+
+    console.error('Failed to reset favicon.', safe.error);
+    throw new SurferError(SurferError.FS_ERROR, 'Failed to reset favicon');
 }
 
-function save(config) {
+async function save(config) {
     const normalized = normalize(config);
     const tx = database.transaction(function () {
         for (const key of Object.keys(DEFAULTS)) {

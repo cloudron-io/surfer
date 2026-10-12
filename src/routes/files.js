@@ -23,10 +23,8 @@ function parsePaths(req, next) {
         return null;
     }
 
-    let filePaths;
-    try {
-        filePaths = JSON.parse(req.query.paths);
-    } catch {
+    const filePaths = safe.JSON.parse(req.query.paths);
+    if (!filePaths) {
         next(new HttpError(400, 'invalid paths'));
         return null;
     }
@@ -71,15 +69,15 @@ async function post(req, res, next) {
     next(new HttpSuccess(201, {}));
 }
 
+async function decodePath(value) {
+    return decodeURIComponent(value);
+}
+
 async function put(req, res, next) {
     if (!req.body || !req.body.newFilePath) return next(new HttpError(400, 'missing newFilePath'));
 
-    let newFilePath;
-    try {
-        newFilePath = decodeURIComponent(req.body.newFilePath);
-    } catch {
-        return next(new HttpError(400, 'missing newFilePath'));
-    }
+    const [decodeError, newFilePath] = await safe(decodePath(req.body.newFilePath));
+    if (decodeError) return next(new HttpError(400, 'missing newFilePath'));
 
     const sourceDeployment = req.body.sourceDeployment;
     const [error] = await safe(files.move(sites.requestHost(req), req.query.deployment, sourceDeployment, req.params.path.join('/'), newFilePath, req.body.overwrite));

@@ -2,6 +2,7 @@
 
 import crypto from 'node:crypto';
 import { promisify } from 'node:util';
+import safe from '@cloudron/safetydance';
 import settings from './settings.js';
 import SurferError from './surfererror.js';
 
@@ -13,6 +14,7 @@ const CRYPTO_ITERATIONS = 10000; // iterations
 const CRYPTO_KEY_LENGTH = 512; // bits
 const CRYPTO_DIGEST = 'sha1'; // used to be the default in node 4.1.1 cannot change since it will affect existing db records
 
+const randomBytes = promisify(crypto.randomBytes);
 const pbkdf2 = promisify(crypto.pbkdf2);
 
 function getCookie(header, name) {
@@ -42,16 +44,16 @@ function cookieMatches(cookieHeader) {
 }
 
 async function hashPassword(password) {
-    try {
-        const salt = crypto.randomBytes(CRYPTO_SALT_SIZE);
-        const derivedKey = await pbkdf2(password, salt, CRYPTO_ITERATIONS, CRYPTO_KEY_LENGTH, CRYPTO_DIGEST);
-        return {
-            accessPassword: Buffer.from(derivedKey, 'binary').toString('hex'),
-            accessPasswordSalt: salt.toString('hex'),
-        };
-    } catch {
-        throw new SurferError(SurferError.INTERNAL_ERROR, 'failed to set password');
-    }
+    const [saltError, salt] = await safe(randomBytes(CRYPTO_SALT_SIZE));
+    if (saltError) throw new SurferError(SurferError.INTERNAL_ERROR, 'failed to set password');
+
+    const [error, derivedKey] = await safe(pbkdf2(password, salt, CRYPTO_ITERATIONS, CRYPTO_KEY_LENGTH, CRYPTO_DIGEST));
+    if (error) throw new SurferError(SurferError.INTERNAL_ERROR, 'failed to set password');
+
+    return {
+        accessPassword: Buffer.from(derivedKey, 'binary').toString('hex'),
+        accessPasswordSalt: salt.toString('hex'),
+    };
 }
 
 async function login(password) {
@@ -59,10 +61,8 @@ async function login(password) {
     if (config.accessRestriction !== 'password') throw new SurferError(SurferError.NOT_PROTECTED, 'site is not protected');
 
     const saltBinary = Buffer.from(config.accessPasswordSalt, 'hex');
-    let derivedKey;
-    try {
-        derivedKey = await pbkdf2(password, saltBinary, CRYPTO_ITERATIONS, CRYPTO_KEY_LENGTH, CRYPTO_DIGEST);
-    } catch (error) {
+    const [error, derivedKey] = await safe(pbkdf2(password, saltBinary, CRYPTO_ITERATIONS, CRYPTO_KEY_LENGTH, CRYPTO_DIGEST));
+    if (error) {
         console.log('Failed to derive key.', error);
         throw new SurferError(SurferError.INTERNAL_ERROR, 'internal error');
     }

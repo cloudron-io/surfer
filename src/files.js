@@ -1,8 +1,8 @@
 'use strict';
 
-import fs from 'node:fs';
-import fsPromises from 'node:fs/promises';
+import fs from 'node:fs/promises';
 import path from 'node:path';
+import safe from '@cloudron/safetydance';
 import { getMimeType } from './mime.js';
 import sites from './sites.js';
 import SurferError from './surfererror.js';
@@ -36,17 +36,19 @@ function entryFromStat(root, filePath, fileName, stat) {
     };
 }
 
-async function collectFiles(root, folderPath, recursive) {
-    const list = await fsPromises.readdir(folderPath);
-    const results = [];
+function collectFiles(root, folderPath, recursive) {
+    const list = safe.fs.readdirSync(folderPath);
+    if (!list) throw new SurferError(SurferError.FS_ERROR, safe.error);
 
+    const results = [];
     for (const file of list) {
         const filePath = path.resolve(folderPath, file);
-        const stat = await fsPromises.stat(filePath);
+        const stat = safe.fs.statSync(filePath);
+        if (!stat) throw new SurferError(SurferError.FS_ERROR, safe.error);
         results.push(entryFromStat(root, filePath, file, stat));
 
         if (stat.isDirectory() && recursive) {
-            const nested = await collectFiles(root, filePath, recursive);
+            const nested = collectFiles(root, filePath, recursive);
             for (const entry of nested) results.push(entry);
         }
     }
@@ -54,94 +56,74 @@ async function collectFiles(root, folderPath, recursive) {
     return results;
 }
 
-function rootFor(host, deployment) {
+async function rootFor(host, deployment) {
     return sites.rootForRequest(host, deployment);
 }
 
-function transferRoots(host, deployment, sourceDeployment) {
-    const destination = rootFor(host, deployment);
+async function transferRoots(host, deployment, sourceDeployment) {
+    const destination = await rootFor(host, deployment);
     if (sourceDeployment == null || sourceDeployment === '') return { source: destination, destination };
-    return { source: sites.rootForName(sourceDeployment), destination: destination };
+    return { source: await sites.rootForName(sourceDeployment), destination: destination };
 }
 
-async function uniquePath(targetPath) {
-    if (!fs.existsSync(targetPath)) return targetPath;
+function uniquePath(targetPath) {
+    if (safe.fs.existsSync(targetPath)) {
+        const dir = path.dirname(targetPath);
+        const ext = path.extname(targetPath);
+        const base = path.basename(targetPath, ext);
 
-    const dir = path.dirname(targetPath);
-    const ext = path.extname(targetPath);
-    const base = path.basename(targetPath, ext);
-
-    for (let i = 1; ; ++i) {
-        const candidate = path.join(dir, `${base} (${i})${ext}`);
-        if (!fs.existsSync(candidate)) return candidate;
+        for (let i = 1; ; ++i) {
+            const candidate = path.join(dir, `${base} (${i})${ext}`);
+            if (!safe.fs.existsSync(candidate)) return candidate;
+        }
     }
+
+    return targetPath;
 }
 
 async function get(host, deployment, filePath, recursive) {
-    const root = rootFor(host, deployment);
+    const root = await rootFor(host, deployment);
     const absoluteFilePath = absolutePath(root, filePath);
     if (!absoluteFilePath) throw new SurferError(SurferError.ACCESS_DENIED, 'Path not allowed');
 
-    let stat;
-    try {
-        stat = await fsPromises.stat(absoluteFilePath);
-    } catch (error) {
-        throw new SurferError(SurferError.NOT_FOUND, error);
-    }
+    const stat = safe.fs.statSync(absoluteFilePath);
+    if (!stat) throw new SurferError(SurferError.NOT_FOUND, safe.error);
 
     console.log('get:', absoluteFilePath);
 
     if (!stat.isDirectory() && !stat.isFile()) throw new SurferError(SurferError.INTERNAL_ERROR, 'unsupported type');
     if (stat.isFile()) return { type: 'file', path: absoluteFilePath };
 
-    let entries;
-    try {
-        entries = await collectFiles(root, absoluteFilePath, recursive);
-    } catch (error) {
-        throw new SurferError(SurferError.FS_ERROR, error);
-    }
-
     return {
         type: 'directory',
         stat: entryFromStat(root, absoluteFilePath, '', stat),
-        entries: entries
+        entries: collectFiles(root, absoluteFilePath, recursive)
     };
 }
 
 async function add(host, deployment, filePath, directory, uploadPath, mtime) {
     console.log('post:', filePath, mtime);
 
-    const root = rootFor(host, deployment);
+    const root = await rootFor(host, deployment);
     const absoluteFilePath = absolutePath(root, filePath);
     if (!absoluteFilePath || isProtected(root, absoluteFilePath)) throw new SurferError(SurferError.ACCESS_DENIED, 'Path not allowed');
 
-    let existing = null;
-    try {
-        existing = await fsPromises.stat(absoluteFilePath);
-    } catch (error) {
-        if (error.code !== 'ENOENT') throw new SurferError(SurferError.FS_ERROR, error);
-    }
+    const existing = safe.fs.statSync(absoluteFilePath);
+    if (!existing && safe.error && safe.error.code !== 'ENOENT') throw new SurferError(SurferError.FS_ERROR, safe.error);
 
     if (existing && directory) throw new SurferError(SurferError.ALREADY_EXISTS, 'name already exists');
     if (existing && existing.isDirectory()) throw new SurferError(SurferError.CONFLICT, 'cannot post on directories');
 
     if (directory) {
-        try {
-            await fsPromises.mkdir(absoluteFilePath, { recursive: true });
-        } catch (error) {
-            throw new SurferError(SurferError.FS_ERROR, error);
-        }
+        if (!safe.fs.mkdirSync(absoluteFilePath, { recursive: true })) throw new SurferError(SurferError.FS_ERROR, safe.error);
         return;
     }
 
     if (!existing || existing.isFile()) {
-        try {
-            await fsPromises.mkdir(path.dirname(absoluteFilePath), { recursive: true });
-            await fsPromises.copyFile(uploadPath, absoluteFilePath);
-            if (mtime) await fsPromises.utimes(absoluteFilePath, mtime, mtime);
-        } catch (error) {
-            throw new SurferError(SurferError.FS_ERROR, error);
-        }
+        if (!safe.fs.mkdirSync(path.dirname(absoluteFilePath), { recursive: true })) throw new SurferError(SurferError.FS_ERROR, safe.error);
+        const [copyError] = await safe(fs.copyFile(uploadPath, absoluteFilePath));
+        if (copyError) throw new SurferError(SurferError.FS_ERROR, copyError);
+        if (mtime && !safe.fs.utimesSync(absoluteFilePath, mtime, mtime)) throw new SurferError(SurferError.FS_ERROR, safe.error);
         return;
     }
 
@@ -151,7 +133,7 @@ async function add(host, deployment, filePath, directory, uploadPath, mtime) {
 async function move(host, deployment, sourceDeployment, oldFilePath, newFilePath, overwrite) {
     console.log('put: %s -> %s', oldFilePath, newFilePath);
 
-    const roots = transferRoots(host, deployment, sourceDeployment);
+    const roots = await transferRoots(host, deployment, sourceDeployment);
     const absoluteOldFilePath = absolutePath(roots.source, oldFilePath);
     if (!absoluteOldFilePath || isProtected(roots.source, absoluteOldFilePath)) throw new SurferError(SurferError.ACCESS_DENIED, 'Path not allowed');
 
@@ -160,27 +142,18 @@ async function move(host, deployment, sourceDeployment, oldFilePath, newFilePath
 
     let targetPath = absoluteNewFilePath;
     if (overwrite === false) {
-        try {
-            await fsPromises.stat(absoluteNewFilePath);
-            throw new SurferError(SurferError.ALREADY_EXISTS, 'destination exists');
-        } catch (error) {
-            if (error instanceof SurferError) throw error;
-        }
+        if (safe.fs.statSync(absoluteNewFilePath)) throw new SurferError(SurferError.ALREADY_EXISTS, 'destination exists');
     } else if (overwrite === 'rename') {
-        targetPath = await uniquePath(absoluteNewFilePath);
+        targetPath = uniquePath(absoluteNewFilePath);
     }
 
-    try {
-        await fsPromises.rename(absoluteOldFilePath, targetPath);
-    } catch (error) {
-        throw new SurferError(SurferError.FS_ERROR, error);
-    }
+    if (!safe.fs.renameSync(absoluteOldFilePath, targetPath)) throw new SurferError(SurferError.FS_ERROR, safe.error);
 
     console.log('put: successful');
 }
 
 async function copy(host, deployment, sourceDeployment, sources, destination) {
-    const roots = transferRoots(host, deployment, sourceDeployment);
+    const roots = await transferRoots(host, deployment, sourceDeployment);
     const absoluteDestination = absolutePath(roots.destination, destination);
     if (!absoluteDestination || isProtected(roots.destination, absoluteDestination)) throw new SurferError(SurferError.ACCESS_DENIED, 'Path not allowed');
 
@@ -188,40 +161,31 @@ async function copy(host, deployment, sourceDeployment, sources, destination) {
         const absoluteSource = absolutePath(roots.source, sourceFilePath);
         if (!absoluteSource || isProtected(roots.source, absoluteSource)) throw new SurferError(SurferError.ACCESS_DENIED, 'Path not allowed');
 
-        const targetPath = await uniquePath(path.join(absoluteDestination, path.basename(absoluteSource)));
-        try {
-            await fsPromises.cp(absoluteSource, targetPath, { recursive: true });
-        } catch (error) {
-            throw new SurferError(SurferError.FS_ERROR, error.message);
-        }
+        const targetPath = uniquePath(path.join(absoluteDestination, path.basename(absoluteSource)));
+        const [copyError] = await safe(fs.cp(absoluteSource, targetPath, { recursive: true }));
+        if (copyError) throw new SurferError(SurferError.FS_ERROR, copyError.message);
     }
 }
 
 async function remove(host, deployment, filePath, recursive) {
-    const root = rootFor(host, deployment);
+    const root = await rootFor(host, deployment);
     const absoluteFilePath = absolutePath(root, filePath);
     if (!absoluteFilePath) throw new SurferError(SurferError.NOT_FOUND, 'Not found');
     if (isProtected(root, absoluteFilePath)) throw new SurferError(SurferError.ACCESS_DENIED, 'Path not allowed');
 
-    let stat;
-    try {
-        stat = await fsPromises.stat(absoluteFilePath);
-    } catch (error) {
-        throw new SurferError(SurferError.NOT_FOUND, error);
-    }
+    const stat = safe.fs.statSync(absoluteFilePath);
+    if (!stat) throw new SurferError(SurferError.NOT_FOUND, safe.error);
 
     if (stat.isDirectory() && !recursive) throw new SurferError(SurferError.ACCESS_DENIED, 'Is directory');
 
-    try {
-        await fsPromises.rm(absoluteFilePath, { recursive: true });
-    } catch (error) {
-        console.error(error);
+    if (!safe.fs.rmSync(absoluteFilePath, { recursive: true })) {
+        console.error(safe.error);
         throw new SurferError(SurferError.FS_ERROR, 'Unable to remove');
     }
 }
 
 async function zipSources(host, deployment, filePaths) {
-    const root = rootFor(host, deployment);
+    const root = await rootFor(host, deployment);
     const absolutePaths = [];
     for (const filePath of filePaths) {
         const resolved = path.resolve(path.join(root, filePath));

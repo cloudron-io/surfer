@@ -1,7 +1,7 @@
 'use strict';
 
-import fsPromises from 'node:fs/promises';
 import path from 'node:path';
+import safe from '@cloudron/safetydance';
 import { getMimeType } from './mime.js';
 import sites from './sites.js';
 import SurferError from './surfererror.js';
@@ -35,33 +35,21 @@ async function listDirectory(root, filePath) {
     const absoluteFilePath = absolutePath(root, filePath);
     if (!absoluteFilePath) throw new SurferError(SurferError.ACCESS_DENIED, 'Path not allowed');
 
-    let stat;
-    try {
-        stat = await fsPromises.stat(absoluteFilePath);
-    } catch (error) {
-        throw new SurferError(SurferError.NOT_FOUND, error);
-    }
+    const stat = safe.fs.statSync(absoluteFilePath);
+    if (!stat) throw new SurferError(SurferError.NOT_FOUND, safe.error);
 
     console.log('get', absoluteFilePath);
 
     if (!stat.isDirectory()) throw new SurferError(SurferError.INTERNAL_ERROR, 'unsupported type');
 
-    let names;
-    try {
-        names = await fsPromises.readdir(absoluteFilePath);
-    } catch (error) {
-        throw new SurferError(SurferError.FS_ERROR, error);
-    }
+    const names = safe.fs.readdirSync(absoluteFilePath);
+    if (!names) throw new SurferError(SurferError.FS_ERROR, safe.error);
 
     const entries = [];
     for (const file of names) {
         const childPath = path.resolve(absoluteFilePath, file);
-        let childStat;
-        try {
-            childStat = await fsPromises.stat(childPath);
-        } catch (error) {
-            throw new SurferError(SurferError.FS_ERROR, error);
-        }
+        const childStat = safe.fs.statSync(childPath);
+        if (!childStat) throw new SurferError(SurferError.FS_ERROR, safe.error);
         entries.push(entryFromStat(root, childPath, file, childStat));
     }
 

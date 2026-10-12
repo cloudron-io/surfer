@@ -42,24 +42,24 @@ function publicDirForHost(host) {
     return row ? row.publicDir : null;
 }
 
-function list() {
+async function list() {
     return database.all('SELECT domain, publicDir FROM sites ORDER BY publicDir, domain');
 }
 
-function insert(domain, publicDir) {
+async function insert(domain, publicDir) {
     database.run('INSERT INTO sites (domain, publicDir) VALUES (?, ?)', [ domain, publicDir ]);
 }
 
-function remove(domain) {
+async function remove(domain) {
     database.run('DELETE FROM sites WHERE domain = ?', [ domain ]);
 }
 
-function rowForDomain(domain) {
+async function rowForDomain(domain) {
     if (!domain) return null;
     return database.get('SELECT domain, publicDir FROM sites WHERE domain = ?', [ domain ]) || null;
 }
 
-function updateSite(fromDomain, fromDir, publicDir, domain) {
+async function updateSite(fromDomain, fromDir, publicDir, domain) {
     const tx = database.transaction(function () {
         if (publicDir !== fromDir) database.run('UPDATE sites SET publicDir = ? WHERE publicDir = ?', [ publicDir, fromDir ]);
         if (domain !== fromDomain) database.run('UPDATE sites SET domain = ? WHERE domain = ?', [ domain, fromDomain ]);

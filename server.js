@@ -31,7 +31,7 @@ fs.mkdirSync(ROOT_FOLDER, { recursive: true });
 sites.prepare();
 
 console.log(`Using database at: ${DB_FILE}`);
-settings.init(DB_FILE, { faviconFile: FAVICON_FILE, faviconFallback: FAVICON_FALLBACK_FILE });
+await settings.init(DB_FILE, { faviconFile: FAVICON_FILE, faviconFallback: FAVICON_FALLBACK_FILE });
 domains.init(sites.primaryName());
 history.init();
 settings.load();

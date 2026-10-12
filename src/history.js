@@ -51,19 +51,23 @@ function init() {
     }
 }
 
-function parseMessage(raw) {
+async function decode(value) {
+    return decodeURIComponent(value);
+}
+
+async function parseMessage(raw) {
     if (raw == null || raw === '') return '';
     if (typeof raw !== 'string') throw new SurferError(SurferError.BAD_FIELD, 'invalid deploy message');
 
-    const decoded = safe(function () { return decodeURIComponent(raw); });
-    if (safe.error) throw new SurferError(SurferError.BAD_FIELD, 'invalid deploy message');
+    const [error, decoded] = await safe(decode(raw));
+    if (error) throw new SurferError(SurferError.BAD_FIELD, 'invalid deploy message');
 
     const message = decoded.trim();
     if (message.length > MAX_MESSAGE_LENGTH) throw new SurferError(SurferError.BAD_FIELD, 'deploy message is too long');
     return message;
 }
 
-function add(user, message, site) {
+async function add(user, message, site) {
     const record = user || {};
     const username = typeof record.username === 'string' ? record.username : '';
     const name = typeof record.name === 'string' ? record.name : (typeof record.displayName === 'string' ? record.displayName : '');
@@ -79,14 +83,18 @@ function add(user, message, site) {
     tx();
 }
 
+async function readRows() {
+    return database.all('SELECT id, at, username, name, message, site FROM history ORDER BY id DESC');
+}
+
 async function list() {
-    try {
-        const rows = database.all('SELECT id, at, username, name, message, site FROM history ORDER BY id DESC');
-        return rows.map(function (row) {
-            return { id: row.id, at: row.at, username: row.username, name: row.name, message: row.message, site: row.site || 'default' };
-        });
-    } catch (error) {
+    const [error, rows] = await safe(readRows());
+    if (error) {
         console.error('history:', error);
         throw new SurferError(SurferError.DATABASE_ERROR, 'failed to list history');
     }
+
+    return rows.map(function (row) {
+        return { id: row.id, at: row.at, username: row.username, name: row.name, message: row.message, site: row.site || 'default' };
+    });
 }

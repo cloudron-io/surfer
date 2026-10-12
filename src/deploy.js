@@ -213,41 +213,35 @@ async function promote(name, user) {
 
     if (!sites.tryLock()) throw new SurferError(SurferError.BUSY, 'a deploy is already in progress');
 
-    try {
-        await publishDirectory(source, sites.primaryRoot);
-        try {
-            history.add(user, 'Deployed from ' + name, 'default');
-        } catch (error) {
-            console.error('deploy: failed to record deploy', error);
-        }
-    } catch (error) {
+    const [error] = await safe(publishDirectory(source, sites.primaryRoot));
+    if (error) {
+        sites.unlock();
         console.error('deploy:', error);
         throw new SurferError(SurferError.INTERNAL_ERROR, error.message);
-    } finally {
-        sites.unlock();
     }
+
+    const [historyError] = await safe(history.add(user, 'Deployed from ' + name, 'default'));
+    if (historyError) console.error('deploy: failed to record deploy', historyError);
+    sites.unlock();
 }
 
 async function publish(stream, headers, user) {
-    const message = history.parseMessage(headers['surfer-message']);
-    const deployment = sites.readDeploymentHeader(headers['surfer-deployment']);
+    const message = await history.parseMessage(headers['surfer-message']);
+    const deployment = await sites.readDeploymentHeader(headers['surfer-deployment']);
     const root = sites.deploymentRoot(deployment);
     if (!root) throw new SurferError(SurferError.BAD_FIELD, 'unknown deployment');
 
     if (!sites.tryLock()) throw new SurferError(SurferError.BUSY, 'a deploy is already in progress');
 
-    try {
-        await receiveAndPublish(stream, root, deployment === 'default' ? '' : deployment);
-        try {
-            history.add(user, message, deployment);
-        } catch (error) {
-            console.error('deploy: failed to record deploy', error);
-        }
-    } catch (error) {
+    const [error] = await safe(receiveAndPublish(stream, root, deployment === 'default' ? '' : deployment));
+    if (error) {
+        sites.unlock();
         console.error('deploy:', error);
         if (error instanceof SurferError) throw error;
         throw new SurferError(SurferError.INTERNAL_ERROR, error.message);
-    } finally {
-        sites.unlock();
     }
+
+    const [historyError] = await safe(history.add(user, message, deployment));
+    if (historyError) console.error('deploy: failed to record deploy', historyError);
+    sites.unlock();
 }

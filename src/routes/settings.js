@@ -7,23 +7,25 @@ import settings from '../settings.js';
 import SurferError from '../surfererror.js';
 import { resetStatic } from './publicSite.js';
 
-function webadminOrigin() {
+async function originOf(issuer) {
+    return new URL(issuer).origin;
+}
+
+async function webadminOrigin() {
     if (process.env.CLOUDRON_WEBADMIN_ORIGIN) return process.env.CLOUDRON_WEBADMIN_ORIGIN.replace(/\/$/, '');
 
     // Local development has no platform env. The OIDC issuer is the dashboard origin plus /openid.
     const issuer = process.env.OIDC_ISSUER_ORIGIN || '';
     if (!issuer) return '';
 
-    try {
-        return new URL(issuer).origin;
-    } catch {
-        return '';
-    }
+    const [error, origin] = await safe(originOf(issuer));
+    if (error) return '';
+    return origin;
 }
 
-function get(req, res, next) {
+async function get(req, res, next) {
     const config = settings.current();
-    const origin = webadminOrigin();
+    const origin = await webadminOrigin();
 
     next(new HttpSuccess(200, {
         folderListingEnabled: !!config.folderListingEnabled,
