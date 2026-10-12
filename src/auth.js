@@ -2,7 +2,6 @@
 
 import crypto from 'crypto';
 import * as tegel from '@cloudron/tegel';
-import { HttpSuccess } from '@cloudron/connect-lastmile';
 import webdavServer from 'webdav-server';
 
 const webdavErrors = webdavServer.v2.Errors;
@@ -21,10 +20,6 @@ async function verifyCloudronCredentials(identifier, password) {
         if (error.status === 401) return null;
         throw error;
     }
-}
-
-function getProfile(req, res, next) {
-    next(new HttpSuccess(200, { username: req.user.username, name: req.user.name || req.user.displayName || '' }));
 }
 
 // This implements the required interface only for the Basic Authentication for webdav-server
@@ -72,7 +67,6 @@ WebdavUserManager.prototype.getUserByNamePassword = function (username, password
 };
 
 export default {
-    getProfile,
     requireAuth,
     WebdavUserManager,
 };

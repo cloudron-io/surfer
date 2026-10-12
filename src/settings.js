@@ -1,8 +1,10 @@
 'use strict';
 
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import safe from '@cloudron/safetydance';
 import database from './database.js';
+import SurferError from './surfererror.js';
 
 const DEFAULTS = {
     folderListingEnabled: false,
@@ -13,13 +15,24 @@ const DEFAULTS = {
     accessPasswordSalt: '',
 };
 
+let gConfig = null;
+let gFaviconFile = '';
+let gFaviconFallback = '';
+
 export default {
     init,
     load,
-    save,
+    current,
+    update,
+    faviconPath,
+    writeFavicon,
+    removeFavicon,
 };
 
-function init(dbPath) {
+function init(dbPath, paths = {}) {
+    gFaviconFile = paths.faviconFile || '';
+    gFaviconFallback = paths.faviconFallback || '';
+
     database.init(dbPath);
     database.exec(`
         CREATE TABLE IF NOT EXISTS settings (
@@ -61,7 +74,54 @@ function load() {
     const values = {};
     for (const row of rows) values[row.key] = row.value;
 
-    return normalize(values);
+    gConfig = normalize(values);
+    return gConfig;
+}
+
+function current() {
+    return gConfig;
+}
+
+async function update(fields) {
+    const config = gConfig;
+    config.folderListingEnabled = !!fields.folderListingEnabled;
+    config.title = fields.title;
+    config.index = typeof fields.index === 'string' ? fields.index : '';
+    config.accessRestriction = fields.accessRestriction;
+    if (fields.passwordUpdate) {
+        config.accessPassword = fields.passwordUpdate.accessPassword;
+        config.accessPasswordSalt = fields.passwordUpdate.accessPasswordSalt;
+    }
+
+    try {
+        save(config);
+    } catch (error) {
+        console.error('unable to save settings', error);
+        throw new SurferError(SurferError.DATABASE_ERROR, 'unable to save settings');
+    }
+}
+
+function faviconPath() {
+    if (gFaviconFile && safe.fs.existsSync(gFaviconFile)) return gFaviconFile;
+    return gFaviconFallback;
+}
+
+async function writeFavicon(uploadPath) {
+    try {
+        await fs.copyFile(uploadPath, gFaviconFile);
+    } catch (error) {
+        console.error('Failed to save favicon.', error);
+        throw new SurferError(SurferError.FS_ERROR, 'Failed to save favicon');
+    }
+}
+
+async function removeFavicon() {
+    try {
+        await fs.unlink(gFaviconFile);
+    } catch (error) {
+        console.error('Failed to reset favicon.', error);
+        throw new SurferError(SurferError.FS_ERROR, 'Failed to reset favicon');
+    }
 }
 
 function save(config) {

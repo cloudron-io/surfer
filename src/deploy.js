@@ -8,9 +8,9 @@ import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import * as tar from 'tar';
 import safe from '@cloudron/safetydance';
-import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
 import history from './history.js';
 import sites from './sites.js';
+import SurferError from './surfererror.js';
 
 const gDeployFolder = path.join(sites.dataDir, '.deploy');
 
@@ -19,24 +19,10 @@ const MAX_EXTRACTED_BYTES = 2 * 1024 * 1024 * 1024;
 
 const REJECTED_TYPES = new Set([ 'SymbolicLink', 'Link', 'CharacterDevice', 'BlockDevice', 'FIFO', 'GNUDumpDir' ]);
 
-let gDeploying = false;
-
-function tryLock() {
-    if (gDeploying) return false;
-    gDeploying = true;
-    return true;
-}
-
-function unlock() {
-    gDeploying = false;
-}
-
 export default {
-    deploy,
+    publish,
     promote,
     recover,
-    tryLock,
-    unlock,
 };
 
 // rename() cannot replace a non-empty directory, so a crashed swap can leave the
@@ -93,9 +79,7 @@ function recover() {
 }
 
 function badArchive(message) {
-    const error = new Error(message);
-    error.code = 'EBADARCHIVE';
-    return error;
+    return new SurferError(SurferError.BAD_FIELD, message);
 }
 
 function limitArchiveSize(max) {
@@ -105,9 +89,7 @@ function limitArchiveSize(max) {
         transform(chunk, encoding, callback) {
             received += chunk.length;
             if (received > max) {
-                const error = new Error('deploy archive is too large');
-                error.code = 'ETOOBIG';
-                callback(error);
+                callback(new SurferError(SurferError.TOO_LARGE, 'deploy archive is too large'));
                 return;
             }
             callback(null, chunk);
@@ -223,63 +205,49 @@ async function publishDirectory(source, root) {
     throw error;
 }
 
-function promote(req, res, next) {
-    const name = typeof req.params.name === 'string' ? req.params.name.trim().toLowerCase() : '';
-    if (!sites.isDeployName(name) || name === 'default') return next(new HttpError(400, 'invalid site name'));
+async function promote(name, user) {
+    if (!sites.isDeployName(name) || name === 'default') throw new SurferError(SurferError.BAD_FIELD, 'invalid site name');
 
     const source = sites.deploymentRoot(name);
-    if (!source || source === sites.primaryRoot) return next(new HttpError(400, 'unknown site'));
+    if (!source || source === sites.primaryRoot) throw new SurferError(SurferError.BAD_FIELD, 'unknown site');
 
-    if (gDeploying) return next(new HttpError(409, 'a deploy is already in progress'));
-    gDeploying = true;
+    if (!sites.tryLock()) throw new SurferError(SurferError.BUSY, 'a deploy is already in progress');
 
-    (async function () {
-        const [error] = await safe(publishDirectory(source, sites.primaryRoot));
-        gDeploying = false;
-
-        if (error) {
-            console.error('deploy:', error);
-            return next(new HttpError(500, error.message));
+    try {
+        await publishDirectory(source, sites.primaryRoot);
+        try {
+            history.add(user, 'Deployed from ' + name, 'default');
+        } catch (error) {
+            console.error('deploy: failed to record deploy', error);
         }
-
-        safe(function () { history.add(req, 'Deployed from ' + name, 'default'); });
-        if (safe.error) console.error('deploy: failed to record deploy', safe.error);
-
-        next(new HttpSuccess(201, {}));
-    })();
+    } catch (error) {
+        console.error('deploy:', error);
+        throw new SurferError(SurferError.INTERNAL_ERROR, error.message);
+    } finally {
+        sites.unlock();
+    }
 }
 
-function deploy(req, res, next) {
-    if (gDeploying) return next(new HttpError(409, 'a deploy is already in progress'));
-
-    const type = (req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
-    if (type !== 'application/gzip' && type !== 'application/x-gzip') return next(new HttpError(400, 'expected application/gzip'));
-
-    const message = safe(function () { return history.readMessage(req); });
-    if (safe.error) return next(new HttpError(400, safe.error.message));
-
-    const deployment = safe(function () { return sites.readDeployment(req); });
-    if (safe.error) return next(new HttpError(400, safe.error.message));
-
+async function publish(stream, headers, user) {
+    const message = history.parseMessage(headers['surfer-message']);
+    const deployment = sites.readDeploymentHeader(headers['surfer-deployment']);
     const root = sites.deploymentRoot(deployment);
-    if (!root) return next(new HttpError(400, 'unknown deployment'));
+    if (!root) throw new SurferError(SurferError.BAD_FIELD, 'unknown deployment');
 
-    gDeploying = true;
+    if (!sites.tryLock()) throw new SurferError(SurferError.BUSY, 'a deploy is already in progress');
 
-    (async function () {
-        const [error] = await safe(receiveAndPublish(req, root, deployment === 'default' ? '' : deployment));
-        gDeploying = false;
-
-        if (error) {
-            console.error('deploy:', error);
-            if (error.code === 'ETOOBIG') return next(new HttpError(413, 'deploy archive is too large'));
-            if (error.code === 'EBADARCHIVE') return next(new HttpError(400, error.message));
-            return next(new HttpError(500, error.message));
+    try {
+        await receiveAndPublish(stream, root, deployment === 'default' ? '' : deployment);
+        try {
+            history.add(user, message, deployment);
+        } catch (error) {
+            console.error('deploy: failed to record deploy', error);
         }
-
-        safe(function () { history.add(req, message, deployment); });
-        if (safe.error) console.error('deploy: failed to record deploy', safe.error);
-
-        next(new HttpSuccess(201, {}));
-    })();
+    } catch (error) {
+        console.error('deploy:', error);
+        if (error instanceof SurferError) throw error;
+        throw new SurferError(SurferError.INTERNAL_ERROR, error.message);
+    } finally {
+        sites.unlock();
+    }
 }

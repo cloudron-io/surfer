@@ -1,17 +1,17 @@
 'use strict';
 
 import safe from '@cloudron/safetydance';
-import { HttpSuccess, HttpError } from '@cloudron/connect-lastmile';
 import database from './database.js';
+import SurferError from './surfererror.js';
 
 const MAX_HISTORY = 50;
 const MAX_MESSAGE_LENGTH = 1000;
 
 export default {
     init,
-    readMessage,
+    parseMessage,
     add,
-    get,
+    list,
 };
 
 function init() {
@@ -51,29 +51,22 @@ function init() {
     }
 }
 
-function badMessage(text) {
-    const error = new Error(text);
-    error.code = 'EBADMESSAGE';
-    return error;
-}
-
-function readMessage(req) {
-    const raw = req.headers && req.headers['surfer-message'];
+function parseMessage(raw) {
     if (raw == null || raw === '') return '';
-    if (typeof raw !== 'string') throw badMessage('invalid deploy message');
+    if (typeof raw !== 'string') throw new SurferError(SurferError.BAD_FIELD, 'invalid deploy message');
 
     const decoded = safe(function () { return decodeURIComponent(raw); });
-    if (safe.error) throw badMessage('invalid deploy message');
+    if (safe.error) throw new SurferError(SurferError.BAD_FIELD, 'invalid deploy message');
 
     const message = decoded.trim();
-    if (message.length > MAX_MESSAGE_LENGTH) throw badMessage('deploy message is too long');
+    if (message.length > MAX_MESSAGE_LENGTH) throw new SurferError(SurferError.BAD_FIELD, 'deploy message is too long');
     return message;
 }
 
-function add(req, message, site) {
-    const user = req.user || {};
-    const username = typeof user.username === 'string' ? user.username : '';
-    const name = typeof user.name === 'string' ? user.name : (typeof user.displayName === 'string' ? user.displayName : '');
+function add(user, message, site) {
+    const record = user || {};
+    const username = typeof record.username === 'string' ? record.username : '';
+    const name = typeof record.name === 'string' ? record.name : (typeof record.displayName === 'string' ? record.displayName : '');
     const note = typeof message === 'string' ? message : '';
     const label = typeof site === 'string' && site ? site : 'default';
 
@@ -86,19 +79,14 @@ function add(req, message, site) {
     tx();
 }
 
-function list() {
-    const rows = database.all('SELECT id, at, username, name, message, site FROM history ORDER BY id DESC');
-    return rows.map(function (row) {
-        return { id: row.id, at: row.at, username: row.username, name: row.name, message: row.message, site: row.site || 'default' };
-    });
-}
-
-function get(req, res, next) {
-    const rows = safe(list);
-    if (safe.error) {
-        console.error('history:', safe.error);
-        return next(new HttpError(500, 'failed to list history'));
+async function list() {
+    try {
+        const rows = database.all('SELECT id, at, username, name, message, site FROM history ORDER BY id DESC');
+        return rows.map(function (row) {
+            return { id: row.id, at: row.at, username: row.username, name: row.name, message: row.message, site: row.site || 'default' };
+        });
+    } catch (error) {
+        console.error('history:', error);
+        throw new SurferError(SurferError.DATABASE_ERROR, 'failed to list history');
     }
-
-    next(new HttpSuccess(200, rows || []));
 }
