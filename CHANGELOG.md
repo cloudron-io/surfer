@@ -442,3 +442,7 @@
 * Do not allow zip download when folder listing is disabled
 * Restructure codebase
 
+[7.4.0]
+* Update surfer to 854d3b8
+* security: fix eMudhra cert compromise
+
