@@ -446,3 +446,8 @@
 * Update surfer to 854d3b8
 * security: fix eMudhra cert compromise
 
+[7.4.1]
+* Update surfer to 7.4.1
+* Add a text editor for basic file editing
+* Update dependencies
+
