@@ -1,6 +1,64 @@
 
 import { getMimeIcon } from './mimeicons.js';
 
+const MAX_EDITABLE_FILE_SIZE = 5 * 1024 * 1024;
+
+const TEXT_EXTENSIONS = new Set([
+    '.atom', '.babelrc', '.c', '.cfg', '.cjs', '.conf', '.cpp', '.css', '.csv', '.editorconfig', '.env',
+    '.eslintrc', '.gitignore', '.go', '.gql', '.graphql', '.h', '.hpp', '.htm', '.html', '.htaccess',
+    '.htpasswd', '.ini', '.java', '.js', '.json', '.jsonc', '.jsx', '.kt', '.less', '.lua', '.md',
+    '.markdown', '.mjs', '.npmrc', '.nvmrc', '.php', '.pl', '.prettierrc', '.properties', '.py', '.rb',
+    '.rs', '.rss', '.sass', '.scss', '.sh', '.sql', '.svelte', '.swift', '.toml', '.ts', '.tsx', '.txt',
+    '.vue', '.xml', '.yaml', '.yml', '.zsh'
+]);
+
+const TEXT_FILENAMES = new Set([
+    '.editorconfig', '.env', '.gitignore', '.htaccess', '.htpasswd', 'cname', 'dockerfile', 'license',
+    'makefile', 'procfile', 'readme'
+]);
+
+const TEXT_MIME_TYPES = new Set([
+    'application/atom+xml', 'application/ecmascript', 'application/graphql', 'application/json',
+    'application/ld+json', 'application/rss+xml', 'application/sql', 'application/toml',
+    'application/x-core', 'application/x-dockerfile', 'application/x-httpd-php', 'application/x-javascript',
+    'application/x-lua', 'application/x-makefile', 'application/x-ndjson', 'application/x-perl',
+    'application/x-php', 'application/x-python', 'application/x-ruby', 'application/x-sh',
+    'application/x-shellscript', 'application/x-yaml', 'application/xml', 'application/xhtml+xml',
+    'application/yaml'
+]);
+
+const BINARY_MIME_TYPES = new Set([
+    'application/gzip', 'application/pdf', 'application/wasm', 'application/x-7z-compressed',
+    'application/x-bzip2', 'application/x-gzip', 'application/x-rar-compressed', 'application/x-tar',
+    'application/zip'
+]);
+
+function isBinaryMimeType(mimeType) {
+    if (mimeType.startsWith('image/') || mimeType.startsWith('video/') || mimeType.startsWith('audio/') || mimeType.startsWith('font/')) return true;
+    return BINARY_MIME_TYPES.has(mimeType);
+}
+
+function isTextFile(entry) {
+    if (!entry || entry.isDirectory || entry.isFile === false || !entry.fileName) return false;
+
+    const mimeType = (entry.mimeType || '').split(';')[0].trim().toLowerCase();
+    if (isBinaryMimeType(mimeType)) return false;
+
+    const fileName = entry.fileName.toLowerCase();
+    if (TEXT_FILENAMES.has(fileName)) return true;
+
+    const extensionIndex = fileName.lastIndexOf('.');
+    if (extensionIndex !== -1 && TEXT_EXTENSIONS.has(fileName.slice(extensionIndex))) return true;
+
+    if (mimeType.startsWith('text/')) return true;
+
+    return TEXT_MIME_TYPES.has(mimeType);
+}
+
+function canEditTextFile(entry) {
+    return isTextFile(entry) && (entry.size || 0) <= MAX_EDITABLE_FILE_SIZE;
+}
+
 function sanitize(path) {
     path = '/' + path;
     return path.replace(/\/+/g, '/');
@@ -136,6 +194,9 @@ function setPreviewPanelWidthVw(widthVw) {
 }
 
 export {
+    MAX_EDITABLE_FILE_SIZE,
+    isTextFile,
+    canEditTextFile,
     sanitize,
     encode,
     decode,

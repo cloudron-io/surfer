@@ -6,6 +6,8 @@ import pankowPlugin from '@cloudron/pankow/vite-plugin';
 import fs from 'fs';
 import path from 'path';
 
+const nodeModules = path.resolve(import.meta.dirname, '..', 'node_modules');
+
 // https://vitejs.dev/config/
 export default defineConfig(({ command }) => ({
   plugins: [
@@ -13,9 +15,24 @@ export default defineConfig(({ command }) => ({
     // server /build.json is proxied to the backend and has the dist build id, so the
     // banner would always show. HMR already handles updates during development.
     pankowPlugin({ versionCheck: command === 'build' }),
-    vue()
+    vue(),
+    {
+      // Monaco is a pankow dependency, so its worker imports have to be resolved
+      // from surfer's node_modules explicitly.
+      name: 'resolve-monaco-worker-imports',
+      resolveId(source) {
+        if (source.includes('?worker') && source.startsWith('monaco-editor/')) {
+          const cleanId = source.replace(/\?worker$/, '');
+          const filePath = path.join(nodeModules, cleanId + '.js');
+          if (fs.existsSync(filePath)) return filePath + '?worker';
+        }
+      },
+    }
   ],
   server: {
+    fs: {
+      allow: [ '..', '../..' ]
+    },
     proxy: {
       // Forward everything to the backend (static files, folder listing, /api, /auth, ...).
       // Vite keeps serving its own frontend source files and internal modules.

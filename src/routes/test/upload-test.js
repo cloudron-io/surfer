@@ -53,6 +53,22 @@ describe('File upload API', function () {
         assert.equal(fs.readFileSync(path.join(filesDir(), 'hello.txt'), 'utf8'), 'hello');
     });
 
+    it('overwrites an existing file', async function () {
+        fs.writeFileSync(path.join(filesDir(), 'edit.txt'), 'old');
+
+        const response = await superagent.post(`${url()}/api/files/edit.txt`).attach('file', Buffer.from('updated'));
+
+        assert.equal(response.status, 201);
+        assert.equal(fs.readFileSync(path.join(filesDir(), 'edit.txt'), 'utf8'), 'updated');
+    });
+
+    it('returns inline file content', async function () {
+        const response = await superagent.get(`${url()}/api/files/edit.txt`).query({ inline: 'true' });
+
+        assert.equal(response.status, 200);
+        assert.equal(response.text, 'updated');
+    });
+
     it('lists a directory', async function () {
         const response = await superagent.get(`${url()}/api/files/docs`);
 

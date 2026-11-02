@@ -22,6 +22,7 @@
             <ProgressBar v-if="busy" mode="indeterminate" :show-label="false" :slim="true" :show-track="false"/>
             <div class="directory-view-wrap">
               <DirectoryView
+                ref="directoryView"
                 :items="entries"
                 :busy="busy"
                 :editable="true"
@@ -60,7 +61,7 @@
           </div>
         </template>
         <template #right>
-          <Preview :entry="previewEntry"/>
+          <Preview :entry="previewEntry" @edit="openEditor"/>
         </template>
       </SplitLayout>
     </div>
@@ -72,17 +73,22 @@
       <ProgressBar :value="uploadStatus.percentDone" style="flex-grow: 1;" v-show="!uploadStatus.uploadListCount">{{ uploadStatus.percentDone }}%</ProgressBar>
     </div>
   </div>
+  <TextEditor v-if="editorEntry" :entry="editorEntry" :deployment="deploymentName" @close="onEditorClose" @saved="onEditorSaved"/>
 </template>
 
 <script setup>
 
-import { ref, reactive, computed, onMounted, inject, watch } from 'vue';
+import { ref, reactive, computed, onMounted, inject, watch, defineAsyncComponent } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Breadcrumb, DirectoryView, InputDialog, ProgressBar, Spinner, SplitLayout, fetcher, useChangeBroadcast } from '@cloudron/pankow';
 import { eachLimit, each } from 'async';
-import { sanitize, encode, decode, download, toDirectoryItems, makeCurrentFolderPreviewEntry, publicFileUrl, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from '../utils.js';
+import { sanitize, encode, decode, download, toDirectoryItems, makeCurrentFolderPreviewEntry, publicFileUrl, canEditTextFile, getPreviewPanelWidthVw, setPreviewPanelWidthVw, clampPreviewPanelWidthVw } from '../utils.js';
 
 import Preview from '../components/Preview.vue';
+
+const TextEditor = defineAsyncComponent(function () {
+  return import('../components/TextEditor.vue');
+});
 
 const logout = inject('logout');
 const sites = inject('sites');
@@ -172,6 +178,8 @@ const breadcrumbHomeItem = ref({
 const breadcrumbItems = ref([]);
 const entries = ref([]);
 const activeEntry = ref({});
+const editorEntry = ref(null);
+const directoryView = ref(null);
 const previewWidthVw = ref(getPreviewPanelWidthVw());
 const leftWidthPercent = computed(() => 100 - previewWidthVw.value);
 
@@ -576,6 +584,41 @@ function onEntryOpen(entry) {
   window.open(entry.openUrl || entry.href, '_blank');
 }
 
+function openEditor(entry) {
+  if (!canEditTextFile(entry)) return;
+  editorEntry.value = { ...entry };
+}
+
+function installContextMenu() {
+  const model = directoryView.value?.contextMenuModel;
+  if (!model || model.some(function (item) { return item.id === 'edit'; })) return;
+
+  const openIndex = model.findIndex(function (item) { return item.id === 'open'; });
+  if (openIndex === -1) return;
+
+  model.splice(openIndex + 1, 0, {
+    id: 'edit',
+    label: 'Edit',
+    icon: 'fa-solid fa-pen-to-square',
+    action: function () {
+      openEditor(directoryView.value?.focusItem);
+    },
+    visible: function () {
+      return canEditTextFile(directoryView.value?.focusItem);
+    }
+  });
+}
+
+function onEditorClose() {
+  editorEntry.value = null;
+}
+
+async function onEditorSaved(entry) {
+  const folder = parentFolder(entry.filePath);
+  if (folder === path.value) await refresh();
+  changes.announce([ folder ]);
+}
+
 function onSelectionChanged(selectedEntries) {
   activeEntry.value = selectedEntries[0] || {};
 }
@@ -593,6 +636,8 @@ watch(function () { return route.fullPath; }, function () {
 }, { immediate: true });
 
 onMounted(() => {
+  installContextMenu();
+
   window.addEventListener('keyup', (e) => {
     if (e.key === 'Escape' && e.target.classList.length === 0) {
       activeEntry.value = {};

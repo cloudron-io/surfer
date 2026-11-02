@@ -7,6 +7,7 @@
       <img :src="previewSrc" alt="" class="preview-image" :class="{ shadow: isImagePreview }" @error="onIconError"/>
       <p v-if="entry.fileName" class="preview-name">{{ entry.fileName }}</p>
       <div class="actions">
+        <Button v-if="canEdit" outline icon="fa-solid fa-pen-to-square" @click="onEdit(entry)">Edit</Button>
         <Button outline v-show="entry.isFile || entry.isDirectory" icon="fa-solid fa-download" @click="onDownload(entry)">Download</Button>
         <Button outline icon="fa-regular fa-copy" @click="onCopyLink(entry)">Copy link</Button>
         <Button outline icon="fa-solid fa-arrow-up-right-from-square" :href="openHref" target="_blank">Open</Button>
@@ -19,14 +20,20 @@
 
 import { computed } from 'vue';
 import { Button } from '@cloudron/pankow';
-import { download, encode, fileApiUrl, getPreviewUrl, sanitize } from '../utils.js';
+import { download, encode, fileApiUrl, getPreviewUrl, sanitize, canEditTextFile } from '../utils.js';
 import { copyToClipboard } from '@cloudron/pankow/utils';
+
+const emit = defineEmits([ 'edit' ]);
 
 const props = defineProps({
   entry: {
     type: Object,
     default: () => ({})
   }
+});
+
+const canEdit = computed(function () {
+  return canEditTextFile(props.entry);
 });
 
 const isImagePreview = computed(function () {
@@ -56,6 +63,10 @@ const openHref = computed(function () {
 function onIconError(event) {
   event.target.onerror = null;
   event.target.src = '/_admin/mime-types/application-x-generic.svg';
+}
+
+function onEdit(entry) {
+  emit('edit', entry);
 }
 
 function onDownload(entry) {

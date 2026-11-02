@@ -17,7 +17,7 @@ export default [
         }
     },
     {
-        files: ["frontend/**/*.js"],
+        files: ["frontend/**/*.js", "frontend/**/*.vue"],
         languageOptions: {
             globals: {
                 ...globals.browser,
@@ -36,7 +36,8 @@ export default [
             'vue/html-closing-bracket-spacing': 'off',
             'vue/singleline-html-element-content-newline': 'off',
             'vue/attributes-order': 'off',
-            'vue/max-attributes-per-line': 'off'
+            'vue/max-attributes-per-line': 'off',
+            'vue/multi-word-component-names': 'off'
         }
     }
 ];
