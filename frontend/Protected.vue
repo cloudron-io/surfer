@@ -3,7 +3,7 @@
     <LoginView
       v-if="settings.accessRestriction !== 'password'"
       icon-url="/_admin/logo.png"
-      title="Surfer"
+      :title="providerName"
       message="Static file server"
       :login-label="`Log in with ${providerName}`"
       footer="Powered by Cloudron"
@@ -73,7 +73,7 @@ onMounted(async () => {
     console.error(e);
   }
 
-  window.document.title = settings.value.accessRestriction === 'password' ? settings.value.title : 'Surfer';
+  window.document.title = settings.value.accessRestriction === 'password' ? settings.value.title : providerName.value;
 
   ready.value = true;
 
