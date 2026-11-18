@@ -2,10 +2,12 @@
 
 import { ref, computed, onMounted, provide, useTemplateRef, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { Button, Dialog, SideBar, TextInput, TopBar, fetcher } from '@cloudron/pankow';
+import { Button, Dialog, LoginView, SideBar, TextInput, TopBar, fetcher } from '@cloudron/pankow';
 import { siteOrigin } from './utils.js';
 
 const ready = ref(false);
+const authenticated = ref(false);
+const providerName = ref('Cloudron');
 const profile = ref({ username: '', name: '' });
 const sites = ref([]);
 const sidebar = useTemplateRef('sidebar');
@@ -289,6 +291,8 @@ async function onCreateDeploy() {
 }
 
 async function loadProfile() {
+  await loadLocationUrl();
+
   try {
     const result = await fetcher.get('/api/profile');
     if (result.status !== 200) return login();
@@ -297,26 +301,36 @@ async function loadProfile() {
       username: result.body.username || '',
       name: result.body.name || ''
     };
+    authenticated.value = true;
   } catch (e) {
-    return console.error(e);
+    console.error(e);
+    return login();
   }
 
   await loadDeploys();
-  await loadLocationUrl();
   ready.value = true;
 }
 
 async function loadLocationUrl() {
   try {
     const result = await fetcher.get('/api/settings');
-    if (result.status === 200 && result.body && result.body.locationUrl) locationUrl.value = result.body.locationUrl;
+    if (result.status !== 200 || !result.body) return;
+
+    providerName.value = result.body.oidcProviderName || 'Cloudron';
+    if (result.body.locationUrl) locationUrl.value = result.body.locationUrl;
   } catch (e) {
     console.error(e);
   }
 }
 
 function login() {
-  window.location.replace('/auth/login?returnTo=/_admin');
+  authenticated.value = false;
+  profile.value = { username: '', name: '' };
+  ready.value = true;
+}
+
+function onOidcLogin() {
+  window.location.href = '/auth/login?returnTo=/_admin';
 }
 
 function logout() {
@@ -333,7 +347,17 @@ onMounted(loadProfile);
 </script>
 
 <template>
-  <div v-if="ready" class="main">
+  <div v-if="ready && !authenticated" class="login-wrapper">
+    <LoginView
+      icon-url="/_admin/logo.png"
+      title="Surfer"
+      message="Static file server"
+      :login-label="`Log in with ${providerName}`"
+      footer="Powered by Cloudron"
+      @login="onOidcLogin"
+    />
+  </div>
+  <div v-else-if="ready" class="main">
     <SideBar ref="sidebar" resizable>
       <div class="sidebar-title">
         <RouterLink to="/" class="sidebar-title-link" @click="onCloseSidebar">
@@ -423,6 +447,11 @@ onMounted(loadProfile);
 </template>
 
 <style>
+.login-wrapper {
+  height: 100%;
+  min-height: 100vh;
+}
+
 .main {
   display: flex;
   width: 100%;
