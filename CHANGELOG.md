@@ -451,3 +451,7 @@
 * Add a text editor for basic file editing
 * Update dependencies
 
+[7.4.2]
+* Update surfer to 7945bb3
+* use the site title in protected page login
+
