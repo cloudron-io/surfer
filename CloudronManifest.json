@@ -3,7 +3,7 @@
   "title": "Cloudron Surfer",
   "author": "Cloudron Team",
   "version": "7.4.2",
-  "upstreamVersion": "7.4.2",
+  "upstreamVersion": "dda6e60",
   "description": "file://DESCRIPTION.md",
   "tagline": "Static file server",
   "tags": [
