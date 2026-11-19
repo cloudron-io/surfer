@@ -2,8 +2,8 @@
   "id": "io.cloudron.surfer",
   "title": "Cloudron Surfer",
   "author": "Cloudron Team",
-  "version": "7.4.2",
-  "upstreamVersion": "bfb9f88",
+  "version": "7.4.3",
+  "upstreamVersion": "7.4.3",
   "description": "file://DESCRIPTION.md",
   "tagline": "Static file server",
   "tags": [

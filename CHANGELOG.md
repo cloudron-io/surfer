@@ -455,3 +455,7 @@
 * Update surfer to 7945bb3
 * use the site title in protected page login
 
+[7.4.3]
+* Update surfer to bfb9f88
+* Fix manifest
+
