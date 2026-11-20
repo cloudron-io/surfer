@@ -21,7 +21,7 @@
     "@cloudron/pankow": "^4.5.5",
     "@cloudron/safetydance": "^3.2.0",
     "@cloudron/superagent": "^2.3.0",
-    "@cloudron/tegel": "^2.4.0",
+    "@cloudron/tegel": "^2.7.0",
     "archiver": "^8.0.0",
     "async": "^3.2.6",
     "better-sqlite3": "^13.0.3",
