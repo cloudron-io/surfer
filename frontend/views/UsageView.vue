@@ -8,8 +8,8 @@
       <SectionItem title="WebDAV">
         <p class="usage-intro">
           Mount the site as a network folder. Sign in with your Cloudron username and an
-          <a v-if="appPasswordsUrl" class="usage-link" :href="appPasswordsUrl" target="_blank" rel="noopener">App password</a>
-          <template v-else>App password</template>
+          <a v-if="appPasswordsUrl" class="usage-link" :href="appPasswordsUrl" target="_blank" rel="noopener">App token</a>
+          <template v-else>App token</template>
           created in the Cloudron dashboard.
         </p>
         <ul class="usage-list">
@@ -23,8 +23,8 @@
       <SectionItem ref="commandLine" id="command-line" title="Command line">
         <p class="usage-intro">
           Upload files with the Surfer CLI. To authenticate, create an
-          <a v-if="appPasswordsUrl" class="usage-link" :href="appPasswordsUrl" target="_blank" rel="noopener">App password</a>
-          <template v-else>App password</template>
+          <a v-if="appPasswordsUrl" class="usage-link" :href="appPasswordsUrl" target="_blank" rel="noopener">App token</a>
+          <template v-else>App token</template>
           in the Cloudron dashboard.
         </p>
         <ul class="usage-list">
@@ -53,7 +53,7 @@ const commandLine = useTemplateRef('commandLine');
 const origin = window.location.origin;
 const domain = window.location.host;
 const installCommand = 'npm install -g @cloudron/surfer';
-const configCommand = `surfer config --server ${origin} --username <username> --password <app password>`;
+const configCommand = `surfer config --server ${origin} --username <username> --password <app token>`;
 const putCommand = 'surfer put file.txt /';
 const deployCommand = 'surfer deploy ./dist -m "Build from commit abc"';
 const deploySiteCommand = 'surfer deploy ./dist --site-name alpha';
