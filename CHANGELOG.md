@@ -459,3 +459,6 @@
 * Update surfer to bfb9f88
 * Fix manifest
 
+[7.5.0]
+* Stream request bodies so deploys over 100MB are accepted
+
